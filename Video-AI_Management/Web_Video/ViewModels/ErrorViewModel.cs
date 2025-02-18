@@ -1,4 +1,4 @@
-namespace Web_Video.Models
+namespace Web_Video.ViewModels
 {
     public class ErrorViewModel
     {

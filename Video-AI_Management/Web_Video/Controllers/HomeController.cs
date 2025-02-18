@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Web_Video.Models;
+using Web_Video.ViewModels;
 
 namespace Web_Video.Controllers
 {
