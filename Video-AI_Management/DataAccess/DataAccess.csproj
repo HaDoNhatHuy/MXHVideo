@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Database_Video\Database_Video.csproj" />
+    <ProjectReference Include="..\WebVideo.Utility\WebVideo.Utility.csproj" />
   </ItemGroup>
 
 </Project>

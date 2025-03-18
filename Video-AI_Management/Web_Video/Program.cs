@@ -1,4 +1,6 @@
 using DataAccess.Data;
+using Database_Video.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Web_Video.Extensions;
 
@@ -29,18 +31,20 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-InitializeContext();
+await InitializeContextAsync();
 app.Run();
 
 
-void InitializeContext()
+async Task InitializeContextAsync()
 {
     using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
     try
     {
         var context = scope.ServiceProvider.GetService<DataContext>();
-        ContextInitializer.Initialize(context);
+        var userManager = scope.ServiceProvider.GetService<UserManager<AppUser>>();
+        var roleManager = scope.ServiceProvider.GetService<RoleManager<AppRole>>();
+        await ContextInitializer.InitializeAsync(context, userManager, roleManager);
     }
     catch (Exception ex)
     {

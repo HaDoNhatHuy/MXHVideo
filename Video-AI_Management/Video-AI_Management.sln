@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Database_Video", "Database_
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataAccess", "DataAccess\DataAccess.csproj", "{AFD2313F-B06F-44C0-948F-E3E255E23B51}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebVideo.Utility", "WebVideo.Utility\WebVideo.Utility.csproj", "{8CC9A90B-41CD-4C71-8548-880ECF5CA51A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{AFD2313F-B06F-44C0-948F-E3E255E23B51}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AFD2313F-B06F-44C0-948F-E3E255E23B51}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AFD2313F-B06F-44C0-948F-E3E255E23B51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8CC9A90B-41CD-4C71-8548-880ECF5CA51A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8CC9A90B-41CD-4C71-8548-880ECF5CA51A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8CC9A90B-41CD-4C71-8548-880ECF5CA51A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8CC9A90B-41CD-4C71-8548-880ECF5CA51A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
