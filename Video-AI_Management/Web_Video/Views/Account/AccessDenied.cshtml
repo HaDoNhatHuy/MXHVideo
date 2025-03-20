@@ -1,0 +1,62 @@
+﻿<div class="body-access-denied">
+    <div class="glass-box">
+        <i class="bi bi-x-circle-fill"></i>
+        <h2>Access Denied</h2>
+        <p>You are not authorized to view this page.</p>
+        <a class="btn btn-custom mt-3" asp-controller="Home" asp-action="Index">
+            <i class="bi bi-house-door"></i> Back to Home
+        </a>
+    </div>
+</div>
+@section Css{
+    <style>
+        .body-access-denied {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Poppins', sans-serif;
+        }
+        .glass-box {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+            .glass-box i {
+                font-size: 60px;
+                color: #ffdfdf;
+            }
+
+            .glass-box h2 {
+                margin-top: 10px;
+                font-weight: 700;
+            }
+
+            .glass-box p {
+                font-size: 16px;
+            }
+
+        .btn-custom {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 50px;
+            transition: all 0.3s ease-in-out;
+        }
+
+            .btn-custom:hover {
+                background: white;
+                color: #ff416c;
+            }
+    </style>
+}

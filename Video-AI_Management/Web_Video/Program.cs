@@ -1,7 +1,13 @@
 using DataAccess.Data;
 using Database_Video.Entities;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Threading.Tasks;
 using Web_Video.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
 builder.AddApplicationServices();
+builder.AddAuthenticationServices();
 
 var app = builder.Build();
 
@@ -25,6 +32,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
