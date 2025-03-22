@@ -9,11 +9,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace DataAccess.Data.Migrations
+namespace DataAccess.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20250313141539_ModelCreation")]
-    partial class ModelCreation
+    [Migration("20250321124714_CreateDatabase")]
+    partial class CreateDatabase
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -128,7 +128,7 @@ namespace DataAccess.Data.Migrations
 
             modelBuilder.Entity("Database_Video.Entities.Category", b =>
                 {
-                    b.Property<Guid>("CategoryId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -158,7 +158,7 @@ namespace DataAccess.Data.Migrations
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("CategoryId");
+                    b.HasKey("Id");
 
                     b.HasIndex("ParentId");
 
@@ -167,7 +167,7 @@ namespace DataAccess.Data.Migrations
 
             modelBuilder.Entity("Database_Video.Entities.Channel", b =>
                 {
-                    b.Property<Guid>("ChannelId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -183,7 +183,7 @@ namespace DataAccess.Data.Migrations
                     b.Property<DateTime?>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("ChannelId");
+                    b.HasKey("Id");
 
                     b.HasIndex("AppUserId")
                         .IsUnique()
@@ -208,6 +208,9 @@ namespace DataAccess.Data.Migrations
 
                     b.Property<DateTime?>("CreatedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ModifiedBy")
                         .HasColumnType("nvarchar(max)");
@@ -257,7 +260,7 @@ namespace DataAccess.Data.Migrations
 
             modelBuilder.Entity("Database_Video.Entities.Video", b =>
                 {
-                    b.Property<Guid>("VideoId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -277,9 +280,11 @@ namespace DataAccess.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Thumbnail")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UploadDate")
@@ -291,7 +296,7 @@ namespace DataAccess.Data.Migrations
                     b.Property<int?>("Views")
                         .HasColumnType("int");
 
-                    b.HasKey("VideoId");
+                    b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
 

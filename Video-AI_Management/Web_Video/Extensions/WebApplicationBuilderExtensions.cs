@@ -1,5 +1,7 @@
 ﻿using DataAccess.Data;
+using DataAccess.Repo;
 using Database_Video.Entities;
+using Database_Video.IRepo;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
@@ -18,6 +20,9 @@ namespace Web_Video.Extensions
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
+
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddSession();
             return builder;
         }
         public static WebApplicationBuilder AddAuthenticationServices(this WebApplicationBuilder builder)

@@ -4,10 +4,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Database_Video.Entities
 {
     [Table("Channel")]
-    public class Channel
+    public class Channel : BaseEntity
     {
-        [Key]
-        public Guid ChannelId { get; set; }
         public string? ChannelName { get; set; }
         public string? About { get; set; }
         public DateTime? CreatedDate { get; set; } = DateTime.Now;

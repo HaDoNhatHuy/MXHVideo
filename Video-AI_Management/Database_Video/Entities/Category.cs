@@ -9,10 +9,8 @@ using System.Threading.Tasks;
 namespace Database_Video.Entities
 {
     [Table("Category")]
-    public class Category : IMeta, IAuditable
+    public class Category : BaseEntity, IMeta, IAuditable 
     {
-        [Key]
-        public Guid CategoryId { get; set; }
         [StringLength(50)]
         public string CategoryName { get; set; }
         [ForeignKey("ParentId")]

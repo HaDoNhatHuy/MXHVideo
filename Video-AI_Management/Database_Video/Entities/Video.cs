@@ -11,13 +11,13 @@ using System.Threading.Tasks;
 namespace Database_Video.Entities
 {
     [Table("Video")]
-    public class Video
+    public class Video : BaseEntity
     {
-        [Key]
-        public Guid VideoId { get; set; }
+        [Required]
         public string? Title { get; set; }
         public string? Description { get; set; }
         public string? VideoUrl { get; set; }
+        [Required]
         public string? Thumbnail { get; set; }
         public DateTime? UploadDate { get; set; }
         public string? ContentType { get; set; }

@@ -1,15 +1,89 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Database_Video.Entities;
+using Database_Video.IRepo;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using System.Linq;
+using System.Threading.Tasks;
+using Web_Video.Extensions;
+using Web_Video.ViewModels;
+using Web_Video.ViewModels.Channel;
 using WebVideo.Utility;
 
 namespace Web_Video.Controllers
 {
-    [Authorize(Roles =$"{SD.UserRole}")]
-    public class ChannelController : Controller
+    [Authorize(Roles = $"{SD.UserRole}")]
+    public class ChannelController : CoreController
     {
-        public IActionResult Index()
+        public async Task<IActionResult> Index(string stringModel)
         {
-            return View();
+            var model = new ChannelAddEditViewModel();
+            HttpContext.Session.GetString("ChannelModelFromSession");
+            if (!string.IsNullOrEmpty(stringModel))
+            {
+                model = JsonConvert.DeserializeObject<ChannelAddEditViewModel>(stringModel);
+                if (model.Errors.Count > 0)
+                {
+                    foreach (var error in model.Errors)
+                    {
+                        ModelState.AddModelError(error.Key, error.ErrorMessage);
+                    }
+                    HttpContext.Session.Remove("ChannelModelFromSession");
+                    return View(model);
+                }
+            }
+            var channel = await UnitOfWork.ChannelRepo.GetFirstOrDefaultAsync(x => x.AppUserId == User.GetUserId());
+            if (channel != null)
+            {
+                model.Name = channel.ChannelName;
+                model.About = channel.About;
+            }
+            return View(model);
+        }
+        [HttpPost]
+        public async Task<IActionResult> CreateChannel(ChannelAddEditViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                foreach (var item in ModelState)
+                {
+                    if (item.Value.Errors.Count > 0)
+                    {
+                        model.Errors.Add(new ModelErrorViewModel
+                        {
+                            Key = item.Key,
+                            ErrorMessage = item.Value.Errors.Select(x => x.ErrorMessage).FirstOrDefault()
+                        });
+                    }
+                }
+                HttpContext.Session.SetString("ChannelModelFromSession", JsonConvert.SerializeObject(model));
+                return RedirectToAction("Index");
+            }
+
+            var channelNameExists = await UnitOfWork.ChannelRepo.AnyAsync(x => x.ChannelName.ToLower() == model.Name.ToLower());
+            if (channelNameExists)
+            {
+                model.Errors.Add(new ModelErrorViewModel
+                {
+                    Key = "Name",
+                    ErrorMessage = $"Channel name of {model.Name} is taken. Please try another name."
+                });
+                //return RedirectToAction("Index", new { stringModel = JsonConvert.SerializeObject(model) });
+                HttpContext.Session.SetString("ChannelModelFromSession", JsonConvert.SerializeObject(model));
+                return RedirectToAction("Index");
+            }
+            var channelToAdd = new Channel
+            {
+                AppUserId = User.GetUserId(),
+                ChannelName = model.Name,
+                About = model.About
+            };
+            UnitOfWork.ChannelRepo.Add(channelToAdd);
+            await UnitOfWork.CompleteAsync();
+
+            TempData["notification"] = "true;Channel created successfully; Your channel has been created and you can upload clips now";
+            return RedirectToAction("Index");
         }
     }
 }

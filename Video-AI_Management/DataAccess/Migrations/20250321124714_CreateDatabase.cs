@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace DataAccess.Data.Migrations
+namespace DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class ModelCreation : Migration
+    public partial class CreateDatabase : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -57,7 +57,7 @@ namespace DataAccess.Data.Migrations
                 name: "Category",
                 columns: table => new
                 {
-                    CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CategoryName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     ParentId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     MetaKeywords = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -69,12 +69,12 @@ namespace DataAccess.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Category", x => x.CategoryId);
+                    table.PrimaryKey("PK_Category", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Category_Category_ParentId",
                         column: x => x.ParentId,
                         principalTable: "Category",
-                        principalColumn: "CategoryId");
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -187,7 +187,7 @@ namespace DataAccess.Data.Migrations
                 name: "Channel",
                 columns: table => new
                 {
-                    ChannelId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ChannelName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     About = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -195,7 +195,7 @@ namespace DataAccess.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Channel", x => x.ChannelId);
+                    table.PrimaryKey("PK_Channel", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Channel_AspNetUsers_AppUserId",
                         column: x => x.AppUserId,
@@ -223,7 +223,7 @@ namespace DataAccess.Data.Migrations
                         name: "FK_Subscribe_Channel_ChannelId",
                         column: x => x.ChannelId,
                         principalTable: "Channel",
-                        principalColumn: "ChannelId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -231,11 +231,11 @@ namespace DataAccess.Data.Migrations
                 name: "Video",
                 columns: table => new
                 {
-                    VideoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     VideoUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Thumbnail = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Thumbnail = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UploadDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ContentType = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Contents = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
@@ -245,17 +245,17 @@ namespace DataAccess.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Video", x => x.VideoId);
+                    table.PrimaryKey("PK_Video", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Video_Category_CategoryId",
                         column: x => x.CategoryId,
                         principalTable: "Category",
-                        principalColumn: "CategoryId");
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Video_Channel_ChannelId",
                         column: x => x.ChannelId,
                         principalTable: "Channel",
-                        principalColumn: "ChannelId");
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -268,7 +268,8 @@ namespace DataAccess.Data.Migrations
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    ModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -283,7 +284,7 @@ namespace DataAccess.Data.Migrations
                         name: "FK_Comment_Video_VideoId",
                         column: x => x.VideoId,
                         principalTable: "Video",
-                        principalColumn: "VideoId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -308,7 +309,7 @@ namespace DataAccess.Data.Migrations
                         name: "FK_LikeDislike_Video_VideoId",
                         column: x => x.VideoId,
                         principalTable: "Video",
-                        principalColumn: "VideoId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
