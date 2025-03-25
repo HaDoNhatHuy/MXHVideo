@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 
 namespace Database_Video.IRepo
 {
-    public interface IChannelRepo:IBaseRepo<Channel>
+    public interface IChannelRepo : IBaseRepo<Channel>
     {
+        Task<Guid> GetChannelIdByUserId(string userId);
     }
 }

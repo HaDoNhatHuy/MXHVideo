@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using Web_Video.Services;
+using Web_Video.Services.IServices;
 
 namespace Web_Video.Extensions
 {
@@ -22,6 +24,7 @@ namespace Web_Video.Extensions
             });
 
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddScoped<IPhotoService, PhotoService>();
             builder.Services.AddSession();
             return builder;
         }

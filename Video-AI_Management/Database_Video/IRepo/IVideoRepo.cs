@@ -9,5 +9,6 @@ namespace Database_Video.IRepo
 {
     public interface IVideoRepo : IBaseRepo<Video>
     {
+        Task<string> GetUserIdByVideoId(Guid videoId);
     }
 }

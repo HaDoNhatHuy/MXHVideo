@@ -85,5 +85,25 @@ namespace Web_Video.Controllers
             TempData["notification"] = "true;Channel created successfully; Your channel has been created and you can upload clips now";
             return RedirectToAction("Index");
         }
+
+        [HttpPost]
+        public async Task<IActionResult> EditChannel(ChannelAddEditViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var channel = await UnitOfWork.ChannelRepo.GetFirstOrDefaultAsync(x => x.AppUserId == User.GetUserId());
+                if (channel != null)
+                {
+                    channel.ChannelName = model.Name;
+                    channel.About = model.About;
+                    await UnitOfWork.CompleteAsync();
+
+                    TempData["notification"] = "true;Channel updated; Your channel has been updated";
+                    return RedirectToAction("Index");
+                }
+            }
+            TempData["notification"] = "false;Channel not found; Your channel was not found";
+            return RedirectToAction("Index");
+        }
     }
 }
