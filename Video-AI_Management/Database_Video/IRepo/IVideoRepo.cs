@@ -11,7 +11,8 @@ namespace Database_Video.IRepo
 {
     public interface IVideoRepo : IBaseRepo<Video>
     {
-        Task<string> GetUserIdByVideoId(Guid videoId);
-        Task<PaginatedList<VideoGridChannelDto>> GetVideosForChannelGrid(Guid channelId, BaseParameters parameters);
+        Task<string> GetUserIdByVideoIdAsync(Guid videoId);
+        Task<PaginatedList<VideoGridChannelDto>> GetVideosForChannelGridAsync(Guid channelId, BaseParameters parameters);
+        Task<PaginatedList<VideoForHomeGridDto>> GetVideosForHomeGridAsync(HomeParameters parameters);
     }
 }

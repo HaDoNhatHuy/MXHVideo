@@ -19,6 +19,17 @@ namespace WebVideo.Utility
             var returnActive = controller == routeController && action == routeAction;
             return returnActive ? cssClass : string.Empty;
         }
+        public static string IsActivePage(this IHtmlHelper html, string page)
+        {
+            var currentPage = html.ViewContext.HttpContext.Request.Query["page"].ToString();
+            var isPageMatch = currentPage == page;
+
+            // default Home page
+            if (string.IsNullOrEmpty(currentPage) && page == "Home") return "active";
+
+            return isPageMatch ? "active" : string.Empty;
+        }
+
         //public static string GetRandomName()
         //{
         //    var randomNumber = new byte[10];

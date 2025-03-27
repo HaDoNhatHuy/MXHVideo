@@ -29,6 +29,10 @@ namespace Web_Video.Controllers
         {
             _photoService = photoService;
         }
+        public IActionResult Watch(Guid id)
+        {
+            return View();
+        }
         public async Task<IActionResult> CreateEditVideo(Guid id)
         {
             if (!await UnitOfWork.ChannelRepo.AnyAsync(x => x.AppUserId == User.GetUserId()))
@@ -44,7 +48,7 @@ namespace Web_Video.Controllers
             {
                 //edit video
 
-                var userId = await UnitOfWork.VideoRepo.GetUserIdByVideoId(id);
+                var userId = await UnitOfWork.VideoRepo.GetUserIdByVideoIdAsync(id);
                 if (userId != User.GetUserId())
                 {
                     TempData["notification"] = "false;Not Found;Requested video was not found";
@@ -173,7 +177,7 @@ namespace Web_Video.Controllers
         public async Task<IActionResult> GetVideosForChannelGrid(BaseParameters parameters)
         {
             var userChannelId = await UnitOfWork.ChannelRepo.GetChannelIdByUserId(User.GetUserId());
-            var videosForGrid = await UnitOfWork.VideoRepo.GetVideosForChannelGrid(userChannelId, parameters);
+            var videosForGrid = await UnitOfWork.VideoRepo.GetVideosForChannelGridAsync(userChannelId, parameters);
             var paginatedResults = new PaginatedResult<VideoGridChannelDto>(videosForGrid, videosForGrid.TotalItemsCount,
                 videosForGrid.PageNumber, videosForGrid.PageSize, videosForGrid.TotalPages);
 

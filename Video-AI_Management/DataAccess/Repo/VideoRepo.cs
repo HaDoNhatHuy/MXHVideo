@@ -21,7 +21,7 @@ namespace DataAccess.Repo
             _context = context;
         }
 
-        public async Task<string> GetUserIdByVideoId(Guid videoId)
+        public async Task<string> GetUserIdByVideoIdAsync(Guid videoId)
         {
             return await _context.Videos
                 .Where(x => x.Id == videoId)
@@ -29,7 +29,7 @@ namespace DataAccess.Repo
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<PaginatedList<VideoGridChannelDto>> GetVideosForChannelGrid(Guid channelId, BaseParameters parameters)
+        public async Task<PaginatedList<VideoGridChannelDto>> GetVideosForChannelGridAsync(Guid channelId, BaseParameters parameters)
         {
             var query = _context.Videos
                 .Include(x => x.Category)
@@ -67,6 +67,33 @@ namespace DataAccess.Repo
                 _ => query.OrderByDescending(u => u.CreatedAt)
             };
             return await PaginatedList<VideoGridChannelDto>.CreateAsync(query.AsNoTracking(), parameters.PageNumber, parameters.PageSize);
+        }
+
+        public async Task<PaginatedList<VideoForHomeGridDto>> GetVideosForHomeGridAsync(HomeParameters parameters)
+        {
+            var query = _context.Videos
+                .Select(x => new VideoForHomeGridDto
+                {
+                    Id = x.Id,
+                    Thumbnail = x.Thumbnail,
+                    Title = x.Title,
+                    Description = x.Description,
+                    CreatedAt = x.UploadDate ?? DateTime.Now,
+                    ChannelName = x.Channel.ChannelName,
+                    ChannelId = x.Channel.Id,
+                    CategoryId = x.Category.Id,
+                    Views = SD.GetRandomNumber(1000, 50000, x.Id.GetHashCode()),// chuyển Guid thành int
+                })
+                .AsQueryable();
+            if (parameters.CategoryId != Guid.Empty)
+            {
+                query = query.Where(x => x.CategoryId == parameters.CategoryId);
+            }
+            if (!string.IsNullOrEmpty(parameters.SearchBy))
+            {
+                query = query.Where(x => x.Title.ToLower().Contains(parameters.SearchBy) || x.Description.ToLower().Contains(parameters.SearchBy));
+            }
+            return await PaginatedList<VideoForHomeGridDto>.CreateAsync(query.AsNoTracking(), parameters.PageNumber, parameters.PageSize);
         }
     }
 }
