@@ -302,6 +302,46 @@ namespace DataAccess.Migrations
                     b.ToTable("Video");
                 });
 
+            modelBuilder.Entity("Database_Video.Entities.VideoView", b =>
+                {
+                    b.Property<string>("AppUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("VideoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Is_Proxy")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("LastVisit")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("NumberOfVisit")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PostalCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("AppUserId", "VideoId");
+
+                    b.HasIndex("VideoId");
+
+                    b.ToTable("VideoView");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.Property<int>("Id")
@@ -498,6 +538,25 @@ namespace DataAccess.Migrations
                     b.Navigation("Channel");
                 });
 
+            modelBuilder.Entity("Database_Video.Entities.VideoView", b =>
+                {
+                    b.HasOne("Database_Video.Entities.AppUser", "AppUser")
+                        .WithMany("Histories")
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Database_Video.Entities.Video", "Video")
+                        .WithMany("Viewers")
+                        .HasForeignKey("VideoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+
+                    b.Navigation("Video");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Database_Video.Entities.AppRole", null)
@@ -555,6 +614,8 @@ namespace DataAccess.Migrations
 
                     b.Navigation("Comments");
 
+                    b.Navigation("Histories");
+
                     b.Navigation("LikeDislikes");
 
                     b.Navigation("Subscriptions");
@@ -577,6 +638,8 @@ namespace DataAccess.Migrations
                     b.Navigation("Comments");
 
                     b.Navigation("LikeDislikes");
+
+                    b.Navigation("Viewers");
                 });
 #pragma warning restore 612, 618
         }

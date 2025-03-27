@@ -1,4 +1,6 @@
-﻿using Database_Video.Entities;
+﻿using Database_Video.DTOs;
+using Database_Video.Entities;
+using Database_Video.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +12,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Web_Video.Extensions;
+using Web_Video.Services;
 using Web_Video.Services.IServices;
+using Web_Video.ViewModels.Channel;
 using Web_Video.ViewModels.Video;
 using WebVideo.Utility;
 
@@ -164,6 +168,31 @@ namespace Web_Video.Controllers
             return View(model);
         }
 
+        #region API Endpoints
+        [HttpGet]
+        public async Task<IActionResult> GetVideosForChannelGrid(BaseParameters parameters)
+        {
+            var userChannelId = await UnitOfWork.ChannelRepo.GetChannelIdByUserId(User.GetUserId());
+            var videosForGrid = await UnitOfWork.VideoRepo.GetVideosForChannelGrid(userChannelId, parameters);
+            var paginatedResults = new PaginatedResult<VideoGridChannelDto>(videosForGrid, videosForGrid.TotalItemsCount,
+                videosForGrid.PageNumber, videosForGrid.PageSize, videosForGrid.TotalPages);
+
+            return Json(new ApiResponse(200, result: paginatedResults));
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> DeleteVideo(Guid id)
+        {
+            var video = await UnitOfWork.VideoRepo.GetFirstOrDefaultAsync(x => x.Id == id && x.Channel.AppUserId == User.GetUserId());
+            if (video != null)
+            {
+                UnitOfWork.VideoRepo.Remove(video);
+                await UnitOfWork.CompleteAsync();
+                return Json(new ApiResponse(200, "Deleted", "Your video of " + video.Title + " has been deleted"));
+            }
+            return Json(new ApiResponse(404, message: "The requested video was not found"));
+        }
+        #endregion
 
         #region Private Methods
 

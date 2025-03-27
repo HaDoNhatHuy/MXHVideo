@@ -20,7 +20,7 @@ namespace Web_Video.Extensions
         {
             builder.Services.AddDbContext<DataContext>(options =>
             {
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), options => options.CommandTimeout(180));
             });
 
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();

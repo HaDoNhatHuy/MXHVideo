@@ -1,6 +1,7 @@
 using DataAccess.Data;
 using Database_Video.Entities;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,6 +10,9 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Web_Video.Extensions;
+using Web_Video.Seed;
+using Web_Video.Services;
+using Web_Video.Services.IServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,7 +57,8 @@ async Task InitializeContextAsync()
         var context = scope.ServiceProvider.GetService<DataContext>();
         var userManager = scope.ServiceProvider.GetService<UserManager<AppUser>>();
         var roleManager = scope.ServiceProvider.GetService<RoleManager<AppRole>>();
-        await ContextInitializer.InitializeAsync(context, userManager, roleManager);
+        var photoService = scope.ServiceProvider.GetService<IPhotoService>();
+        await ContextInitializer.InitializeAsync(context, userManager, roleManager, photoService);
     }
     catch (Exception ex)
     {

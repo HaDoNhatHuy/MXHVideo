@@ -17,5 +17,6 @@ namespace Database_Video.Entities
         public ICollection<Comment> Comments { get; set; } = new HashSet<Comment>();
         public ICollection<Subscribe> Subscriptions { get; set; } = new HashSet<Subscribe>();
         public ICollection<LikeDislike> LikeDislikes { get; set;} = new HashSet<LikeDislike>();
+        public ICollection<VideoView> Histories { get; set;} = new HashSet<VideoView>();
     }
 }

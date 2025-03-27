@@ -24,6 +24,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DataAccess\DataAccess.csproj" />
+    <ProjectReference Include="..\Database_Video\Database_Video.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Seed\Files\" />
   </ItemGroup>
 
 </Project>
