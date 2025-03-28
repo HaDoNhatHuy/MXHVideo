@@ -125,8 +125,13 @@ namespace Web_Video.Seed
                         Title = title,
                         Description = description,
                         CategoryId = categoryId,
-                        ContentType = videoFiles[i].Extension,
-                        Contents = GetContentsAsync(videoFile).GetAwaiter().GetResult(),
+                        VideoFile = new VideoFile
+                        {
+                            Id = Guid.NewGuid(),
+                            ContentType = SD.GetContentType(videoFiles[i].Extension),
+                            Contents = GetContentsAsync(videoFile).GetAwaiter().GetResult(),
+                            Extension = videoFiles[i].Extension,
+                        },
                         Thumbnail = photoService.UploadPhotoLocally(imageFile),
                         ChannelId = (i % 2 == 0) ? johnChannel.Id : peterChannel.Id,
                         UploadDate = SD.GetRandomDate(new DateTime(2015, 1, 1), DateTime.Now, i),

@@ -11,6 +11,7 @@ namespace Database_Video.IRepo
         IChannelRepo ChannelRepo { get; }
         ICategoryRepo CategoryRepo { get; }
         IVideoRepo VideoRepo { get; }
+        IVideoFileRepo VideoFileRepo { get; }
         Task<bool> CompleteAsync();
     }
 }

@@ -267,12 +267,6 @@ namespace DataAccess.Migrations
                     b.Property<Guid?>("ChannelId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("ContentType")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<byte[]>("Contents")
-                        .HasColumnType("varbinary(max)");
-
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
@@ -300,6 +294,35 @@ namespace DataAccess.Migrations
                     b.HasIndex("ChannelId");
 
                     b.ToTable("Video");
+                });
+
+            modelBuilder.Entity("Database_Video.Entities.VideoFile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("Contents")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("Extension")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("VideoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VideoId")
+                        .IsUnique();
+
+                    b.ToTable("VideoFile");
                 });
 
             modelBuilder.Entity("Database_Video.Entities.VideoView", b =>
@@ -538,6 +561,17 @@ namespace DataAccess.Migrations
                     b.Navigation("Channel");
                 });
 
+            modelBuilder.Entity("Database_Video.Entities.VideoFile", b =>
+                {
+                    b.HasOne("Database_Video.Entities.Video", "Video")
+                        .WithOne("VideoFile")
+                        .HasForeignKey("Database_Video.Entities.VideoFile", "VideoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Video");
+                });
+
             modelBuilder.Entity("Database_Video.Entities.VideoView", b =>
                 {
                     b.HasOne("Database_Video.Entities.AppUser", "AppUser")
@@ -638,6 +672,9 @@ namespace DataAccess.Migrations
                     b.Navigation("Comments");
 
                     b.Navigation("LikeDislikes");
+
+                    b.Navigation("VideoFile")
+                        .IsRequired();
 
                     b.Navigation("Viewers");
                 });

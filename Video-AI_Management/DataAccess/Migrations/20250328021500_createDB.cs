@@ -237,8 +237,6 @@ namespace DataAccess.Migrations
                     VideoUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Thumbnail = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UploadDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ContentType = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Contents = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
                     Views = table.Column<int>(type: "int", nullable: true),
                     CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ChannelId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
@@ -311,6 +309,27 @@ namespace DataAccess.Migrations
                         principalTable: "Video",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "VideoFile",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ContentType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Contents = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
+                    Extension = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    VideoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VideoFile", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_VideoFile_Video_VideoId",
+                        column: x => x.VideoId,
+                        principalTable: "Video",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -421,6 +440,12 @@ namespace DataAccess.Migrations
                 column: "ChannelId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_VideoFile_VideoId",
+                table: "VideoFile",
+                column: "VideoId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_VideoView_VideoId",
                 table: "VideoView",
                 column: "VideoId");
@@ -452,6 +477,9 @@ namespace DataAccess.Migrations
 
             migrationBuilder.DropTable(
                 name: "Subscribe");
+
+            migrationBuilder.DropTable(
+                name: "VideoFile");
 
             migrationBuilder.DropTable(
                 name: "VideoView");
