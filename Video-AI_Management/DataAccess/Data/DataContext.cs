@@ -11,6 +11,7 @@ namespace DataAccess.Data
         public DbSet<Category> Categories { get; set; }
         public DbSet<Video> Videos { get; set; }
         public DbSet<Channel> Channels { get; set; }
+        public DbSet<VideoView> VideoViews { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

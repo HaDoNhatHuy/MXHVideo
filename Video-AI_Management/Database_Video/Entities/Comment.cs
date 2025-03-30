@@ -12,8 +12,19 @@ namespace Database_Video.Entities
     [Table("Comment")]
     public class Comment :BaseEntity, IAuditable
     {
-        //PK (AppUserId, VideoId)
         //FK = AppUserId and FK = VideoId
+        public Comment()
+        {
+            
+        }
+
+        public Comment(Guid videoId, string appUserId, string? content)
+        {
+            VideoId = videoId;
+            AppUserId = appUserId;
+            Content = content;
+        }
+
         public Guid VideoId { get; set; }
         public string AppUserId { get; set; }
         public string? Content { get; set; }

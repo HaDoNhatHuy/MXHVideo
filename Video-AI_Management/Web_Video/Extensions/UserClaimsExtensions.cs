@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System;
+using System.Security.Claims;
 
 namespace Web_Video.Extensions
 {
@@ -19,6 +20,10 @@ namespace Web_Video.Extensions
         public static string GetUserId(this ClaimsPrincipal user)
         {
             return user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
+        public static string GetUserChannelId(this ClaimsPrincipal user)
+        {
+            return user.FindFirst(ClaimTypes.Sid)?.Value;
         }
     }
 }

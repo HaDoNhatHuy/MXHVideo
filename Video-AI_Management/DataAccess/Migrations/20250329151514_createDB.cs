@@ -260,18 +260,18 @@ namespace DataAccess.Migrations
                 name: "Comment",
                 columns: table => new
                 {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     VideoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     AppUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Content = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    ModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Comment", x => new { x.AppUserId, x.VideoId });
+                    table.PrimaryKey("PK_Comment", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Comment_AspNetUsers_AppUserId",
                         column: x => x.AppUserId,
@@ -336,19 +336,20 @@ namespace DataAccess.Migrations
                 name: "VideoView",
                 columns: table => new
                 {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     AppUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     VideoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     IpAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     NumberOfVisit = table.Column<int>(type: "int", nullable: false),
-                    City = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PostalCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Country = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Is_Proxy = table.Column<bool>(type: "bit", nullable: false),
+                    City = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PostalCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Country = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Is_Proxy = table.Column<bool>(type: "bit", nullable: true),
                     LastVisit = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_VideoView", x => new { x.AppUserId, x.VideoId });
+                    table.PrimaryKey("PK_VideoView", x => x.Id);
                     table.ForeignKey(
                         name: "FK_VideoView_AspNetUsers_AppUserId",
                         column: x => x.AppUserId,
@@ -415,6 +416,11 @@ namespace DataAccess.Migrations
                 filter: "[AppUserId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Comment_AppUserId",
+                table: "Comment",
+                column: "AppUserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Comment_VideoId",
                 table: "Comment",
                 column: "VideoId");
@@ -444,6 +450,11 @@ namespace DataAccess.Migrations
                 table: "VideoFile",
                 column: "VideoId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VideoView_AppUserId",
+                table: "VideoView",
+                column: "AppUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_VideoView_VideoId",

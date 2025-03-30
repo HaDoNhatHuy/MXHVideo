@@ -17,5 +17,6 @@ namespace Web_Video.ViewModels.Video
         public int DislikesCount { get; set; }
         public int ViewersCount { get; set; }
         public int SubscribersCount { get; set; }
+        public CommentViewModel CommentVM { get; set; } = new();
     }
 }

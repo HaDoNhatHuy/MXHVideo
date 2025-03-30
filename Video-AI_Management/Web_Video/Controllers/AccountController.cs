@@ -145,6 +145,12 @@ namespace Web_Video.Controllers
             claimsIdentity.AddClaim(new Claim(ClaimTypes.GivenName, user.FullName));
             claimsIdentity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
 
+            var userChannelId = await _context.Channels
+                .Where(x => x.AppUserId == user.Id)
+                .Select(x => x.Id)
+                .FirstOrDefaultAsync();
+            claimsIdentity.AddClaim(new Claim(ClaimTypes.Sid, userChannelId.ToString()));
+
             var roles = await _userManager.GetRolesAsync(user);
             claimsIdentity.AddClaims(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 

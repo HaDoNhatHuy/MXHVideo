@@ -14,6 +14,19 @@ namespace Web_Video.Services
         {
             _webHostEnvironment = webHostEnvironment;
         }
+
+        public void DeletePhotoLocally(string photoUrl)
+        {
+            string webRootPath=_webHostEnvironment.WebRootPath;
+            string uploadsDirectory = Path.Combine(webRootPath, @"images\thumbnails");
+            //delete the image
+            var oldImagePath = Path.Combine(webRootPath, photoUrl.TrimStart('\\'));
+            if(File.Exists(oldImagePath))
+            {
+                File.Delete(oldImagePath);
+            }
+        }
+
         public string UploadPhotoLocally(IFormFile photo, string oldPhotoPath = "")
         {
             string webRootPath = _webHostEnvironment.WebRootPath;

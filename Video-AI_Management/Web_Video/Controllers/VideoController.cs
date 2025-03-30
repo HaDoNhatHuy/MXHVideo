@@ -30,7 +30,7 @@ namespace Web_Video.Controllers
         public async Task<IActionResult> Watch(Guid id)
         {
             // with having DOT(.) we can have then include eg:"Channel.Subscribers"
-            var fetchedVideo = await UnitOfWork.VideoRepo.GetFirstOrDefaultAsync(x => x.Id == id, "Channel.Subscribers,LikeDislikes");
+            var fetchedVideo = await UnitOfWork.VideoRepo.GetFirstOrDefaultAsync(x => x.Id == id, "Channel.Subscribers,LikeDislikes,Comments.AppUser,Viewers");
             if (fetchedVideo != null)
             {
                 string userId = User.GetUserId();
@@ -47,11 +47,37 @@ namespace Web_Video.Controllers
                 toReturn.IsDisiked = fetchedVideo.LikeDislikes.Any(x => x.AppUserId == userId && x.Liked == false);
 
                 toReturn.SubscribersCount = fetchedVideo.Channel.Subscribers.Count();
-                toReturn.ViewersCount = SD.GetRandomNumber(1000, 50000, fetchedVideo.Id.GetHashCode());
+                toReturn.ViewersCount = fetchedVideo.Viewers.Select(x => x.NumberOfVisit).Sum();
                 toReturn.LikesCount = fetchedVideo.LikeDislikes.Where(x => x.Liked == true).Count();
                 toReturn.DislikesCount = fetchedVideo.LikeDislikes.Where(x => x.Liked == false).Count();
 
+                toReturn.CommentVM.PostComment.VideoId = id;
+                toReturn.CommentVM.AvailableComments = fetchedVideo.Comments.Select(x => new AvailableCommentViewModel
+                {
+                    FromName = x.AppUser.FullName,
+                    FromChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(x.AppUserId).GetAwaiter().GetResult(),
+                    PostedAt = x.CreatedDate ?? DateTime.Now,
+                    Content = x.Content
+                });
+                var userIpAddress = Request.HttpContext.Connection.RemoteIpAddress.ToString();
+                await UnitOfWork.VideoViewRepo.HandleVideoViewAsync(userId, id, userIpAddress);
+                await UnitOfWork.CompleteAsync();
+
                 return View(toReturn);
+            }
+            TempData["notification"] = "false;Not Found;Requested video was not found";
+            return RedirectToAction("Index", "Home");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateComment(CommentViewModel model)
+        {
+            var video = await UnitOfWork.VideoRepo.GetFirstOrDefaultAsync(x => x.Id == model.PostComment.VideoId, "Comments");
+            if (video != null)
+            {
+                video.Comments.Add(new Comment(model.PostComment.VideoId, User.GetUserId(), model.PostComment.Content.Trim()));
+                await UnitOfWork.CompleteAsync();
+                return RedirectToAction("Watch", new { id = model.PostComment.VideoId });
             }
             TempData["notification"] = "false;Not Found;Requested video was not found";
             return RedirectToAction("Index", "Home");
@@ -239,6 +265,7 @@ namespace Web_Video.Controllers
             var video = await UnitOfWork.VideoRepo.GetFirstOrDefaultAsync(x => x.Id == id && x.Channel.AppUserId == User.GetUserId());
             if (video != null)
             {
+                _photoService.DeletePhotoLocally(video.Thumbnail);
                 UnitOfWork.VideoRepo.Remove(video);
                 await UnitOfWork.CompleteAsync();
                 return Json(new ApiResponse(200, "Deleted", "Your video of " + video.Title + " has been deleted"));

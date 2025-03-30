@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Database_Video.IRepo;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -8,10 +9,9 @@ using System.Threading.Tasks;
 namespace Database_Video.Entities
 {
     [Table("VideoView")]
-    public class VideoView
+    public class VideoView : BaseEntity
     {
         //bridge table between AppUser and Video
-        // PK(AppUserId,VideoId)
         // FK= AppUserId and FK= VideoId
         public string AppUserId { get; set; }
         public Guid VideoId { get; set; }
@@ -19,10 +19,10 @@ namespace Database_Video.Entities
         //IP2 Location
         public string IpAddress { get; set; }
         public int NumberOfVisit { get; set; } = 1;
-        public string City { get; set; }
-        public string PostalCode { get; set; }
-        public string Country { get; set; }
-        public bool Is_Proxy { get; set; }
+        public string? City { get; set; }
+        public string? PostalCode { get; set; }
+        public string? Country { get; set; }
+        public bool? Is_Proxy { get; set; }
         public DateTime LastVisit { get; set; } = DateTime.Now;
 
         //Navigation

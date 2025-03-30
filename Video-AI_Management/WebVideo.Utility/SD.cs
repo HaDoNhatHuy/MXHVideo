@@ -10,6 +10,7 @@ namespace WebVideo.Utility
         public const string UserRole = "user";
         public static readonly List<string> Roles = new List<string> { AdminRole, ModeratorRole, UserRole };
         public const int MB = 1000000;
+        public static readonly List<string> LocalIpAddress = new List<string> { "127.0.0.1", "::1" };
         public static string IsActive(this IHtmlHelper html, string controller, string action, string cssClass = "active")
         {
             var routeData = html.ViewContext.RouteData;
@@ -102,7 +103,7 @@ namespace WebVideo.Utility
 
         public static string TimeAgo(DateTime dateTime)
         {
-            DateTime now = DateTime.UtcNow;
+            DateTime now = DateTime.Now;
             TimeSpan timeSpan = now - dateTime;
 
             double totalSeconds = Math.Floor(timeSpan.TotalSeconds);
