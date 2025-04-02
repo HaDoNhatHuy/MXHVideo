@@ -39,7 +39,7 @@ namespace DataAccess.Repo
                     Id = x.Id,
                     Title = x.Title,
                     Thumbnail = x.Thumbnail,
-                    CreatedAt = x.UploadDate ?? DateTime.Now,
+                    CreatedAt = x.UploadDate,
                     CategoryName = x.Category.CategoryName,
                     Views = SD.GetRandomNumber(1000, 50000, x.Id.GetHashCode()),// chuyển Guid thành int
                     Comments = SD.GetRandomNumber(1, 100, x.Id.GetHashCode()),// chuyển Guid thành int
@@ -78,7 +78,7 @@ namespace DataAccess.Repo
                     Thumbnail = x.Thumbnail,
                     Title = x.Title,
                     Description = x.Description,
-                    CreatedAt = x.UploadDate ?? DateTime.Now,
+                    CreatedAt = x.UploadDate,
                     ChannelName = x.Channel.ChannelName,
                     ChannelId = x.Channel.Id,
                     CategoryId = x.Category.Id,

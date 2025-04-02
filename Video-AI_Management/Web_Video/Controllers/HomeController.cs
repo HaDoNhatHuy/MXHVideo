@@ -1,14 +1,19 @@
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Database_Video.DTOs;
 using Database_Video.Pagination;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Web_Video.Extensions;
 using Web_Video.ViewModels;
 using Web_Video.ViewModels.Channel;
 using Web_Video.ViewModels.Home;
+using WebVideo.Utility;
 
 namespace Web_Video.Controllers
 {
@@ -55,14 +60,73 @@ namespace Web_Video.Controllers
         }
 
         #region API Endpoints
+        [Authorize(Roles = $"{SD.UserRole}")]
         [HttpGet]
         public async Task<IActionResult> GetVideosForHomeGrid(HomeParameters parameters)
         {
             var items = await UnitOfWork.VideoRepo.GetVideosForHomeGridAsync(parameters);
             var paginatedResults = new PaginatedResult<VideoForHomeGridDto>(items, items.TotalItemsCount, items.PageNumber, items.PageSize, items.TotalPages);
-            
+
             return Json(new ApiResponse(200, result: paginatedResults));
         }
-        #endregion
+
+        [Authorize(Roles = $"{SD.UserRole}")]
+        [HttpGet]
+        public async Task<IActionResult> GetSubscriptions()
+        {
+            var userSubscribedChannels = await Context.Subscribes
+               .Where(x => x.AppUserId == User.GetUserId())
+               // project the result into an anonymous object
+               .Select(x => new
+               {
+                   Id = x.ChannelId,
+                   ChannelName = x.Channel.ChannelName,
+                   VideosCount = x.Channel.Videos.Count
+               }).ToListAsync();
+
+            return Json(new ApiResponse(200, result: userSubscribedChannels));
+        }
+
+        [Authorize(Roles = $"{SD.UserRole}")]
+        [HttpGet]
+        public async Task<IActionResult> GetHistory()
+        {
+            var userWatchedVideoHistory = await Context.VideoViews
+                .Where(x => x.AppUserId == User.GetUserId())
+                // project the result into an anonymous object
+                .Select(x => new
+                {
+                    Id = x.VideoId,
+                    x.Video.Title,
+                    ChannelName = x.Video.Channel.ChannelName,
+                    ChannelId = x.Video.Channel.Id,
+                    LastVisitTimeAgo = SD.TimeAgo(x.LastVisit),
+                    x.LastVisit
+                }).ToListAsync();
+
+            return Json(new ApiResponse(200, result: userWatchedVideoHistory));
+        }
+
+        [Authorize(Roles = $"{SD.UserRole}")]
+        [HttpGet]
+        public async Task<IActionResult> GetLikesDislikesVideos(bool liked)
+        {
+            var userLikedDislikedVideos = await Context.LikeDislikes
+                .Where(x => x.AppUserId == User.GetUserId() && x.Liked == liked)
+                // project the result into an anonymous object
+                .Select(x => new
+                {
+                    Id = x.VideoId,
+                    x.Video.Title,
+                    x.Video.Thumbnail,
+                    ChannelName = x.Video.Channel.ChannelName,
+                    ChannelId = x.Video.Channel.Id,
+                    CreatedAtTimeAgo = SD.TimeAgo(x.Video.UploadDate),
+                    x.Video.UploadDate
+                }).ToListAsync();
+
+            return Json(new ApiResponse(200, result: userLikedDislikedVideos));
+        }
     }
+    #endregion
 }

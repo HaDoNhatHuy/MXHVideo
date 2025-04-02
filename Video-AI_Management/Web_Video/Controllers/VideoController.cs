@@ -38,7 +38,7 @@ namespace Web_Video.Controllers
                 toReturn.Id = fetchedVideo.Id;
                 toReturn.Title = fetchedVideo.Title;
                 toReturn.Description = fetchedVideo.Description;
-                toReturn.CreatedAt = fetchedVideo.UploadDate ?? DateTime.Now;
+                toReturn.CreatedAt = fetchedVideo.UploadDate;
                 toReturn.ChannelId = fetchedVideo.ChannelId ?? Guid.Empty;
                 toReturn.ChannelName = fetchedVideo.Channel.ChannelName;
 

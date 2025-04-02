@@ -53,12 +53,3 @@ body {
     width: 100%;
     overflow: auto;
 }
-
-.main{
-    min-height:700px;
-}
-
-.preview-image {
-    height: 100px;
-    width: 200px;
-}

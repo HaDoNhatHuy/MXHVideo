@@ -12,6 +12,8 @@ namespace DataAccess.Data
         public DbSet<Video> Videos { get; set; }
         public DbSet<Channel> Channels { get; set; }
         public DbSet<VideoView> VideoViews { get; set; }
+        public DbSet<Subscribe> Subscribes { get; set; }
+        public DbSet<LikeDislike> LikeDislikes { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

@@ -12,7 +12,7 @@ namespace Database_Video.Entities
         public string? VideoUrl { get; set; }
         [Required]
         public string? Thumbnail { get; set; }
-        public DateTime? UploadDate { get; set; } = DateTime.Now;        
+        public DateTime UploadDate { get; set; } = DateTime.Now;        
         public int? Views { get; set; }
         [ForeignKey("CategoryId")]
         public Guid? CategoryId { get; set; }
