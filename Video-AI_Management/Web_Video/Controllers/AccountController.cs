@@ -60,7 +60,15 @@ namespace Web_Video.Controllers
             }
             else
             {
-                ModelState.AddModelError(string.Empty, "Invalid username or password. Please try again.");
+                if (result.IsLockedOut)
+                {
+                    ModelState.AddModelError(string.Empty, $"Your account has been locked. You should wait until {user.LockoutEnd} (UTC time) to be able to login");
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, "Invalid username or password. Please try again.");
+                }
+
                 return View(model);
             }
         }

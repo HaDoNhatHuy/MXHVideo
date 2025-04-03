@@ -26,6 +26,7 @@ namespace Web_Video.Extensions
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IPhotoService, PhotoService>();
             builder.Services.AddSession();
+            builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             return builder;
         }
         public static WebApplicationBuilder AddAuthenticationServices(this WebApplicationBuilder builder)
