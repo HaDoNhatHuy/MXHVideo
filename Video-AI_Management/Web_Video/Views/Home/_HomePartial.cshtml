@@ -77,7 +77,8 @@
                    class="form-control"
                    autocomplete="off"
                    aria-autocomplete="list"
-                   aria-controls="searchSuggestions" />
+                   aria-controls="searchSuggestions" 
+                   type="search"/>
             <!-- Thêm container cho gợi ý tìm kiếm -->
             <div id="searchSuggestions"
                  class="position-absolute w-100 bg-white border rounded shadow-sm"
@@ -250,13 +251,72 @@
 </script>
 
 <style>
+    #searchSuggestions {
+        position: absolute;
+        width: 100%;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        z-index: 1000;
+    }
+    .suggestion-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background 0.3s ease-in-out;
+    }
     .suggestion-item:hover {
         background-color: #f8f9fa;
         cursor: pointer;
     }
+
+        .suggestion-item:first-child {
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
 
     #voiceSearchBtn.recording {
         background-color: #dc3545;
         color: white;
     }
 </style>
+@* <style>
+    #searchSuggestions {
+        position: absolute;
+        width: 100%;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        z-index: 1000;
+    }
+
+    .suggestion-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background 0.3s ease-in-out;
+    }
+
+        .suggestion-item:hover {
+            background: #f0f0f0;
+        }
+
+        .suggestion-item:first-child {
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+
+</style> *@

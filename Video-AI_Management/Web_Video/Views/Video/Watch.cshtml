@@ -76,7 +76,28 @@
 </div>
 
 <partial name="_CommentPartial" model="@Model.CommentVM" />
+@section Css{
+    <style>
+        #subscribeBtn {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
+        #notificationBtn {
+            background: none;
+            border: none;
+            color: white;
+        }
+
+            #notificationBtn:focus {
+                outline: none;
+                box-shadow: none;
+            }
+
+    </style>
+}
 @section Scripts {
     <script>
         $('#subscribeBtn').on('click', function () {
