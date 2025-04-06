@@ -1,5 +1,6 @@
 ﻿using DataAccess.Data;
 using Database_Video.Entities;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +18,8 @@ namespace Web_Video.Seed
         public static async Task InitializeAsync(DataContext context,
             UserManager<AppUser> userManager,
             RoleManager<AppRole> roleManager,
-            IPhotoService photoService)
+            IPhotoService photoService,
+            IWebHostEnvironment webHostEnvironment)
         {
             if (context.Database.GetPendingMigrations().Count() > 0)
             {
@@ -102,6 +104,13 @@ namespace Web_Video.Seed
 
                 await context.SaveChangesAsync();
 
+                var folderPath = Path.Combine(webHostEnvironment.WebRootPath, "images");
+                //check if the folder exists
+                if (Directory.Exists(folderPath))
+                {
+                    Directory.Delete(folderPath, true);
+                }
+
                 // adding some videos and images into the database
                 var imageDirectory = new DirectoryInfo("Seed/Files/Thumbnails");
                 var videoDirectory = new DirectoryInfo("Seed/Files/Videos");
@@ -137,8 +146,8 @@ namespace Web_Video.Seed
                         UploadDate = SD.GetRandomDate(new DateTime(2015, 1, 1), DateTime.Now, i),
                     };
                     context.Videos.Add(videoToAdd);
-                }
-                await context.SaveChangesAsync();
+                    await context.SaveChangesAsync();
+                }                
             }
         }
         #region Private Helper Methods

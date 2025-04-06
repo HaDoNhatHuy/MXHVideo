@@ -307,6 +307,23 @@ namespace Web_Video.Controllers
             var category = await UnitOfWork.CategoryRepo.GetByIdAsync(id);
             if (category == null)
                 return Json(new ApiResponse(404, message: "The requested category was not found"));
+
+            var categoryVideoIdsAndThumbnails = await Context.Videos
+                .Where(x => x.CategoryId == id)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.Thumbnail
+                }).ToListAsync();
+            if (categoryVideoIdsAndThumbnails.Any())
+            {
+                foreach(var video in categoryVideoIdsAndThumbnails)
+                {
+                    PhotoService.DeletePhotoLocally(video.Thumbnail);
+                    await UnitOfWork.VideoRepo.RemoveVideoAsync(video.Id);
+                    await UnitOfWork.CompleteAsync();
+                }
+            }
             UnitOfWork.CategoryRepo.Remove(category);
             await UnitOfWork.CompleteAsync();
             return Json(new ApiResponse(200, "Deleted", $"Category of {category.CategoryName} has been deleted"));
@@ -326,26 +343,26 @@ namespace Web_Video.Controllers
                     return Json(new ApiResponse(400, message: "Super admin cannot be deleted"));
                 }
 
-                //if (user.Channel != null)
-                //{
-                //    var userChannelWithVideos = await Context.Channels
-                //        .Where(x => x.AppUserId == id)
-                //        .Select(x => new
-                //        {
-                //            Videos = x.Videos.Select(x => new
-                //            {
-                //                x.Id,
-                //                x.Thumbnail
-                //            })
-                //        }).FirstOrDefaultAsync();
+                if (user.Channel != null)
+                {
+                    var userChannelWithVideos = await Context.Channels
+                        .Where(x => x.AppUserId == id)
+                        .Select(x => new
+                        {
+                            Videos = x.Videos.Select(x => new
+                            {
+                                x.Id,
+                                x.Thumbnail
+                            })
+                        }).FirstOrDefaultAsync();
 
-                //    foreach (var video in userChannelWithVideos.Videos)
-                //    {
-                //        PhotoService.DeletePhotoLocally(video.Thumbnail);
-                //        await UnitOfWork.VideoRepo.RemoveVideoAsync(video.Id);
-                //        await UnitOfWork.CompleteAsync();
-                //    }
-                //}
+                    foreach (var video in userChannelWithVideos.Videos)
+                    {
+                        PhotoService.DeletePhotoLocally(video.Thumbnail);
+                        await UnitOfWork.VideoRepo.RemoveVideoAsync(video.Id);
+                        await UnitOfWork.CompleteAsync();
+                    }
+                }
 
                 var result = await _userManager.DeleteAsync(user);
                 if (result.Succeeded)

@@ -14,5 +14,6 @@ namespace Database_Video.IRepo
         Task<string> GetUserIdByVideoIdAsync(Guid videoId);
         Task<PaginatedList<VideoGridChannelDto>> GetVideosForChannelGridAsync(Guid channelId, BaseParameters parameters);
         Task<PaginatedList<VideoForHomeGridDto>> GetVideosForHomeGridAsync(HomeParameters parameters);
+        Task RemoveVideoAsync(Guid videoId);
     }
 }

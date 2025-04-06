@@ -58,7 +58,8 @@ async Task InitializeContextAsync()
         var userManager = scope.ServiceProvider.GetService<UserManager<AppUser>>();
         var roleManager = scope.ServiceProvider.GetService<RoleManager<AppRole>>();
         var photoService = scope.ServiceProvider.GetService<IPhotoService>();
-        await ContextInitializer.InitializeAsync(context, userManager, roleManager, photoService);
+        var webHostEnvironment = scope.ServiceProvider.GetService<IWebHostEnvironment>();
+        await ContextInitializer.InitializeAsync(context, userManager, roleManager, photoService, webHostEnvironment);
     }
     catch (Exception ex)
     {

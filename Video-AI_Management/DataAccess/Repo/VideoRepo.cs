@@ -95,5 +95,26 @@ namespace DataAccess.Repo
             }
             return await PaginatedList<VideoForHomeGridDto>.CreateAsync(query.AsNoTracking(), parameters.PageNumber, parameters.PageSize);
         }
+
+        public async Task RemoveVideoAsync(Guid videoId)
+        {
+            var video = await GetFirstOrDefaultAsync(x => x.Id == videoId, "Comments,LikeDislikes,Viewers");
+            if (video != null)
+            {
+                if (video.Viewers != null)
+                {
+                    _context.VideoViews.RemoveRange(video.Viewers);
+                }
+                if (video.Comments != null)
+                {
+                    _context.Comments.RemoveRange(video.Comments);
+                }
+                if (video.LikeDislikes != null)
+                {
+                    _context.LikeDislikes.RemoveRange(video.LikeDislikes);
+                }
+                Remove(video);
+            }
+        }
     }
 }

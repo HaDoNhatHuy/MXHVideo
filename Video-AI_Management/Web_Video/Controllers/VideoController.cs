@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -20,13 +21,7 @@ namespace Web_Video.Controllers
 {
     [Authorize(Roles = $"{SD.UserRole}")]
     public class VideoController : CoreController
-    {
-        private readonly IPhotoService _photoService;
-
-        public VideoController(IPhotoService photoService)
-        {
-            _photoService = photoService;
-        }
+    {      
         public async Task<IActionResult> Watch(Guid id)
         {
             // with having DOT(.) we can have then include eg:"Channel.Subscribers"
@@ -212,7 +207,7 @@ namespace Web_Video.Controllers
                             Description = model.Description,
                             CategoryId = model.CategoryId,
                             ChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(User.GetUserId()).GetAwaiter().GetResult(), //channelId of the current User
-                            Thumbnail = _photoService.UploadPhotoLocally(model.ImageUpload), //some url that we are going to provide
+                            Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload), //some url that we are going to provide
                         };
                         UnitOfWork.VideoRepo.Add(videoToAdd);
                         title = "Created";
@@ -233,7 +228,7 @@ namespace Web_Video.Controllers
                         if (model.ImageUpload != null)
                         {
                             //handle re uploading the image file
-                            fetchedVideo.Thumbnail = _photoService.UploadPhotoLocally(model.ImageUpload, fetchedVideo.Thumbnail);
+                            fetchedVideo.Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload, fetchedVideo.Thumbnail);
                         }
                         title = "Updated";
                         message = "Video has been updated";
@@ -262,11 +257,19 @@ namespace Web_Video.Controllers
         [HttpDelete]
         public async Task<IActionResult> DeleteVideo(Guid id)
         {
-            var video = await UnitOfWork.VideoRepo.GetFirstOrDefaultAsync(x => x.Id == id && x.Channel.AppUserId == User.GetUserId());
+            var video = await Context.Videos
+                .Where(x => x.Id == id && x.Channel.AppUserId == User.GetUserId())
+                .Select(x => new
+                {
+                    x.Id,
+                    x.Thumbnail,
+                    x.Title
+                }).FirstOrDefaultAsync();
+            //var video = await UnitOfWork.VideoRepo.GetFirstOrDefaultAsync(x => x.Id == id && x.Channel.AppUserId == User.GetUserId());
             if (video != null)
             {
-                _photoService.DeletePhotoLocally(video.Thumbnail);
-                UnitOfWork.VideoRepo.Remove(video);
+                PhotoService.DeletePhotoLocally(video.Thumbnail);
+                await UnitOfWork.VideoRepo.RemoveVideoAsync(video.Id);
                 await UnitOfWork.CompleteAsync();
                 return Json(new ApiResponse(200, "Deleted", "Your video of " + video.Title + " has been deleted"));
             }
