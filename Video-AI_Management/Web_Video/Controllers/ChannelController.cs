@@ -33,11 +33,12 @@ namespace Web_Video.Controllers
                     return View(model);
                 }
             }
-            var channel = await UnitOfWork.ChannelRepo.GetFirstOrDefaultAsync(x => x.AppUserId == User.GetUserId());
+            var channel = await UnitOfWork.ChannelRepo.GetFirstOrDefaultAsync(x => x.AppUserId == User.GetUserId(),includeProperties: "Subscribers");
             if (channel != null)
             {
                 model.Name = channel.ChannelName;
                 model.About = channel.About;
+                model.SubcribersCount = channel.Subscribers.Count();
             }
             return View(model);
         }

@@ -15,5 +15,6 @@ namespace Web_Video.ViewModels.Channel
         [Display(Name = "About your channel")]
         public string About { get; set; }
         public List<ModelErrorViewModel> Errors { get; set; } = new List<ModelErrorViewModel>();
+        public int SubcribersCount { get; set; }
     }
 }

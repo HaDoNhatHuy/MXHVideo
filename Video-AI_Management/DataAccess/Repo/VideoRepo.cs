@@ -41,10 +41,10 @@ namespace DataAccess.Repo
                     Thumbnail = x.Thumbnail,
                     CreatedAt = x.UploadDate,
                     CategoryName = x.Category.CategoryName,
-                    Views = SD.GetRandomNumber(1000, 50000, x.Id.GetHashCode()),// chuyển Guid thành int
-                    Comments = SD.GetRandomNumber(1, 100, x.Id.GetHashCode()),// chuyển Guid thành int
-                    Likes = SD.GetRandomNumber(10, 100, x.Id.GetHashCode()),// chuyển Guid thành int
-                    Dislikes = SD.GetRandomNumber(5, 50, x.Id.GetHashCode()),// chuyển Guid thành int
+                    Views = x.Viewers.Count(),
+                    Comments = x.Comments.Count(),
+                    Likes = x.LikeDislikes.Where(l => l.Liked == true).Count(),
+                    Dislikes = x.LikeDislikes.Where(l => l.Liked == false).Count(),
 
                 })
                 .AsQueryable();
@@ -82,7 +82,7 @@ namespace DataAccess.Repo
                     ChannelName = x.Channel.ChannelName,
                     ChannelId = x.Channel.Id,
                     CategoryId = x.Category.Id,
-                    Views = SD.GetRandomNumber(1000, 50000, x.Id.GetHashCode()),// chuyển Guid thành int
+                    Views = x.Viewers.Count()
                 })
                 .AsQueryable();
             if (parameters.CategoryId != Guid.Empty)

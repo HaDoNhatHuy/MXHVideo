@@ -44,7 +44,7 @@ else
         <div class="tab-pane fade" id="myvideos">
             <div class="mt-3 d-flex justify-content-between">
                 <a class="btn btn-primary" asp-controller="Video" asp-action="CreateEditVideo">Create Video</a>
-                <h4 class="text-danger-emphasis">Subscribers: 2,435</h4>
+                <h4 class="text-danger-emphasis">Subscribers: @Model.SubcribersCount.ToString("N0")</h4>
             </div>
             <div class=" card border-primary mt-3 table-responsive-md">
                 <table class="table mt-3">

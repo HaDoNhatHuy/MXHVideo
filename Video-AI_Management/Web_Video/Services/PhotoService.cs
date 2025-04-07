@@ -17,11 +17,11 @@ namespace Web_Video.Services
 
         public void DeletePhotoLocally(string photoUrl)
         {
-            string webRootPath=_webHostEnvironment.WebRootPath;
+            string webRootPath = _webHostEnvironment.WebRootPath;
             string uploadsDirectory = Path.Combine(webRootPath, @"images\thumbnails");
             //delete the image
             var oldImagePath = Path.Combine(webRootPath, photoUrl.TrimStart('\\'));
-            if(File.Exists(oldImagePath))
+            if (File.Exists(oldImagePath))
             {
                 File.Delete(oldImagePath);
             }

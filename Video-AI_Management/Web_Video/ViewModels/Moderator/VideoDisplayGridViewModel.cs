@@ -10,6 +10,6 @@ namespace Web_Video.ViewModels.Moderator
         public string CategoryName { get; set; }
         public Guid ChannelId { get; set; }
         public string ChannelName { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public DateTime UploadDate { get; set; }
     }
 }
