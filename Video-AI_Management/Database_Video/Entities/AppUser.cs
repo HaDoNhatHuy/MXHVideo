@@ -12,7 +12,7 @@ namespace Database_Video.Entities
     {
         public string? FullName { get; set; }
         public string? Avatar { get; set; }
-        public DateTime? JoinDate { get; set; } = DateTime.Now;
+        public DateTime? JoinDate { get; set; } = DateTime.UtcNow;
         public Channel? Channel { get; set; }
         public ICollection<Comment> Comments { get; set; } = new HashSet<Comment>();
         public ICollection<Subscribe> Subscriptions { get; set; } = new HashSet<Subscribe>();

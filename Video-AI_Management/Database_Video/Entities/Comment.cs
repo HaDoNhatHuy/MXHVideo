@@ -10,12 +10,12 @@ using System.Threading.Tasks;
 namespace Database_Video.Entities
 {
     [Table("Comment")]
-    public class Comment :BaseEntity, IAuditable
+    public class Comment : BaseEntity, IAuditable
     {
         //FK = AppUserId and FK = VideoId
         public Comment()
         {
-            
+
         }
 
         public Comment(Guid videoId, string appUserId, string? content)

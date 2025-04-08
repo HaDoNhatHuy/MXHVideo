@@ -431,7 +431,7 @@ namespace Web_Video.Controllers
                 {
                     FromName = x.AppUser.FullName,
                     FromChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(x.AppUserId).GetAwaiter().GetResult(),
-                    PostedAt = x.CreatedDate ?? DateTime.Now,
+                    PostedAt = x.CreatedDate ?? DateTime.UtcNow,
                     Content = x.Content
                 });
                 return toReturn;
@@ -468,7 +468,7 @@ namespace Web_Video.Controllers
                         {
                             FromName = c.AppUser.FullName,
                             FromChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(c.AppUserId).GetAwaiter().GetResult(),
-                            PostedAt = c.CreatedDate ?? DateTime.Now,
+                            PostedAt = c.CreatedDate ?? DateTime.UtcNow,
                             Content = c.Content
                         })
                     }

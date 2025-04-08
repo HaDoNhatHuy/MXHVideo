@@ -106,9 +106,11 @@ else
     </div>
 }
 @section Scripts {
+    <script src="~/js/site.js"></script>
     <script src="~/js/home_home.js"></script>
     <script>
         var dataTable;
+        setUtcDateTimeNow('@DateTime.UtcNow.ToString("o")');
 
         $(function(){
             const activeLink = $('.nav-link.active');

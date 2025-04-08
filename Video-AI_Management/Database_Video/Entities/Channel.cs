@@ -8,7 +8,7 @@ namespace Database_Video.Entities
     {
         public string? ChannelName { get; set; }
         public string? About { get; set; }
-        public DateTime? CreatedDate { get; set; } = DateTime.Now;
+        public DateTime? CreatedDate { get; set; } = DateTime.UtcNow;
         [ForeignKey("AppUserId")]
         public string? AppUserId { get; set; }
         public AppUser? AppUser { get; set; }

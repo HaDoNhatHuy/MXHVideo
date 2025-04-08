@@ -143,7 +143,7 @@ namespace Web_Video.Seed
                         },
                         Thumbnail = photoService.UploadPhotoLocally(imageFile),
                         ChannelId = (i % 2 == 0) ? johnChannel.Id : peterChannel.Id,
-                        UploadDate = SD.GetRandomDate(new DateTime(2015, 1, 1), DateTime.Now, i),
+                        UploadDate = SD.GetRandomDate(new DateTime(2015, 1, 1), DateTime.UtcNow, i),
                     };
                     context.Videos.Add(videoToAdd);
                     await context.SaveChangesAsync();

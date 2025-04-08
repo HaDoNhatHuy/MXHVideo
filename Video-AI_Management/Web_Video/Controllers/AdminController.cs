@@ -226,7 +226,7 @@ namespace Web_Video.Controllers
 
             // Lock the user for 5 days
             user.LockoutEnabled = true;
-            var result = await _userManager.SetLockoutEndDateAsync(user, DateTime.Now.AddDays(5));
+            var result = await _userManager.SetLockoutEndDateAsync(user, DateTime.UtcNow.AddDays(5));
 
             if (!result.Succeeded)
             {
@@ -283,7 +283,7 @@ namespace Web_Video.Controllers
             {
                 if (model.Id == Guid.Empty)
                 {
-                    UnitOfWork.CategoryRepo.Add(new Category() { CategoryName = model.Name, CreatedDate = DateTime.Now });
+                    UnitOfWork.CategoryRepo.Add(new Category() { CategoryName = model.Name, CreatedDate = DateTime.UtcNow });
                     await UnitOfWork.CompleteAsync();
                     return Json(new ApiResponse(201, "Created", "New Category was added"));
                 }

@@ -24,7 +24,7 @@ namespace Web_Video.Controllers
                     ChannelId = x.Id,
                     Name = x.ChannelName,
                     About = x.About,
-                    CreatedAt = x.CreatedDate ?? DateTime.Now,
+                    CreatedAt = x.CreatedDate ?? DateTime.UtcNow,
                     NumberOfAvailableVideos = x.Videos.Count(),
                     NumberOfSubscribers = x.Subscribers.Count(),
                     UserIsSubscribed = x.Subscribers.Any(s => s.AppUserId == User.GetUserId()),

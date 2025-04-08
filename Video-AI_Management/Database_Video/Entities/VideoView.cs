@@ -23,7 +23,7 @@ namespace Database_Video.Entities
         public string? PostalCode { get; set; }
         public string? Country { get; set; }
         public bool? Is_Proxy { get; set; }
-        public DateTime LastVisit { get; set; } = DateTime.Now;
+        public DateTime LastVisit { get; set; } = DateTime.UtcNow;
 
         //Navigation
         public AppUser AppUser { get; set; }

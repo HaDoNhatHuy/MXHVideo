@@ -41,12 +41,12 @@ namespace DataAccess.Repo
             }
             else
             {
-                DateTime now = DateTime.Now;
+                DateTime now = DateTime.UtcNow;
                 DateTime oneHourAfterLastVisit = fetchedVideoView.LastVisit.AddHours(1);
                 if (now > oneHourAfterLastVisit && now.Date == fetchedVideoView.LastVisit.Date)
                 {
                     // Last visit was more than one hour ago and still in the same day (today)
-                    fetchedVideoView.LastVisit = DateTime.Now;
+                    fetchedVideoView.LastVisit = DateTime.UtcNow;
                     fetchedVideoView.NumberOfVisit++;
                 }
                 if (fetchedVideoView.LastVisit.Date < now.Date)
