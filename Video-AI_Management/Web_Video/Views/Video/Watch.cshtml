@@ -1,5 +1,6 @@
 ﻿@model Web_Video.ViewModels.Video.VideoWatchViewModel
 @using Web_Video.Extensions
+
 <style>
     video {
         width: 100%;
@@ -17,7 +18,6 @@
         font-size: 1.2rem;
     }
 </style>
-
 
 <a asp-action="Index" asp-controller="Home" class="btn btn-primary btn-lg">Back</a>
 
@@ -50,9 +50,7 @@
         <div class="card border-secondary mb-3">
             <div class="card-header">
                 <p class="text-danger-emphasis h4">@Model.Title</p>
-                <p>
-                    @SD.TimeAgo(Model.CreatedAt)
-                </p>
+                <p>@SD.TimeAgo(Model.CreatedAt)</p>
                 <div class="d-flex align-content-center justify-content-between">
                     <div>
                         <a asp-action="Member" asp-controller="Channel" asp-route-id="@Model.ChannelId" class="text-primary text-decoration-none">@Model.ChannelName</a>
@@ -67,17 +65,17 @@
                 </div>
             </div>
             <div class="card-body">
-                <p class="card-text">
-                    @Model.Description
-                </p>
+                <p class="card-text">@Model.Description</p>
+                <!-- Hiển thị kết quả nhận diện khuôn mặt -->
+                @if (!string.IsNullOrEmpty(Model.RecognizedCelebrities))
+                {
+                    <p class="card-text text-success"><strong>@Model.RecognizedCelebrities</strong></p>
+                }
             </div>
         </div>
     </div>
 </div>
-
-@* <partial name="_CommentPartial" model="@Model.CommentVM" /> *@
-@await Html.PartialAsync("_CommentPartial", Model.CommentVM)
-@section Css{
+@section Css {
     <style>
         #subscribeBtn {
             position: relative;
@@ -96,9 +94,12 @@
                 outline: none;
                 box-shadow: none;
             }
-
     </style>
 }
+
+@* <partial name="_CommentPartial" model="@Model.CommentVM" /> *@
+@await Html.PartialAsync("_CommentPartial", Model.CommentVM)
+
 @section Scripts {
     <script>
         $('#subscribeBtn').on('click', function () {

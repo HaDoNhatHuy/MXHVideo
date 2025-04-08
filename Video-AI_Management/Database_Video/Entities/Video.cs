@@ -21,6 +21,7 @@ namespace Database_Video.Entities
         public Guid? ChannelId { get; set; }
         public Channel? Channel { get; set; }
         public VideoFile VideoFile { get; set; }
+        public string? RecognizedCelebrities { get; set; }
         public ICollection<Comment> Comments { get; set; } = new HashSet<Comment>();
         public ICollection<LikeDislike> LikeDislikes { get; set; } = new HashSet<LikeDislike>();
         public ICollection<VideoView> Viewers { get; set; } = new HashSet<VideoView>();

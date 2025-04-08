@@ -9,12 +9,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Web_Video.Extensions;
 using Web_Video.ViewModels.Channel;
 using Web_Video.ViewModels.Video;
 using WebVideo.Utility;
+using Xabe.FFmpeg;
 
 namespace Web_Video.Controllers
 {
@@ -162,6 +166,111 @@ namespace Web_Video.Controllers
             toReturn.CategoryDropdown = await GetCategoryDropdownAsync();
             return View(toReturn);
         }
+        //[HttpPost]
+        //public async Task<IActionResult> CreateEditVideo(VideoAddEditViewModel model)
+        //{
+        //    if (ModelState.IsValid)
+        //    {
+        //        bool proceed = true;
+        //        if (model.Id == Guid.Empty)
+        //        {
+        //            //adding some security to check for create
+        //            if (model.ImageUpload == null)
+        //            {
+        //                ModelState.AddModelError("ImageUpload", "Please upload an image for your video");
+        //                proceed = false;
+        //            }
+        //            if (proceed && model.VideoUpload == null)
+        //            {
+        //                ModelState.AddModelError("VideoUpload", "Please upload a video for your video");
+        //                proceed = false;
+        //            }
+        //        }
+        //        if (model.ImageUpload != null)
+        //        {
+        //            if (proceed && !IsAcceptableContentType("image", model.ImageUpload.ContentType))
+        //            {
+        //                ModelState.AddModelError("ImageUpload", string.Format("Invalid content type. It must be one of the following: {0}",
+        //                    string.Join(", ", AcceptableContentTypes("image"))));
+        //                proceed = false;
+        //            }
+        //            if (proceed && model.ImageUpload.Length > int.Parse(Configuration["FileUpload:ImageMaxSizeInMB"]) * SD.MB)
+        //            {
+        //                ModelState.AddModelError("ImageUpload", string.Format("The uploaded file should not exceed {0} MB",
+        //                    int.Parse(Configuration["FileUpload:ImageMaxSizeInMB"])));
+        //                proceed = false;
+        //            }
+        //        }
+
+        //        if (model.VideoUpload != null)
+        //        {
+        //            if (proceed && !IsAcceptableContentType("video", model.VideoUpload.ContentType))
+        //            {
+        //                ModelState.AddModelError("VideoUpload", string.Format("Invalid content type. It must be one of the following: {0}",
+        //                    string.Join(", ", AcceptableContentTypes("video"))));
+        //                proceed = false;
+        //            }
+        //            if (proceed && model.VideoUpload.Length > int.Parse(Configuration["FileUpload:VideoMaxSizeInMB"]) * SD.MB)
+        //            {
+        //                ModelState.AddModelError("VideoUpload", string.Format("The uploaded file should not exceed {0} MB",
+        //                    int.Parse(Configuration["FileUpload:VideoMaxSizeInMB"])));
+        //                proceed = false;
+        //            }
+        //        }
+        //        if (proceed)
+        //        {
+        //            string title = "";
+        //            string message = "";
+        //            if (model.Id == Guid.Empty)
+        //            {
+        //                //for create
+        //                var videoToAdd = new Video()
+        //                {
+        //                    Id = Guid.NewGuid(),
+        //                    Title = model.Title,
+        //                    VideoFile = new VideoFile
+        //                    {
+        //                        ContentType = model.VideoUpload.ContentType,
+        //                        Contents = GetContentsAsync(model.VideoUpload).GetAwaiter().GetResult(),
+        //                        Extension = SD.GetFileExtension(model.VideoUpload.ContentType)
+        //                    },
+        //                    Description = model.Description,
+        //                    CategoryId = model.CategoryId,
+        //                    ChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(User.GetUserId()).GetAwaiter().GetResult(), //channelId of the current User
+        //                    Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload), //some url that we are going to provide
+        //                };
+        //                UnitOfWork.VideoRepo.Add(videoToAdd);
+        //                title = "Created";
+        //                message = "New video has been created";
+        //            }
+        //            else
+        //            {
+        //                //for edit
+        //                var fetchedVideo = await UnitOfWork.VideoRepo.GetByIdAsync(model.Id);
+        //                if (fetchedVideo == null)
+        //                {
+        //                    TempData["notification"] = "false;Not Found;Requested video was not found";
+        //                    return RedirectToAction("Index", "Channel");
+        //                }
+        //                fetchedVideo.Title = model.Title;
+        //                fetchedVideo.Description = model.Description;
+        //                fetchedVideo.CategoryId = model.CategoryId;
+        //                if (model.ImageUpload != null)
+        //                {
+        //                    //handle re uploading the image file
+        //                    fetchedVideo.Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload, fetchedVideo.Thumbnail);
+        //                }
+        //                title = "Updated";
+        //                message = "Video has been updated";
+        //            }
+        //            TempData["notification"] = $"true;{title};{message}";
+        //            await UnitOfWork.CompleteAsync();
+        //            return RedirectToAction("Index", "Channel");
+        //        }
+        //    }
+        //    model.CategoryDropdown = await GetCategoryDropdownAsync();
+        //    return View(model);
+        //}
         [HttpPost]
         public async Task<IActionResult> CreateEditVideo(VideoAddEditViewModel model)
         {
@@ -170,7 +279,6 @@ namespace Web_Video.Controllers
                 bool proceed = true;
                 if (model.Id == Guid.Empty)
                 {
-                    //adding some security to check for create
                     if (model.ImageUpload == null)
                     {
                         ModelState.AddModelError("ImageUpload", "Please upload an image for your video");
@@ -217,10 +325,23 @@ namespace Web_Video.Controllers
                 {
                     string title = "";
                     string message = "";
+                    Video videoToAdd = null;
                     if (model.Id == Guid.Empty)
                     {
-                        //for create
-                        var videoToAdd = new Video()
+                        // Lưu video tạm thời để xử lý nhận diện khuôn mặt
+                        var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+                        Directory.CreateDirectory(uploadPath);
+                        var videoPath = Path.Combine(uploadPath, model.VideoUpload.FileName);
+                        using (var stream = new FileStream(videoPath, FileMode.Create))
+                        {
+                            await model.VideoUpload.CopyToAsync(stream);
+                        }
+
+                        // Nhận diện khuôn mặt
+                        string recognitionResult = await ProcessVideo(videoPath);
+
+                        // Tạo video mới
+                        videoToAdd = new Video()
                         {
                             Id = Guid.NewGuid(),
                             Title = model.Title,
@@ -232,8 +353,9 @@ namespace Web_Video.Controllers
                             },
                             Description = model.Description,
                             CategoryId = model.CategoryId,
-                            ChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(User.GetUserId()).GetAwaiter().GetResult(), //channelId of the current User
-                            Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload), //some url that we are going to provide
+                            ChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(User.GetUserId()).GetAwaiter().GetResult(),
+                            Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload),
+                            RecognizedCelebrities = recognitionResult // Lưu kết quả nhận diện
                         };
                         UnitOfWork.VideoRepo.Add(videoToAdd);
                         title = "Created";
@@ -241,11 +363,10 @@ namespace Web_Video.Controllers
                     }
                     else
                     {
-                        //for edit
                         var fetchedVideo = await UnitOfWork.VideoRepo.GetByIdAsync(model.Id);
                         if (fetchedVideo == null)
                         {
-                            TempData["notification"] = "false;Not Found;Requested video was not found";
+                            TempData["notification"] = "false;Not Found;Requested video was.ConcurrentDictionary not found";
                             return RedirectToAction("Index", "Channel");
                         }
                         fetchedVideo.Title = model.Title;
@@ -253,7 +374,6 @@ namespace Web_Video.Controllers
                         fetchedVideo.CategoryId = model.CategoryId;
                         if (model.ImageUpload != null)
                         {
-                            //handle re uploading the image file
                             fetchedVideo.Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload, fetchedVideo.Thumbnail);
                         }
                         title = "Updated";
@@ -266,6 +386,62 @@ namespace Web_Video.Controllers
             }
             model.CategoryDropdown = await GetCategoryDropdownAsync();
             return View(model);
+        }
+
+        // Thêm các phương thức xử lý nhận diện khuôn mặt từ HomeController.cs
+        private async Task<string> ProcessVideo(string videoPath)
+        {
+            var outputDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/frames");
+            Directory.CreateDirectory(outputDir);
+
+            var oldFrames = Directory.GetFiles(outputDir, "frame-*.jpg");
+            foreach (var oldFrame in oldFrames)
+            {
+                System.IO.File.Delete(oldFrame);
+            }
+
+            var outputImage = Path.Combine(outputDir, "frame-%03d.jpg");
+            Xabe.FFmpeg.FFmpeg.SetExecutablesPath(@"C:\FFmpeg\ffmpeg\bin");
+
+            var conversion = FFmpeg.Conversions.New()
+                .AddParameter($"-i \"{videoPath}\" -vf fps=1,scale=640:-1 \"{outputImage}\"")
+                .SetOverwriteOutput(true);
+            await conversion.Start();
+
+            var frames = Directory.GetFiles(outputDir, "frame-*.jpg");
+            if (frames.Length == 0)
+            {
+                return "Không thể trích xuất frame từ video.";
+            }
+
+            string recognitionResult = await RecognizeCelebrity(frames);
+            return recognitionResult;
+        }
+
+        private async Task<string> RecognizeCelebrity(string[] frames)
+        {
+            var client = new HttpClient { BaseAddress = new Uri("http://localhost:5000/"), Timeout = TimeSpan.FromMinutes(5) };
+            HashSet<string> allCelebrities = new HashSet<string>();
+
+            foreach (var frame in frames)
+            {
+                var requestBody = new { frame_path = frame };
+                var response = await client.PostAsJsonAsync("recognize", requestBody);
+                var result = await response.Content.ReadFromJsonAsync<Dictionary<string, string[]>>();
+
+                var celebrities = result["celebrities"];
+                if (celebrities != null && celebrities.Length > 0 && celebrities[0] != "Unknown")
+                {
+                    foreach (var celeb in celebrities)
+                    {
+                        allCelebrities.Add(celeb);
+                    }
+                }
+            }
+
+            return allCelebrities.Count > 0
+                ? $"Đã nhận diện: {string.Join(", ", allCelebrities)}"
+                : "Không nhận diện được nhân vật nổi tiếng.";
         }
 
         #region API Endpoints
@@ -506,6 +682,7 @@ namespace Web_Video.Controllers
                     ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
                     LikesCount = x.LikeDislikes.Where(l => l.Liked == true).Count(),
                     DislikesCount = x.LikeDislikes.Where(l => l.Liked == false).Count(),
+                    RecognizedCelebrities = x.RecognizedCelebrities, // Thêm RecognizedCelebrities vào ViewModel
                     CommentVM = new CommentViewModel
                     {
                         PostComment = new CommentPostViewModel
