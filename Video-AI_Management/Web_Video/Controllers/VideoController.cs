@@ -12,7 +12,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Web_Video.Extensions;
-using Web_Video.Services.IServices;
 using Web_Video.ViewModels.Channel;
 using Web_Video.ViewModels.Video;
 using WebVideo.Utility;
@@ -54,6 +53,55 @@ namespace Web_Video.Controllers
             }
             TempData["notification"] = "false;Not Found;Requested video was not found";
             return RedirectToAction("Index", "Home");
+        }
+        [HttpPost]
+        public async Task<IActionResult> EditComment(Guid commentId, Guid videoId, string content)
+        {
+            var comment = await UnitOfWork.CommentRepo.GetFirstOrDefaultAsync(c => c.Id == commentId);
+            if (comment == null)
+            {
+                TempData["notification"] = "false;Not Found;Comment not found";
+                return RedirectToAction("Watch", new { id = videoId });
+            }
+
+            // Kiểm tra quyền: Chỉ người tạo comment mới được sửa
+            if (comment.AppUserId != User.GetUserId())
+            {
+                TempData["notification"] = "false;Unauthorized;You are not authorized to edit this comment";
+                return RedirectToAction("Watch", new { id = videoId });
+            }
+
+            // Cập nhật nội dung comment
+            comment.Content = content.Trim();
+            comment.ModifiedDate = DateTime.Now;
+            comment.ModifiedBy = User.GetUserId();
+
+            await UnitOfWork.CompleteAsync();
+            TempData["notification"] = "true;Success;Comment updated successfully";
+            return RedirectToAction("Watch", new { id = videoId });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteComment(Guid commentId, Guid videoId)
+        {
+            var comment = await UnitOfWork.CommentRepo.GetFirstOrDefaultAsync(c => c.Id == commentId);
+            if (comment == null)
+            {
+                TempData["notification"] = "false;Not Found;Comment not found";
+                return RedirectToAction("Watch", new { id = videoId });
+            }
+
+            // Kiểm tra quyền: Chỉ người tạo comment mới được xóa
+            if (comment.AppUserId != User.GetUserId())
+            {
+                TempData["notification"] = "false;Unauthorized;You are not authorized to delete this comment";
+                return RedirectToAction("Watch", new { id = videoId });
+            }
+
+            UnitOfWork.CommentRepo.Remove(comment);
+            await UnitOfWork.CompleteAsync();
+            TempData["notification"] = "true;Success;Comment deleted successfully";
+            return RedirectToAction("Watch", new { id = videoId });
         }
         public async Task<IActionResult> GetVideoFile(Guid videoId)
         {
@@ -466,6 +514,8 @@ namespace Web_Video.Controllers
                         },
                         AvailableComments = x.Comments.Select(c => new AvailableCommentViewModel
                         {
+                            Id = c.Id,
+                            AppUserId = c.AppUserId,
                             FromName = c.AppUser.FullName,
                             FromChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(c.AppUserId).GetAwaiter().GetResult(),
                             PostedAt = c.CreatedDate ?? DateTime.UtcNow,

@@ -1,14 +1,17 @@
 ﻿@model Web_Video.ViewModels.Video.CommentViewModel
+
 <style>
     .comment-from {
         width: 40px;
         height: 40px;
     }
+
+    .edit-comment-form {
+        display: none; /* Ẩn form chỉnh sửa ban đầu */
+    }
 </style>
 
-
 <div class="container my-4">
-    @* <h2 class="mb-3">13 Comments</h2> *@
     <h2 class="mb-3">@SD.FormatView(Model.AvailableComments.Count()) @(Model.AvailableComments.Count() > 1 ? "Comments" : "Comment")</h2>
     <div class="row mb-4">
         <div class="col-3 user-avatar bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center comment-from">
@@ -16,7 +19,7 @@
         </div>
         <div class="col-9">
             <form method="post" asp-action="CreateComment" asp-controller="Video">
-                <input type="text" asp-for="@Model.PostComment.VideoId" hidden />
+                <input type="text" asp-for="PostComment.VideoId" hidden />
                 <textarea id="textComment" asp-for="PostComment.Content" class="form-control mb-2" rows="2" placeholder="Add a comment..."></textarea>
                 <div class="d-flex justify-content-end" style="height: 30px;">
                     <section id="sectionCommentBtns" style="display:none;">
@@ -28,40 +31,107 @@
         </div>
     </div>
     <!-- Comment List -->
-    @for (int i = 0; i < Model.AvailableComments.Count(); i++)
+    @foreach (var comment in Model.AvailableComments)
     {
-        <div class="row mb-4">
-            <div class="col-3 user-avatar bg-@(i % 2 == 0 ? "secondary" : "primary") text-white rounded-circle d-flex align-items-center justify-content-center comment-from">
-                @if (Model.AvailableComments.ElementAt(i).FromChannelId != Guid.Empty)
+        var isOwner = comment.AppUserId == User.GetUserId();
+        <div class="row mb-4" id="comment-@comment.Id.ToString()">
+            <div class="col-3 user-avatar bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center comment-from">
+                @if (comment.FromChannelId != Guid.Empty)
                 {
-                    <a asp-controller="Member" asp-action="Channel" asp-route-id="@Model.AvailableComments.ElementAt(i).FromChannelId" class="text-white" style="text-decoration: none;">
-                        @Model.AvailableComments.ElementAt(i).FromName.Substring(0, 2).ToUpper()
+                    <a asp-controller="Member" asp-action="Channel" asp-route-id="@comment.FromChannelId" class="text-white" style="text-decoration: none;">
+                        @comment.FromName.Substring(0, 2).ToUpper()
                     </a>
                 }
                 else
                 {
-                    @Model.AvailableComments.ElementAt(i).FromName.Substring(0, 2).ToUpper()
+                    @comment.FromName.Substring(0, 2).ToUpper()
                 }
             </div>
             <div class="col-9">
                 <div class="d-flex justify-content-between align-content-center">
-                    @if (Model.AvailableComments.ElementAt(i).FromChannelId != Guid.Empty)
+                    @if (comment.FromChannelId != Guid.Empty)
                     {
-                        <a asp-controller="Member" asp-action="Channel" asp-route-id="@Model.AvailableComments.ElementAt(i).FromChannelId" class="fw-bold text-dark" style="text-decoration: none;">
-                            @Model.AvailableComments.ElementAt(i).FromName
+                        <a asp-controller="Member" asp-action="Channel" asp-route-id="@comment.FromChannelId" class="fw-bold text-dark" style="text-decoration: none;">
+                            @comment.FromName
                         </a>
                     }
                     else
                     {
                         <span class="fw-bold">
-                            @Model.AvailableComments.ElementAt(i).FromName
+                            @comment.FromName
                         </span>
                     }
-                    <span class="text-muted small">@SD.TimeAgo(Model.AvailableComments.ElementAt(i).PostedAt)</span>
+                    <span class="text-muted small">@SD.TimeAgo(comment.PostedAt)</span>
                 </div>
-                <p>@Model.AvailableComments.ElementAt(i).Content</p>
+                <p class="comment-content">@comment.Content</p>
+
+                <!-- Nút Sửa và Xóa -->
+                @if (isOwner)
+                {
+                    <div class="d-flex justify-content-start mb-2">
+                        <!-- Form để xóa comment -->
+                        <form method="post" asp-action="DeleteComment" asp-controller="Video" class="d-inline">
+                            <input type="hidden" name="commentId" value="@comment.Id" />
+                            <input type="hidden" name="videoId" value="@Model.PostComment.VideoId" />
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-danger me-2" onclick="return confirm('Are you sure you want to delete this comment?')">Delete</button>
+                        </form>
+
+                        <!-- Nút để hiển thị form chỉnh sửa -->
+                        <button class="btn btn-sm btn-outline-primary btn-edit-comment" data-comment-id="@comment.Id.ToString()">Edit</button>
+                    </div>
+
+                    <!-- Form chỉnh sửa comment (ẩn ban đầu) -->
+                    <form method="post" asp-action="EditComment" asp-controller="Video" class="edit-comment-form" id="edit-form-@comment.Id.ToString()">
+                        <input type="hidden" name="commentId" value="@comment.Id" />
+                        <input type="hidden" name="videoId" value="@Model.PostComment.VideoId" />
+                        @Html.AntiForgeryToken()
+                        <textarea name="content" class="form-control mb-2" rows="2">@comment.Content</textarea>
+                        <div class="d-flex justify-content-end">
+                            <button type="button" class="btn btn-sm btn-light me-2 btn-cancel-edit" data-comment-id="@comment.Id.ToString()">Cancel</button>
+                            <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                        </div>
+                    </form>
+                }
             </div>
         </div>
-
     }
 </div>
+
+@section Scripts {
+    <script>
+        // Hiển thị/Ẩn form chỉnh sửa khi nhấn nút Edit
+        document.querySelectorAll('.btn-edit-comment').forEach(button => {
+            button.addEventListener('click', function () {
+                const commentId = this.getAttribute('data-comment-id');
+                document.querySelector(`#comment-${commentId} .comment-content`).style.display = 'none';
+                document.querySelector(`#comment-${commentId} .edit-comment-form`).style.display = 'block';
+                this.style.display = 'none';
+            });
+        });
+
+        // Ẩn form chỉnh sửa khi nhấn Cancel
+        document.querySelectorAll('.btn-cancel-edit').forEach(button => {
+            button.addEventListener('click', function () {
+                const commentId = this.getAttribute('data-comment-id');
+                document.querySelector(`#comment-${commentId} .comment-content`).style.display = 'block';
+                document.querySelector(`#comment-${commentId} .edit-comment-form`).style.display = 'none';
+                document.querySelector(`#comment-${commentId} .btn-edit-comment`).style.display = 'inline-block';
+            });
+        });
+
+        // Hiển thị/Ẩn nút Comment và Cancel khi nhập nội dung
+        document.getElementById('textComment').addEventListener('input', function () {
+            if (this.value.trim().length > 0) {
+                document.getElementById('sectionCommentBtns').style.display = 'block';
+            } else {
+                document.getElementById('sectionCommentBtns').style.display = 'none';
+            }
+        });
+
+        document.getElementById('btnCancel').addEventListener('click', function () {
+            document.getElementById('textComment').value = '';
+            document.getElementById('sectionCommentBtns').style.display = 'none';
+        });
+    </script>
+}

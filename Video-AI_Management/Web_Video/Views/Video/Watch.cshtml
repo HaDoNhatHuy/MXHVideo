@@ -75,7 +75,8 @@
     </div>
 </div>
 
-<partial name="_CommentPartial" model="@Model.CommentVM" />
+@* <partial name="_CommentPartial" model="@Model.CommentVM" /> *@
+@await Html.PartialAsync("_CommentPartial", Model.CommentVM)
 @section Css{
     <style>
         #subscribeBtn {

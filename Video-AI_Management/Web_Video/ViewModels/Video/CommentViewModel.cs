@@ -19,6 +19,8 @@ namespace Web_Video.ViewModels.Video
     }
     public class AvailableCommentViewModel
     {
+        public Guid Id { get; set; } // Thêm Id của comment
+        public string AppUserId { get; set; } // Thêm AppUserId để kiểm tra quyền
         public string Content { get; set; }
         public string FromName { get; set; }
         public Guid FromChannelId { get; set; }

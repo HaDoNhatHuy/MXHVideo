@@ -167,7 +167,7 @@ else
                             title: "title"
                         },
                         "render": function (data) {
-                            var aTag = `<a href="/Video/Watch/${data.id}" class="text-dark">${data.title}</a>`;
+                            var aTag = `<a href="/Video/Watch/'${data.id}'" class="text-dark">${data.title}</a>`;
                             return aTag;
                         }
                     },
@@ -207,7 +207,7 @@ else
                         },
                         "render": function (data) {
                             var divTag = '<div class="row">';
-                            divTag += `<div class="col-lg-6 text-center"><a href="/Video/Watch/${data.id}" class="text-dark">${data.title}</a></div>`;
+                            divTag += `<div class="col-lg-6 text-center"><a href="/Video/Watch/'${data.id}'" class="text-dark">${data.title}</a></div>`;
                             divTag += `<div class="col-lg-6 text-center"><img src="${data.thumbnail}" class="card-img-top rounded preview-image /></div>"`;
                             divTag += '</div>';
                             return divTag;
