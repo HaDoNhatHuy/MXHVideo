@@ -34,7 +34,7 @@
     @foreach (var comment in Model.AvailableComments)
     {
         var isOwner = comment.AppUserId == User.GetUserId();
-        <div class="row mb-4" id="comment-@comment.Id.ToString()">
+        <div class="row mb-4" id="comment-@comment.Id">
             <div class="col-3 user-avatar bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center comment-from">
                 @if (comment.FromChannelId != Guid.Empty)
                 {
@@ -78,17 +78,17 @@
                         </form>
 
                         <!-- Nút để hiển thị form chỉnh sửa -->
-                        <button class="btn btn-sm btn-outline-primary btn-edit-comment" data-comment-id="@comment.Id.ToString()">Edit</button>
+                        <button class="btn btn-sm btn-outline-primary btn-edit-comment" data-comment-id="@comment.Id">Edit</button>
                     </div>
 
                     <!-- Form chỉnh sửa comment (ẩn ban đầu) -->
-                    <form method="post" asp-action="EditComment" asp-controller="Video" class="edit-comment-form" id="edit-form-@comment.Id.ToString()">
+                    <form method="post" asp-action="EditComment" asp-controller="Video" class="edit-comment-form" id="edit-form-@comment.Id">
                         <input type="hidden" name="commentId" value="@comment.Id" />
                         <input type="hidden" name="videoId" value="@Model.PostComment.VideoId" />
                         @Html.AntiForgeryToken()
                         <textarea name="content" class="form-control mb-2" rows="2">@comment.Content</textarea>
                         <div class="d-flex justify-content-end">
-                            <button type="button" class="btn btn-sm btn-light me-2 btn-cancel-edit" data-comment-id="@comment.Id.ToString()">Cancel</button>
+                            <button type="button" class="btn btn-sm btn-light me-2 btn-cancel-edit" data-comment-id="@comment.Id">Cancel</button>
                             <button type="submit" class="btn btn-sm btn-primary">Save</button>
                         </div>
                     </form>

@@ -87,7 +87,7 @@
                 <p>@SD.TimeAgo(Model.CreatedAt)</p>
                 <div class="d-flex align-content-center justify-content-between">
                     <div>
-                        <a asp-action="Member" asp-controller="Channel" asp-route-id="@Model.ChannelId" class="text-primary text-decoration-none">@Model.ChannelName</a>
+                        <a asp-action="Channel" asp-controller="Member" asp-route-id="@Model.ChannelId" class="text-primary text-decoration-none">@Model.ChannelName</a>
                         <p class="text-muted small mb-0">@SD.FormatView(Model.SubscribersCount) subscribers</p>
                     </div>
                     @if (User.GetUserChannelId() != Model.ChannelId.ToString())
