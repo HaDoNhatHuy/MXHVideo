@@ -686,6 +686,7 @@ namespace Web_Video.Controllers
                     ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
                     LikesCount = x.LikeDislikes.Where(l => l.Liked == true).Count(),
                     DislikesCount = x.LikeDislikes.Where(l => l.Liked == false).Count(),
+                    VideoContentType = x.VideoFile.ContentType, // Thêm ContentType
                     RecognizedCelebrities = x.RecognizedCelebrities, // Thêm RecognizedCelebrities vào ViewModel
                     CommentVM = new CommentViewModel
                     {
@@ -713,7 +714,7 @@ namespace Web_Video.Controllers
             return await Context.Videos
                 .Where(x => x.Id != currentVideoId) // Không lấy video hiện tại
                 .OrderBy(x => Guid.NewGuid()) // Sắp xếp ngẫu nhiên
-                .Take(5) // Lấy 5 video
+                .Take(10) // Lấy 5 video
                 .Select(x => new RecommendedVideoViewModel
                 {
                     Id = x.Id,

@@ -19,6 +19,9 @@ namespace Web_Video.ViewModels.Video
         public int ViewersCount { get; set; }
         public int SubscribersCount { get; set; }
         public CommentViewModel CommentVM { get; set; } = new();
+        // Thêm thuộc tính mới
+        public string VideoContentType { get; set; } // Lưu ContentType của video
+
         // Thêm thuộc tính mới - nhận diện người nổi tiếng
         public string RecognizedCelebrities { get; set; }
 

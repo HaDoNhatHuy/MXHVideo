@@ -32,6 +32,7 @@
 
   <ItemGroup>
     <Folder Include="Seed\Files\" />
+    <Folder Include="wwwroot\avatarUser\" />
   </ItemGroup>
 
 </Project>
