@@ -1,7 +1,7 @@
 ﻿@model Web_Video.ViewModels.Video.VideoWatchViewModel
 @using Web_Video.Extensions
 
-<style>
+@* <style>
     /* Container cho video */
     .video-container {
         position: relative;
@@ -44,8 +44,47 @@
         border-radius: 5px;
         font-size: 0.9rem;
     }
-</style>
+    /* CSS cho video đề xuất */
+    .recommended-video {
+        display: flex;
+        margin-bottom: 20px;
+    }
 
+        .recommended-video img {
+            width: 168px;
+            height: 94px; /* Tỷ lệ 16:9 */
+            object-fit: cover;
+            border-radius: 5px;
+            margin-right: 12px;
+        }
+
+        .recommended-video .video-info {
+            flex: 1;
+        }
+
+            .recommended-video .video-info h6 {
+                font-size: 0.95rem;
+                font-weight: 500;
+                margin: 0;
+                line-height: 1.3;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+                color: #000;
+            }
+
+            .recommended-video .video-info p {
+                font-size: 0.85rem;
+                color: #606060;
+                margin: 4px 0 0 0;
+            }
+
+    .recommended-videos {
+        margin-top: 20px;
+    }
+</style>
+ *@
 <a asp-action="Index" asp-controller="Home" class="btn btn-primary btn-lg">Back</a>
 
 <div class="row mt-3">
@@ -120,10 +159,112 @@
                 <p class="card-text">@Model.Description</p>
             </div>
         </div>
+
+        @* <partial name="_CommentPartial" model="@Model.CommentVM" /> *@
+        @await Html.PartialAsync("_CommentPartial", Model.CommentVM)
+
+        <!-- Phần đề xuất video -->
+        <div class="recommended-videos">
+            @foreach (var video in Model.RecommendedVideos)
+            {
+                <div class="recommended-video">
+                    <a asp-action="Watch" asp-controller="Video" asp-route-id="@video.Id">
+                        <img src="@video.Thumbnail" alt="@video.Title" />
+                    </a>
+                    <div class="video-info">
+                        <a asp-action="Watch" asp-controller="Video" asp-route-id="@video.Id" class="text-decoration-none text-dark">
+                            <h6>@video.Title</h6>
+                        </a>
+                        <p>@video.ChannelName • @SD.FormatView(video.ViewersCount) views • @SD.TimeAgo(video.CreatedAt)</p>
+                    </div>
+                </div>
+            }
+        </div>
     </div>
 </div>
 @section Css {
     <style>
+        /* Container cho video */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* Tỷ lệ 16:9 (9/16 = 0.5625) */
+        }
+
+        /* Định dạng video */
+        video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            outline: none;
+            object-fit: cover;
+        }
+
+            video:hover {
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9);
+            }
+
+        .font-btn {
+            font-size: 1.2rem;
+        }
+        /* CSS cho tag */
+        .tag-container {
+            margin-top: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            background-color: #e0e0e0;
+            color: #333;
+            padding: 5px 10px;
+            margin: 5px 5px 0 0;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        /* CSS cho video đề xuất */
+        .recommended-video {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+            .recommended-video img {
+                width: 168px;
+                height: 94px; /* Tỷ lệ 16:9 */
+                object-fit: cover;
+                border-radius: 5px;
+                margin-right: 12px;
+            }
+
+            .recommended-video .video-info {
+                flex: 1;
+            }
+
+                .recommended-video .video-info h6 {
+                    font-size: 0.95rem;
+                    font-weight: 500;
+                    margin: 0;
+                    line-height: 1.3;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                    color: #000;
+                }
+
+                .recommended-video .video-info p {
+                    font-size: 0.85rem;
+                    color: #606060;
+                    margin: 4px 0 0 0;
+                }
+
+        .recommended-videos {
+            margin-top: 20px;
+        }
         #subscribeBtn {
             position: relative;
             display: flex;
@@ -144,8 +285,6 @@
     </style>
 }
 
-@* <partial name="_CommentPartial" model="@Model.CommentVM" /> *@
-@await Html.PartialAsync("_CommentPartial", Model.CommentVM)
 
 @section Scripts {
     <script>

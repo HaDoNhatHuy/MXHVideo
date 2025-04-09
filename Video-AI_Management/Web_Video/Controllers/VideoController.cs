@@ -19,6 +19,7 @@ using Web_Video.ViewModels.Channel;
 using Web_Video.ViewModels.Video;
 using WebVideo.Utility;
 using Xabe.FFmpeg;
+using static Web_Video.ViewModels.Video.VideoWatchViewModel;
 
 namespace Web_Video.Controllers
 {
@@ -35,6 +36,9 @@ namespace Web_Video.Controllers
 
             if (toReturn != null)
             {
+                // Lấy danh sách video đề xuất
+                toReturn.RecommendedVideos = await GetRecommendedVideos(id);
+
                 var userIpAddress = Request.HttpContext.Connection.RemoteIpAddress.ToString();
                 await UnitOfWork.VideoViewRepo.HandleVideoViewAsync(User.GetUserId(), id, userIpAddress);
                 await UnitOfWork.CompleteAsync();
@@ -701,6 +705,25 @@ namespace Web_Video.Controllers
                     }
                 }).FirstOrDefaultAsync();
             return toReturn;
+        }
+
+        // Phương thức để lấy danh sách video đề xuất
+        private async Task<List<RecommendedVideoViewModel>> GetRecommendedVideos(Guid currentVideoId)
+        {
+            return await Context.Videos
+                .Where(x => x.Id != currentVideoId) // Không lấy video hiện tại
+                .OrderBy(x => Guid.NewGuid()) // Sắp xếp ngẫu nhiên
+                .Take(5) // Lấy 5 video
+                .Select(x => new RecommendedVideoViewModel
+                {
+                    Id = x.Id,
+                    Title = x.Title,
+                    Thumbnail = x.Thumbnail,
+                    ChannelName = x.Channel.ChannelName,
+                    ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
+                    CreatedAt = x.UploadDate
+                })
+                .ToListAsync();
         }
         #endregion
     }
