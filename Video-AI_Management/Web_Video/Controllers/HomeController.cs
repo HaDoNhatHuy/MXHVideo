@@ -98,6 +98,7 @@ namespace Web_Video.Controllers
                 {
                     Id = x.VideoId,
                     x.Video.Title,
+                    x.Video.Thumbnail,
                     ChannelName = x.Video.Channel.ChannelName,
                     ChannelId = x.Video.Channel.Id,
                     LastVisitTimeAgo = SD.TimeAgo(x.LastVisit),
