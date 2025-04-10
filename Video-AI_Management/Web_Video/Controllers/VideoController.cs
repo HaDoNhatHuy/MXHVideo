@@ -178,7 +178,6 @@ namespace Web_Video.Controllers
         //        bool proceed = true;
         //        if (model.Id == Guid.Empty)
         //        {
-        //            //adding some security to check for create
         //            if (model.ImageUpload == null)
         //            {
         //                ModelState.AddModelError("ImageUpload", "Please upload an image for your video");
@@ -225,10 +224,23 @@ namespace Web_Video.Controllers
         //        {
         //            string title = "";
         //            string message = "";
+        //            Video videoToAdd = null;
         //            if (model.Id == Guid.Empty)
         //            {
-        //                //for create
-        //                var videoToAdd = new Video()
+        //                // Lưu video tạm thời để xử lý nhận diện khuôn mặt
+        //                var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+        //                Directory.CreateDirectory(uploadPath);
+        //                var videoPath = Path.Combine(uploadPath, model.VideoUpload.FileName);
+        //                using (var stream = new FileStream(videoPath, FileMode.Create))
+        //                {
+        //                    await model.VideoUpload.CopyToAsync(stream);
+        //                }
+
+        //                // Nhận diện khuôn mặt
+        //                string recognitionResult = await ProcessVideo(videoPath);
+
+        //                // Tạo video mới
+        //                videoToAdd = new Video()
         //                {
         //                    Id = Guid.NewGuid(),
         //                    Title = model.Title,
@@ -240,8 +252,9 @@ namespace Web_Video.Controllers
         //                    },
         //                    Description = model.Description,
         //                    CategoryId = model.CategoryId,
-        //                    ChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(User.GetUserId()).GetAwaiter().GetResult(), //channelId of the current User
-        //                    Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload), //some url that we are going to provide
+        //                    ChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(User.GetUserId()).GetAwaiter().GetResult(),
+        //                    Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload),
+        //                    RecognizedCelebrities = recognitionResult // Lưu kết quả nhận diện
         //                };
         //                UnitOfWork.VideoRepo.Add(videoToAdd);
         //                title = "Created";
@@ -249,11 +262,10 @@ namespace Web_Video.Controllers
         //            }
         //            else
         //            {
-        //                //for edit
         //                var fetchedVideo = await UnitOfWork.VideoRepo.GetByIdAsync(model.Id);
         //                if (fetchedVideo == null)
         //                {
-        //                    TempData["notification"] = "false;Not Found;Requested video was not found";
+        //                    TempData["notification"] = "false;Not Found;Requested video was.ConcurrentDictionary not found";
         //                    return RedirectToAction("Index", "Channel");
         //                }
         //                fetchedVideo.Title = model.Title;
@@ -261,7 +273,6 @@ namespace Web_Video.Controllers
         //                fetchedVideo.CategoryId = model.CategoryId;
         //                if (model.ImageUpload != null)
         //                {
-        //                    //handle re uploading the image file
         //                    fetchedVideo.Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload, fetchedVideo.Thumbnail);
         //                }
         //                title = "Updated";
@@ -359,7 +370,7 @@ namespace Web_Video.Controllers
                             CategoryId = model.CategoryId,
                             ChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(User.GetUserId()).GetAwaiter().GetResult(),
                             Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload),
-                            RecognizedCelebrities = recognitionResult // Lưu kết quả nhận diện
+                            RecognizedCelebrities = recognitionResult
                         };
                         UnitOfWork.VideoRepo.Add(videoToAdd);
                         title = "Created";
@@ -370,7 +381,7 @@ namespace Web_Video.Controllers
                         var fetchedVideo = await UnitOfWork.VideoRepo.GetByIdAsync(model.Id);
                         if (fetchedVideo == null)
                         {
-                            TempData["notification"] = "false;Not Found;Requested video was.ConcurrentDictionary not found";
+                            TempData["notification"] = "false;Not Found;Requested video was not found";
                             return RedirectToAction("Index", "Channel");
                         }
                         fetchedVideo.Title = model.Title;
@@ -383,15 +394,17 @@ namespace Web_Video.Controllers
                         title = "Updated";
                         message = "Video has been updated";
                     }
-                    TempData["notification"] = $"true;{title};{message}";
                     await UnitOfWork.CompleteAsync();
+
+                    TempData["notification"] = $"true;{title};{message}";
                     return RedirectToAction("Index", "Channel");
                 }
             }
+
+            // Nếu không hợp lệ, trả về view với lỗi
             model.CategoryDropdown = await GetCategoryDropdownAsync();
             return View(model);
         }
-
         // Thêm các phương thức xử lý nhận diện khuôn mặt từ HomeController.cs
         private async Task<string> ProcessVideo(string videoPath)
         {
