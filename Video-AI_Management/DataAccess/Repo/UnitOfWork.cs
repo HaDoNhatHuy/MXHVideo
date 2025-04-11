@@ -26,6 +26,7 @@ namespace DataAccess.Repo
         public IVideoFileRepo VideoFileRepo => new VideoFileRepo(_context);
         public ICommentRepo CommentRepo => new CommentRepo(_context);
         public IVideoViewRepo VideoViewRepo => new VideoViewRepo(_context,_config);
+        public ICelebrityRepo CelebrityRepo => new CelebrityRepo(_context);
 
         public async Task<bool> CompleteAsync()
         {

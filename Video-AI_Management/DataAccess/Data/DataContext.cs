@@ -15,6 +15,8 @@ namespace DataAccess.Data
         public DbSet<Subscribe> Subscribes { get; set; }
         public DbSet<LikeDislike> LikeDislikes { get; set; }
         public DbSet<Comment> Comments { get; set; }
+        public DbSet<Celebrity> Celebrities { get; set; }
+        public DbSet<RecognizeCelebrities> RecognizeCelebrities { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -27,6 +29,7 @@ namespace DataAccess.Data
             builder.ApplyConfiguration(new SubscribeConfig());
             builder.ApplyConfiguration(new LikeDislikeConfig());
             builder.ApplyConfiguration(new VideoViewConfig());
+            builder.ApplyConfiguration(new RecognizeCelebritiesConfig());
         }
     }
 }

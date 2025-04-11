@@ -12,7 +12,7 @@ namespace Database_Video.Entities
         public string? VideoUrl { get; set; }
         [Required]
         public string? Thumbnail { get; set; }
-        public DateTime UploadDate { get; set; } = DateTime.Now;        
+        public DateTime UploadDate { get; set; } = DateTime.Now;
         public int? Views { get; set; }
         [ForeignKey("CategoryId")]
         public Guid? CategoryId { get; set; }
@@ -22,6 +22,7 @@ namespace Database_Video.Entities
         public Channel? Channel { get; set; }
         public VideoFile VideoFile { get; set; }
         public string? RecognizedCelebrities { get; set; }
+        public ICollection<RecognizeCelebrities> RecognizeCelebrities { get; set; } = new HashSet<RecognizeCelebrities>();
         public ICollection<Comment> Comments { get; set; } = new HashSet<Comment>();
         public ICollection<LikeDislike> LikeDislikes { get; set; } = new HashSet<LikeDislike>();
         public ICollection<VideoView> Viewers { get; set; } = new HashSet<VideoView>();

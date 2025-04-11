@@ -14,6 +14,7 @@ namespace Database_Video.IRepo
         IVideoFileRepo VideoFileRepo { get; }
         ICommentRepo CommentRepo { get; }
         IVideoViewRepo VideoViewRepo { get; }
+        ICelebrityRepo CelebrityRepo { get; }
         Task<bool> CompleteAsync();
     }
 }

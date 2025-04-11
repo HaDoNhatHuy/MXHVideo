@@ -126,6 +126,7 @@
     /* Form chỉnh sửa bình luận */
     .edit-comment-form {
         display: none;
+        width: 100%;
     }
 
         .edit-comment-form textarea {
@@ -135,6 +136,7 @@
             padding: 8px;
             font-size: 0.9rem;
             resize: none;
+            box-sizing: border-box;
         }
 
         .edit-comment-form .edit-actions {
@@ -231,12 +233,23 @@
 @section Scripts {
     <script>
         // Hiển thị/Ẩn form chỉnh sửa khi nhấn nút Edit
-        document.querySelectorAll('.btn-edit-comment').forEach(button => {
+            document.querySelectorAll('.btn-edit-comment').forEach(button => {
             button.addEventListener('click', function () {
                 const commentId = this.getAttribute('data-comment-id');
-                document.querySelector(`#comment-${commentId} .comment-text`).style.display = 'none';
-                document.querySelector(`#comment-${commentId} .comment-actions-owner`).style.display = 'none';
-                document.querySelector(`#comment-${commentId} .edit-comment-form`).style.display = 'block';
+                console.log('Edit button clicked, commentId:', commentId);
+
+                const commentText = document.querySelector(`#comment-${commentId} .comment-text`);
+                const actionsOwner = document.querySelector(`#comment-${commentId} .comment-actions-owner`);
+                const editForm = document.querySelector(`#comment-${commentId} .edit-comment-form`);
+
+                if (commentText && actionsOwner && editForm) {
+                    console.log('Elements found, updating display...');
+                    commentText.style.display = 'none';
+                    actionsOwner.style.display = 'none';
+                    editForm.style.display = 'block';
+                } else {
+                    console.error('Cannot find elements for commentId:', commentId);
+                }
             });
         });
 

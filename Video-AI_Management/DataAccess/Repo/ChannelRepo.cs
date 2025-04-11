@@ -1,11 +1,6 @@
-﻿using Database_Video.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DataAccess.Data;
+using Database_Video.Entities;
 using Database_Video.IRepo;
-using DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataAccess.Repo

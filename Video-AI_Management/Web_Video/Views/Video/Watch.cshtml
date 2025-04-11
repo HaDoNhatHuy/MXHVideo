@@ -38,17 +38,17 @@
         margin-bottom: 10px;
     }
 
-    .channel-info .channel-name {
-        font-size: 0.9rem;
-        font-weight: 500;
-        color: #000;
-    }
+        .channel-info .channel-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #000;
+        }
 
-    .channel-info .subscribers {
-        font-size: 0.85rem;
-        color: #606060;
-        margin-top: 2px;
-    }
+        .channel-info .subscribers {
+            font-size: 0.85rem;
+            color: #606060;
+            margin-top: 2px;
+        }
 
     /* Nút Subscribe */
     .subscribe-btn {
@@ -62,10 +62,10 @@
         transition: background-color 0.2s;
     }
 
-    .subscribe-btn.subscribed {
-        background-color: #ccc; /* Màu xám khi đã subscribe */
-        color: #000;
-    }
+        .subscribe-btn.subscribed {
+            background-color: #ccc; /* Màu xám khi đã subscribe */
+            color: #000;
+        }
 
     /* Nút tương tác (Like, Dislike, Share) */
     .action-buttons {
@@ -74,26 +74,26 @@
         gap: 10px;
     }
 
-    .action-buttons .btn {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 0.9rem;
-        color: #606060;
-        border: none;
-        background: none;
-        padding: 5px 10px;
-        border-radius: 2px;
-        transition: color 0.2s;
-    }
+        .action-buttons .btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+            color: #606060;
+            border: none;
+            background: none;
+            padding: 5px 10px;
+            border-radius: 2px;
+            transition: color 0.2s;
+        }
 
-    .action-buttons .btn.active {
-        color: #000;
-    }
+            .action-buttons .btn.active {
+                color: #000;
+            }
 
-    .action-buttons .btn i {
-        font-size: 1rem;
-    }
+            .action-buttons .btn i {
+                font-size: 1rem;
+            }
 
     /* Mô tả video */
     .description-box {
@@ -103,23 +103,23 @@
         margin-top: 15px;
     }
 
-    .description-box p {
-        font-size: 0.9rem;
-        color: #333;
-        margin: 0;
-    }
+        .description-box p {
+            font-size: 0.9rem;
+            color: #333;
+            margin: 0;
+        }
 
     /* Phần bình luận */
     .comments-section {
         margin-top: 20px;
     }
 
-    .comments-section h5 {
-        font-size: 1rem;
-        font-weight: 500;
-        color: #000;
-        margin-bottom: 15px;
-    }
+        .comments-section h5 {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #000;
+            margin-bottom: 15px;
+        }
 
     .comment-input {
         display: flex;
@@ -128,20 +128,20 @@
         margin-bottom: 20px;
     }
 
-    .comment-input img {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-    }
+        .comment-input img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
 
-    .comment-input input {
-        flex: 1;
-        border: none;
-        border-bottom: 1px solid #ccc;
-        padding: 5px 0;
-        font-size: 0.9rem;
-        outline: none;
-    }
+        .comment-input input {
+            flex: 1;
+            border: none;
+            border-bottom: 1px solid #ccc;
+            padding: 5px 0;
+            font-size: 0.9rem;
+            outline: none;
+        }
 
     /* CSS cho video đề xuất */
     .recommended-video {
@@ -149,35 +149,35 @@
         margin-bottom: 15px;
     }
 
-    .recommended-video img {
-        width: 168px;
-        height: 94px; /* Tỷ lệ 16:9 */
-        object-fit: cover;
-        border-radius: 5px; /* Bỏ border-radius để giống YouTube */
-        margin-right: 10px;
-    }
+        .recommended-video img {
+            width: 168px;
+            height: 94px; /* Tỷ lệ 16:9 */
+            object-fit: cover;
+            border-radius: 5px; /* Bỏ border-radius để giống YouTube */
+            margin-right: 10px;
+        }
 
-    .recommended-video .video-info {
-        flex: 1;
-    }
+        .recommended-video .video-info {
+            flex: 1;
+        }
 
-    .recommended-video .video-info h6 {
-        font-size: 0.9rem;
-        font-weight: 500;
-        margin: 0;
-        line-height: 1.2;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        color: #000;
-    }
+            .recommended-video .video-info h6 {
+                font-size: 0.9rem;
+                font-weight: 500;
+                margin: 0;
+                line-height: 1.2;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+                color: #000;
+            }
 
-    .recommended-video .video-info p {
-        font-size: 0.85rem;
-        color: #606060;
-        margin: 4px 0 0 0;
-    }
+            .recommended-video .video-info p {
+                font-size: 0.85rem;
+                color: #606060;
+                margin: 4px 0 0 0;
+            }
 
     .recommended-videos {
         margin-top: 0;
@@ -250,8 +250,8 @@
                 <div class="tag-container">
                     @{
                         var celebrities = Model.RecognizedCelebrities
-                            .Replace("Đã nhận diện: ", "")
-                            .Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+                        .Replace("Đã nhận diện: ", "")
+                        .Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
                     }
                     @foreach (var celebrity in celebrities)
                     {
@@ -265,10 +265,10 @@
         <!-- Phần bình luận -->
         <div class="comments-section">
             @* <h5>@(Model.CommentVM.AvailableComments?.Count() ?? 0) Comments</h5> *@
-            @await Html.PartialAsync("_CommentPartial", Model.CommentVM)            
-        </div>
+            <partial name="_CommentPartial" model="Model.CommentVM" />
+         </div>
     </div>
-   
+
 
     <!-- Cột bên phải: Video đề xuất -->
     <div class="col-lg-4">

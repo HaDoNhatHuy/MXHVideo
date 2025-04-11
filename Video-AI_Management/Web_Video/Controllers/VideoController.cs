@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Web_Video.Extensions;
 using Web_Video.ViewModels.Channel;
@@ -63,8 +64,20 @@ namespace Web_Video.Controllers
             return RedirectToAction("Index", "Home");
         }
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditComment(Guid commentId, Guid videoId, string content)
         {
+            if (commentId == Guid.Empty || videoId == Guid.Empty)
+            {
+                TempData["notification"] = "false;Invalid;Invalid comment or video ID";
+                return RedirectToAction("Watch", new { id = videoId });
+            }
+
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                TempData["notification"] = "false;Invalid;Comment content cannot be empty";
+                return RedirectToAction("Watch", new { id = videoId });
+            }
             var comment = await UnitOfWork.CommentRepo.GetFirstOrDefaultAsync(c => c.Id == commentId);
             if (comment == null)
             {
@@ -254,7 +267,7 @@ namespace Web_Video.Controllers
         //                    CategoryId = model.CategoryId,
         //                    ChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(User.GetUserId()).GetAwaiter().GetResult(),
         //                    Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload),
-        //                    RecognizedCelebrities = recognitionResult // Lưu kết quả nhận diện
+        //                    RecognizedCelebrities = recognitionResult
         //                };
         //                UnitOfWork.VideoRepo.Add(videoToAdd);
         //                title = "Created";
@@ -265,7 +278,7 @@ namespace Web_Video.Controllers
         //                var fetchedVideo = await UnitOfWork.VideoRepo.GetByIdAsync(model.Id);
         //                if (fetchedVideo == null)
         //                {
-        //                    TempData["notification"] = "false;Not Found;Requested video was.ConcurrentDictionary not found";
+        //                    TempData["notification"] = "false;Not Found;Requested video was not found";
         //                    return RedirectToAction("Index", "Channel");
         //                }
         //                fetchedVideo.Title = model.Title;
@@ -278,13 +291,71 @@ namespace Web_Video.Controllers
         //                title = "Updated";
         //                message = "Video has been updated";
         //            }
-        //            TempData["notification"] = $"true;{title};{message}";
         //            await UnitOfWork.CompleteAsync();
+
+        //            TempData["notification"] = $"true;{title};{message}";
         //            return RedirectToAction("Index", "Channel");
         //        }
         //    }
+
+        //    // Nếu không hợp lệ, trả về view với lỗi
         //    model.CategoryDropdown = await GetCategoryDropdownAsync();
         //    return View(model);
+        //}
+        //// Thêm các phương thức xử lý nhận diện khuôn mặt từ HomeController.cs
+        //private async Task<string> ProcessVideo(string videoPath)
+        //{
+        //    var outputDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/frames");
+        //    Directory.CreateDirectory(outputDir);
+
+        //    var oldFrames = Directory.GetFiles(outputDir, "frame-*.jpg");
+        //    foreach (var oldFrame in oldFrames)
+        //    {
+        //        System.IO.File.Delete(oldFrame);
+        //    }
+
+        //    var outputImage = Path.Combine(outputDir, "frame-%03d.jpg");
+        //    Xabe.FFmpeg.FFmpeg.SetExecutablesPath(@"C:\FFmpeg\ffmpeg\bin");
+
+        //    var conversion = FFmpeg.Conversions.New()
+        //        .AddParameter($"-i \"{videoPath}\" -vf fps=1,scale=640:-1 \"{outputImage}\"")
+        //        .SetOverwriteOutput(true);
+        //    await conversion.Start();
+
+        //    var frames = Directory.GetFiles(outputDir, "frame-*.jpg");
+        //    if (frames.Length == 0)
+        //    {
+        //        return "Không thể trích xuất frame từ video.";
+        //    }
+
+        //    string recognitionResult = await RecognizeCelebrity(frames);
+        //    return recognitionResult;
+        //}
+
+        //private async Task<string> RecognizeCelebrity(string[] frames)
+        //{
+        //    var client = new HttpClient { BaseAddress = new Uri("http://localhost:5000/"), Timeout = TimeSpan.FromMinutes(5) };
+        //    HashSet<string> allCelebrities = new HashSet<string>();
+
+        //    foreach (var frame in frames)
+        //    {
+        //        var requestBody = new { frame_path = frame };
+        //        var response = await client.PostAsJsonAsync("recognize", requestBody);
+        //        var result = await response.Content.ReadFromJsonAsync<Dictionary<string, string[]>>();
+
+        //        var celebrities = result["celebrities"];
+        //        if (celebrities != null && celebrities.Length > 0 && celebrities[0] != "Unknown")
+        //        {
+        //            foreach (var celeb in celebrities)
+        //            {
+        //                allCelebrities.Add(celeb);
+        //            }
+        //        }
+        //    }
+
+        //    return allCelebrities.Count > 0
+        //        ? $"Đã nhận diện: {string.Join(", ", allCelebrities)}"
+        //        : "Không nhận diện được nhân vật nổi tiếng.";
         //}
         [HttpPost]
         public async Task<IActionResult> CreateEditVideo(VideoAddEditViewModel model)
@@ -371,7 +442,12 @@ namespace Web_Video.Controllers
                             ChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(User.GetUserId()).GetAwaiter().GetResult(),
                             Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload),
                             RecognizedCelebrities = recognitionResult
+
                         };
+
+                        // Lưu người nổi tiếng vào bảng Celebrity và liên kết với video
+                        await SaveRecognizedCelebrities(videoToAdd, recognitionResult);
+
                         UnitOfWork.VideoRepo.Add(videoToAdd);
                         title = "Created";
                         message = "New video has been created";
@@ -405,7 +481,50 @@ namespace Web_Video.Controllers
             model.CategoryDropdown = await GetCategoryDropdownAsync();
             return View(model);
         }
-        // Thêm các phương thức xử lý nhận diện khuôn mặt từ HomeController.cs
+        // Phương thức lưu người nổi tiếng vào bảng Celebrity và liên kết với video
+        private async Task SaveRecognizedCelebrities(Video video, string recognitionResult)
+        {
+            if (string.IsNullOrEmpty(recognitionResult) || recognitionResult.Contains("Không nhận diện được"))
+            {
+                return;
+            }
+
+            // Tách danh sách người nổi tiếng từ chuỗi recognitionResult
+            var celebrityNames = recognitionResult
+                .Replace("Đã nhận diện: ", "")
+                .Split(", ", StringSplitOptions.RemoveEmptyEntries)
+                .Select(name => name.Trim())
+                .ToList();
+
+            foreach (var name in celebrityNames)
+            {
+                // Kiểm tra xem người nổi tiếng đã tồn tại trong bảng Celebrity chưa
+                var celebrity = await UnitOfWork.CelebrityRepo
+                    .GetFirstOrDefaultAsync(c => c.Name.ToLower() == name.ToLower());
+
+                if (celebrity == null)
+                {
+                    // Nếu chưa tồn tại, tạo mới
+                    celebrity = new Celebrity
+                    {
+                        Name = name,
+                        // Các thông tin khác như Age, Gender, Job có thể được thêm sau nếu có dữ liệu từ API
+                    };
+                    UnitOfWork.CelebrityRepo.Add(celebrity);
+                    await UnitOfWork.CompleteAsync(); // Lưu để có Id cho celebrity
+                }
+
+                // Liên kết người nổi tiếng với video qua bảng RecognizeCelebrities
+                var recognizeCelebrity = new RecognizeCelebrities
+                {
+                    VideoId = video.Id,
+                    CelebrityId = celebrity.Id
+                };
+                video.RecognizeCelebrities.Add(recognizeCelebrity);
+            }
+        }
+
+        // Giữ nguyên các phương thức ProcessVideo và RecognizeCelebrity
         private async Task<string> ProcessVideo(string videoPath)
         {
             var outputDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/frames");
@@ -460,7 +579,6 @@ namespace Web_Video.Controllers
                 ? $"Đã nhận diện: {string.Join(", ", allCelebrities)}"
                 : "Không nhận diện được nhân vật nổi tiếng.";
         }
-
         #region API Endpoints
         [HttpGet]
         public async Task<IActionResult> GetVideosForChannelGrid(BaseParameters parameters)
