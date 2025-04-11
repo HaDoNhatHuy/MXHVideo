@@ -41,7 +41,6 @@ function getMyVideos() {
                 const to = result.pageNumber * result.pageSize > result.totalItemsCount ? result.totalItemsCount : result.pageNumber * result.pageSize;
                 $('#paginationSummery').text(`${from}-${to} of ${result.totalItemsCount}`);
 
-
                 // Next Page, Last Page, Previous Page, First Page buttons and functionalities
                 let firstPageBtn = '';
                 firstPageBtn += `<button type="button" class="btn btn-secondary btn-sm paginationBtn" ${result.pageNumber == 1 ? 'disabled' : ''} data-value="1" data-bs-toggle="tooltip" data-bs-placement="bottom" title="First Page">`;
@@ -75,6 +74,12 @@ function getMyVideos() {
             } else {
                 $('#itemsPerPageDropdown').hide();
             }
+        },
+        error: function (xhr, status, error) {
+            console.error('Error fetching videos:', error);
+            $('#videosTableBody').html('<div class="text-center p-3">Không có video nào để hiển thị.</div>');
+            $('#paginationSummery').text('Hiển thị 0 trong số 0 mục');
+            $('#paginationBtnGroup').empty();
         }
     });
 
@@ -84,60 +89,44 @@ function getMyVideos() {
         getMyVideos();
     });
 
-
     // On dropdown "CategoryDropdown" selection event
     $('#categoryDropdown').on('change', function () {
-        var selectedValue = $(this).val(); // Get selected value
+        var selectedValue = $(this).val();
         categoryId = selectedValue;
         getMyVideos();
     });
 
-
-    // On searchBtn click
-    $("#searchBtn").click(function () {
-        const searchInput = $('#searchInput').val();
-        searchBy = searchInput;
+    // On filter button click
+    $('.youtube-filter-btn').on('click', function () {
+        $('.youtube-filter-btn').removeClass('active');
+        $(this).addClass('active');
+        searchBy = $(this).data('filter');
         getMyVideos();
     });
 
-
-    // On Search input when enter is pressed
-    $('#searchInput').on('keyup', function (event) {
-        if (event.key === "Enter" || event.keyCode === 13) {
-            var searchInput = $(this).val();
-            searchBy = searchInput;
-            getMyVideos();
-        }
-    });
-
-
     function populateVideoTableBody(videos) {
-        let divTag = '';
+        let html = '';
 
         if (videos.length > 0) {
-            videos.map((v, index) => {
-
-                if (index % 4 == 0) {
-                    divTag += '<div class="row">';
-                }
-
-                divTag += '<div class="col-xl-3 col-md-6 pt-2">';
-                divTag += '<div class="p-2 border rounded text-center">';
-                divTag += `<div><a href="/Video/Watch/${v.id}"><img src="${v.thumbnail}" class="rounded preview-image" /></a></div>`;
-                divTag += `<a href="/Video/Watch/${v.id}" class="text-danger-emphasis" style="text-decoration: none;">${v.title}</a>`;
-                divTag += '<div><span style="font-size: small">';
-                divTag += `<a href="/Member/Channel/${v.channelId}" style="text-decoration: none;" class="text-primary">${v.channelName}</a> <br />`;
-                divTag += `${formatView(v.views)} - ${timeAgo(v.createdAt, getUtcDateTimeNow())}</span></div>`;
-                divTag += '</div></div>';
-
-                if ((index + 1) % 4 == 0) {
-                    divTag += '</div>';
-                }
+            videos.forEach(v => {
+                html += `
+                    <div class="youtube-video-card">
+                        <a href="/Video/Watch/${v.id}" class="thumbnail-link">
+                            <img src="${v.thumbnail}" alt="Video Thumbnail" class="thumbnail-img" />
+                        </a>
+                        <div class="video-details">
+                            <a href="/Video/Watch/${v.id}" class="video-title">${v.title}</a>
+                            <div class="video-meta">
+                                <a href="/Member/Channel/${v.channelId}" class="channel-name">${v.channelName}</a>
+                                <span class="video-stats">${formatView(v.views)} lượt xem • ${timeAgo(v.createdAt, getUtcDateTimeNow())}</span>
+                            </div>
+                        </div>
+                    </div>`;
             });
         } else {
-            divTag += '<div class="row"><div class="col text-center">No Videos</div></div>';
+            html = '<div class="text-center p-3">Không có video nào để hiển thị.</div>';
         }
 
-        $('#videosTableBody').append(divTag);
+        $('#videosTableBody').append(html);
     }
 }

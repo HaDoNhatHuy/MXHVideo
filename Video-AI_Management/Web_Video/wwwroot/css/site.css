@@ -1,4 +1,4 @@
-html {
+﻿html {
     font-size: 14px;
 }
 
@@ -19,6 +19,9 @@ html {
 
 body {
     margin-bottom: 60px;
+    /*Thêm các thuộc tính mới*/
+    font-family: 'Roboto', sans-serif;
+    background-color: #f9f9f9; /* Chế độ sáng */
 }
 
 .navbar-brand {
