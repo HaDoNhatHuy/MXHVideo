@@ -12,6 +12,7 @@ using Web_Video.Extensions;
 using Web_Video.ViewModels;
 using Web_Video.ViewModels.Channel;
 using WebVideo.Utility;
+using System.IO;
 
 namespace Web_Video.Controllers
 {
@@ -20,6 +21,7 @@ namespace Web_Video.Controllers
     {
         public async Task<IActionResult> Index(string stringModel)
         {
+            ViewData["CurrentPage"] = "Channel";
             var model = new ChannelAddEditViewModel();
             HttpContext.Session.GetString("ChannelModelFromSession");
             if (!string.IsNullOrEmpty(stringModel))
@@ -230,4 +232,69 @@ namespace Web_Video.Controllers
 //        var totalViews = videos.Sum(v => v.Views);
 //        return Json(new { totalViews });
 //    }
+//}
+
+//[HttpPost]
+//public async Task<IActionResult> CreateChannel(ChannelAddEditViewModel model)
+//{
+//    if (ModelState.IsValid)
+//    {
+//        string avatarUrl = null;
+//        if (model.Avatar != null && model.Avatar.Length > 0)
+//        {
+//            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(model.Avatar.FileName);
+//            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/avatars", fileName);
+//            using (var stream = new FileStream(filePath, FileMode.Create))
+//            {
+//                await model.Avatar.CopyToAsync(stream);
+//            }
+//            avatarUrl = $"/uploads/avatars/{fileName}";
+//        }
+
+//        // Lưu thông tin channel vào database, bao gồm avatarUrl
+//        // Ví dụ:
+//        // var channel = new Channel
+//        // {
+//        //     Name = model.Name,
+//        //     About = model.About,
+//        //     AvatarUrl = avatarUrl ?? "/images/default-avatar.png"
+//        // };
+//        // await _context.Channels.AddAsync(channel);
+//        // await _context.SaveChangesAsync();
+
+//        return RedirectToAction("Channel", "Member");
+//    }
+
+//    return View(model);
+//}
+
+//[HttpPost]
+//public async Task<IActionResult> EditChannel(ChannelAddEditViewModel model)
+//{
+//    if (ModelState.IsValid)
+//    {
+//        string avatarUrl = model.AvatarUrl; // Giữ avatar hiện tại nếu không upload mới
+//        if (model.Avatar != null && model.Avatar.Length > 0)
+//        {
+//            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(model.Avatar.FileName);
+//            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/avatars", fileName);
+//            using (var stream = new FileStream(filePath, FileMode.Create))
+//            {
+//                await model.Avatar.CopyToAsync(stream);
+//            }
+//            avatarUrl = $"/uploads/avatars/{fileName}";
+//        }
+
+//        // Cập nhật thông tin channel trong database
+//        // Ví dụ:
+//        // var channel = await _context.Channels.FindAsync(channelId);
+//        // channel.Name = model.Name;
+//        // channel.About = model.About;
+//        // channel.AvatarUrl = avatarUrl;
+//        // await _context.SaveChangesAsync();
+
+//        return RedirectToAction("Channel", "Member");
+//    }
+
+//    return View("Channel", model);
 //}

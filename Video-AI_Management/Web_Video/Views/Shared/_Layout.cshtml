@@ -9,259 +9,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" integrity="sha512-vKMx8UnXk60zUwyUnUPM3HbQo8QfmNx7+ltw8Pm5zLusl1XIfwcxo8DbWCqMGKaWeNxWA8yrx5v3SaVpMvR3CA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.css" />
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/newStyle.css" asp-append-version="true" />
+    @* <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" /> *@
     <link rel="stylesheet" href="~/Web_Video.styles.css" asp-append-version="true" />
     @await RenderSectionAsync("Css", required: false)
 
-    <style>
-        /* CSS chung cho giao diện giống YouTube */
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f9f9f9; /* Chế độ sáng */
-            margin: 0;
-            padding: 0;
-        }
-
-        /* Header */
-        .youtube-header {
-            background-color: #fff;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .youtube-logo span {
-            font-size: 20px;
-        }
-
-        .youtube-menu-btn i {
-            font-size: 24px;
-            color: #606060;
-        }
-
-        .youtube-search-container {
-            max-width: 600px;
-        }
-
-        .youtube-search-input {
-            border: 1px solid #ccc;
-            border-right: none;
-            border-radius: 20px 0 0 20px;
-            padding: 8px 16px;
-            font-size: 16px;
-            box-shadow: none;
-        }
-
-        .youtube-search-btn {
-            border: 1px solid #ccc;
-            border-left: none;
-            border-radius: 0 20px 20px 0;
-            background-color: #f8f8f8;
-            padding: 8px 16px;
-        }
-
-            .youtube-search-btn i {
-                color: #606060;
-            }
-
-        .youtube-suggestions {
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-        }
-
-            .youtube-suggestions .suggestion-item {
-                padding: 12px 16px;
-                cursor: pointer;
-                font-size: 16px;
-                transition: background 0.3s ease-in-out;
-            }
-
-                .youtube-suggestions .suggestion-item:hover {
-                    background-color: #f1f1f1;
-                }
-
-        .youtube-voice-btn {
-            border-radius: 50%;
-            background-color: #f8f8f8;
-            border: 1px solid #ccc;
-            padding: 8px;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-            .youtube-voice-btn i {
-                color: #606060;
-            }
-
-            .youtube-voice-btn.recording {
-                background-color: #dc3545;
-            }
-
-                .youtube-voice-btn.recording i {
-                    color: #fff;
-                }
-
-        /* Sidebar */
-        .youtube-sidebar {
-            background-color: #fff;
-            border-right: 1px solid #e0e0e0;
-            min-height: calc(100vh - 56px);
-        }
-
-            .youtube-sidebar .nav-link {
-                color: #030303;
-                border-radius: 8px;
-                margin: 4px 8px;
-                padding: 10px 16px;
-                font-size: 14px;
-            }
-
-                .youtube-sidebar .nav-link:hover {
-                    background-color: #f1f1f1;
-                }
-
-                .youtube-sidebar .nav-link.active {
-                    background-color: #f1f1f1;
-                    font-weight: 500;
-                }
-
-                .youtube-sidebar .nav-link i {
-                    color: #606060;
-                    margin-right: 16px;
-                }
-
-        /* Navbar cho màn hình nhỏ */
-        .youtube-mobile-nav .btn-light {
-            background-color: #fff !important;
-            border: none;
-            color: #606060;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-            .youtube-mobile-nav .btn-light:hover {
-                background-color: #f1f1f1 !important;
-            }
-
-        /* Nội dung chính */
-        .youtube-content {
-            background-color: #f9f9f9;
-        }
-
-        /* Footer */
-        .footer {
-            background-color: #f9f9f9;
-            border-top: 1px solid #e0e0e0;
-            padding: 16px 0;
-            text-align: center;
-        }
-
-        /* Lưới video (dùng chung) */
-        .youtube-video-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 16px;
-            padding: 16px;
-        }
-
-        /* Thẻ video (dùng chung) */
-        .youtube-video-card {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .thumbnail-link {
-            display: block;
-            position: relative;
-            width: 100%;
-            padding-top: 56.25%; /* Tỷ lệ 16:9 */
-        }
-
-        .thumbnail-img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 12px;
-        }
-
-        .video-details {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .video-title {
-            font-size: 16px;
-            font-weight: 500;
-            color: #030303;
-            text-decoration: none;
-            line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-            .video-title:hover {
-                color: #065fd4; /* Màu hover của YouTube */
-            }
-
-        .channel-name {
-            font-size: 13px;
-            color: #606060;
-            text-decoration: none;
-        }
-
-            .channel-name:hover {
-                color: #030303;
-            }
-
-        .video-stats {
-            font-size: 13px;
-            color: #606060;
-        }
-
-        /* Phân trang (dùng chung) */
-        .youtube-pagination {
-            font-size: 14px;
-        }
-
-            .youtube-pagination .nav-link {
-                color: #606060;
-            }
-
-            .youtube-pagination .btn-group .btn {
-                border-radius: 20px;
-                margin: 0 4px;
-                background-color: #f8f8f8;
-                border: 1px solid #ccc;
-                color: #606060;
-            }
-
-                .youtube-pagination .btn-group .btn:hover {
-                    background-color: #e0e0e0;
-                }
-    </style>
 </head>
 <body>
-    <!-- Header giống YouTube -->
+    <!-- Header -->
     <header class="youtube-header d-flex align-items-center justify-content-between p-2 bg-light border-bottom">
-        <!-- Logo -->
         <div class="d-flex align-items-center">
-            <button class="btn youtube-menu-btn me-2 d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+            <button class="btn youtube-menu-btn me-2" type="button" id="toggleSidebarBtn">
                 <i class="bi bi-list"></i>
             </button>
             <a href="/" class="youtube-logo d-flex align-items-center text-decoration-none">
@@ -306,14 +64,17 @@
         </div>
     </header>
 
+    <!-- Overlay cho sidebar -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <!-- Bố cục chính -->
-    <div class="d-lg-flex">
-        <!-- Sidebar cho màn hình lớn -->
-        <nav id="sidebarMenu" class="p-2 youtube-sidebar d-none d-lg-block collapse" style="width: 250px;">
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <nav id="sidebarMenu" class="p-2 youtube-sidebar collapse show">
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
                     <a asp-action="Index" asp-controller="Home" asp-route-page="Home" class="nav-link @Html.IsActivePage("Home")">
-                        <i class="bi bi-house-door me-2"></i><span class="nav-text">Trang chủ</span>
+                        <i class="bi bi-house-door-fill me-2"></i><span class="nav-text">Trang chủ</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -326,17 +87,17 @@
                 </li>
                 <li class="nav-item">
                     <a asp-action="Index" asp-controller="Home" asp-route-page="History" class="nav-link @Html.IsActivePage("History")">
-                        <i class="bi bi-clock-history me-2"></i><span class="nav-text">Lịch sử</span>
+                        <i class="bi bi-clock-fill me-2"></i><span class="nav-text">Lịch sử</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a asp-action="Index" asp-controller="Home" asp-route-page="Likes" class="nav-link @Html.IsActivePage("Likes")">
-                        <i class="bi bi-hand-thumbs-up me-2"></i><span class="nav-text">Video đã thích</span>
+                        <i class="bi bi-hand-thumbs-up-fill me-2"></i><span class="nav-text">Video đã thích</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a asp-action="Index" asp-controller="Home" asp-route-page="Dislikes" class="nav-link @Html.IsActivePage("Dislikes")">
-                        <i class="bi bi-hand-thumbs-down me-2"></i><span class="nav-text">Video không thích</span>
+                        <i class="bi bi-hand-thumbs-down-fill me-2"></i><span class="nav-text">Video không thích</span>
                     </a>
                 </li>
                 @if (User.IsInRole(SD.AdminRole))
@@ -393,7 +154,7 @@
         </nav>
 
         <!-- Nội dung chính -->
-        <div class="youtube-content px-2" style="width: 100%;">
+        <div class="youtube-content px-2">
             <main role="main" class="main pb-3">
                 @RenderBody()
             </main>
@@ -411,108 +172,171 @@
     <partial name="_Confirmation" />
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    @* <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script> *@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js" integrity="sha512-VEd+nq25CkR676O+pLBnDW09R7VQX9Mdiij052gVCp5yVH3jGtH70Ho/UUv4mJDsEdTvqRCFZg0NKGiojGnUCw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
-    <!-- JavaScript chung cho tìm kiếm -->
+    <!-- JavaScript cho sidebar và tìm kiếm -->
     <script>
-        // Xử lý gợi ý tìm kiếm
-        const searchInput = document.getElementById('searchInput');
-        const suggestionsContainer = document.getElementById('searchSuggestions');
-        const searchBtn = document.getElementById('searchBtn');
+        $(document).ready(function () {
+            const sidebar = $('#sidebarMenu');
+            const content = $('.youtube-content');
+            const toggleBtn = $('#toggleSidebarBtn');
+            const overlay = $('#sidebarOverlay');
 
-        searchInput.addEventListener('input', async function() {
-            const query = this.value.trim();
-            if (query.length < 2) {
-                suggestionsContainer.style.display = 'none';
-                return;
+            // Kiểm tra trang hiện tại
+            const currentPage = '@ViewData["CurrentPage"]';
+
+            // Ẩn sidebar trên Watch và Channel ở màn hình lớn
+            if (currentPage === 'Watch' /* || currentPage === 'Channel' */) {
+                sidebar.addClass('hidden');
+                content.addClass('full-width');
+            } else {
+                sidebar.removeClass('hidden');
+                content.removeClass('full-width');
             }
 
-            try {
-                const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`);
-                const suggestions = await response.json();
-
-                if (suggestions.length > 0) {
-                    suggestionsContainer.innerHTML = suggestions
-                        .map(s => `<div class="p-2 suggestion-item" role="option">${s}</div>`)
-                        .join('');
-                    suggestionsContainer.style.display = 'block';
+            // Toggle sidebar
+            toggleBtn.on('click', function () {
+                if ($(window).width() >= 992) {
+                    // Màn hình lớn: toggle ẩn/hiển thị sidebar
+                    sidebar.toggleClass('hidden');
+                    content.toggleClass('full-width');
                 } else {
+                    // Màn hình nhỏ: toggle sidebar dạng trượt
+                    sidebar.toggleClass('active');
+                    overlay.toggleClass('active');
+                }
+            });
+
+            // Đóng sidebar trên mobile khi nhấn overlay
+            overlay.on('click', function () {
+                sidebar.removeClass('active');
+                overlay.removeClass('active');
+            });
+
+            // Đóng sidebar khi click link trên mobile
+            sidebar.find('.nav-link').on('click', function () {
+                if ($(window).width() < 992) {
+                    sidebar.removeClass('active');
+                    overlay.removeClass('active');
+                }
+            });
+
+            // Xử lý khi thay đổi kích thước màn hình
+            $(window).on('resize', function () {
+                if ($(window).width() >= 992) {
+                    sidebar.removeClass('active');
+                    overlay.removeClass('active');
+                    if (currentPage === 'Watch' /* || currentPage === 'Channel' */) {
+                        sidebar.addClass('hidden');
+                        content.addClass('full-width');
+                    } else {
+                        sidebar.removeClass('hidden');
+                        content.removeClass('full-width');
+                    }
+                } else {
+                    sidebar.removeClass('hidden');
+                    content.removeClass('full-width');
+                }
+            });
+
+            // Xử lý gợi ý tìm kiếm
+            const searchInput = document.getElementById('searchInput');
+            const suggestionsContainer = document.getElementById('searchSuggestions');
+            const searchBtn = document.getElementById('searchBtn');
+
+            searchInput.addEventListener('input', async function () {
+                const query = this.value.trim();
+                if (query.length < 2) {
+                    suggestionsContainer.style.display = 'none';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`);
+                    const suggestions = await response.json();
+
+                    if (suggestions.length > 0) {
+                        suggestionsContainer.innerHTML = suggestions
+                            .map(s => `<div class="p-2 suggestion-item" role="option">${s}</div>`)
+                            .join('');
+                        suggestionsContainer.style.display = 'block';
+                    } else {
+                        suggestionsContainer.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('Error fetching suggestions:', error);
                     suggestionsContainer.style.display = 'none';
                 }
-            } catch (error) {
-                console.error('Error fetching suggestions:', error);
-                suggestionsContainer.style.display = 'none';
-            }
-        });
+            });
 
-        suggestionsContainer.addEventListener('click', function(e) {
-            if (e.target.classList.contains('suggestion-item')) {
-                searchInput.value = e.target.textContent;
-                suggestionsContainer.style.display = 'none';
-                searchBtn.click();
-            }
-        });
+            suggestionsContainer.addEventListener('click', function (e) {
+                if (e.target.classList.contains('suggestion-item')) {
+                    searchInput.value = e.target.textContent;
+                    suggestionsContainer.style.display = 'none';
+                    searchBtn.click();
+                }
+            });
 
-        document.addEventListener('click', function(e) {
-            if (!searchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
-                suggestionsContainer.style.display = 'none';
-            }
-        });
+            document.addEventListener('click', function (e) {
+                if (!searchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                    suggestionsContainer.style.display = 'none';
+                }
+            });
 
-        // Xử lý tìm kiếm bằng giọng nói
-        const voiceSearchBtn = document.getElementById('voiceSearchBtn');
-        voiceSearchBtn.addEventListener('click', function() {
-            if (!('webkitSpeechRecognition' in window)) {
-                alert('Trình duyệt của bạn không hỗ trợ tìm kiếm bằng giọng nói');
-                return;
-            }
+            // Xử lý tìm kiếm bằng giọng nói
+            const voiceSearchBtn = document.getElementById('voiceSearchBtn');
+            voiceSearchBtn.addEventListener('click', function () {
+                if (!('webkitSpeechRecognition' in window)) {
+                    alert('Trình duyệt của bạn không hỗ trợ tìm kiếm bằng giọng nói');
+                    return;
+                }
 
-            const recognition = new webkitSpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = 'vi-VN';
+                const recognition = new webkitSpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'vi-VN';
 
-            recognition.onstart = function() {
-                voiceSearchBtn.classList.add('recording');
-            };
+                recognition.onstart = function () {
+                    voiceSearchBtn.classList.add('recording');
+                };
 
-            recognition.onresult = function(event) {
-                const transcript = event.results[0][0].transcript;
-                searchInput.value = transcript;
-                voiceSearchBtn.classList.remove('recording');
-                searchBtn.click();
-            };
+                recognition.onresult = function (event) {
+                    const transcript = event.results[0][0].transcript;
+                    searchInput.value = transcript;
+                    voiceSearchBtn.classList.remove('recording');
+                    searchBtn.click();
+                };
 
-            recognition.onerror = function(event) {
-                console.error('Voice recognition error:', event.error);
-                voiceSearchBtn.classList.remove('recording');
-                alert('Có lỗi khi nhận diện giọng nói');
-            };
+                recognition.onerror = function (event) {
+                    console.error('Voice recognition error:', event.error);
+                    voiceSearchBtn.classList.remove('recording');
+                    alert('Có lỗi khi nhận diện giọng nói');
+                };
 
-            recognition.onend = function() {
-                voiceSearchBtn.classList.remove('recording');
-            };
+                recognition.onend = function () {
+                    voiceSearchBtn.classList.remove('recording');
+                };
 
-            recognition.start();
-        });
+                recognition.start();
+            });
 
-        // Xử lý tìm kiếm khi nhấn nút hoặc Enter
-        searchBtn.addEventListener('click', function() {
-            const query = searchInput.value.trim();
-            searchBy = query; // Nếu query trống, searchBy sẽ là chuỗi rỗng
-            getMyVideos();
-        });
-
-        searchInput.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter' || event.keyCode === 13) {
+            // Xử lý tìm kiếm khi nhấn nút hoặc Enter
+            searchBtn.addEventListener('click', function () {
                 const query = searchInput.value.trim();
-                searchBy = query; // Nếu query trống, searchBy sẽ là chuỗi rỗng
+                searchBy = query;
                 getMyVideos();
-            }
+            });
+
+            searchInput.addEventListener('keypress', function (event) {
+                if (event.key === 'Enter' || event.keyCode === 13) {
+                    const query = searchInput.value.trim();
+                    searchBy = query;
+                    getMyVideos();
+                }
+            });
         });
     </script>
 

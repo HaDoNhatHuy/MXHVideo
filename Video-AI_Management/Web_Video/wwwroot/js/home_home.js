@@ -44,7 +44,7 @@ function getMyVideos() {
                 // Next Page, Last Page, Previous Page, First Page buttons and functionalities
                 let firstPageBtn = '';
                 firstPageBtn += `<button type="button" class="btn btn-secondary btn-sm paginationBtn" ${result.pageNumber == 1 ? 'disabled' : ''} data-value="1" data-bs-toggle="tooltip" data-bs-placement="bottom" title="First Page">`;
-                firstPageBtn += '<i class="bi bi-chevron-bar-left"></i>';
+                firstPageBtn += '<i class="bi bi-skip-start-fill"></i>';
                 firstPageBtn += '</button>';
                 $('#paginationBtnGroup').append(firstPageBtn);
 
@@ -62,7 +62,7 @@ function getMyVideos() {
 
                 let lastPageBtn = '';
                 lastPageBtn += `<button type="button" class="btn btn-secondary btn-sm paginationBtn" ${result.pageNumber == result.totalPages ? 'disabled' : ''}  data-value="${result.totalPages}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Last Page">`;
-                lastPageBtn += '<i class="bi bi-chevron-bar-right"></i>';
+                lastPageBtn += '<i class="bi bi-skip-end-fill"></i>';
                 lastPageBtn += '</button>';
                 $('#paginationBtnGroup').append(lastPageBtn);
 

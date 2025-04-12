@@ -23,8 +23,11 @@
 <div class="d-flex justify-content-end me-3 mb-2 youtube-pagination">
     <ul class="navbar-nav me-3">
         <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle text-dark" data-bs-toggle="dropdown" id="itemsPerPageDropdown" role="button" aria-expanded="false">Số mục mỗi trang:</a>
+            <a class="nav-link dropdown-toggle text-dark youtube-items-per-page" data-bs-toggle="dropdown" id="itemsPerPageDropdown" role="button" aria-expanded="false">
+                <span id="itemsPerPageDisplay">Số mục mỗi trang: 10</span>
+            </a>
             <div class="dropdown-menu">
+                <div class="dropdown-header text-muted">Số mục mỗi trang</div>
                 <button type="button" class="dropdown-item pageSizeBtn" data-value="10">10</button>
                 <button type="button" class="dropdown-item pageSizeBtn" data-value="20">20</button>
                 <button type="button" class="dropdown-item pageSizeBtn" data-value="50">50</button>
@@ -34,15 +37,12 @@
     </ul>
     <ul class="navbar-nav me-3">
         <li class="nav-item">
-            <span class="nav-link text-dark" id="itemsPerPageDisplay"></span>
-        </li>
-    </ul>
-    <ul class="navbar-nav me-3">
-        <li class="nav-item">
             <span class="nav-link text-dark" id="paginationSummery"></span>
         </li>
     </ul>
-    <div id="paginationBtnGroup" class="btn-group"></div>
+    <div id="paginationBtnGroup" class="btn-group">
+        <!-- Các nút sẽ được tạo động bằng JavaScript -->
+    </div>
 </div>
 
 <style>
@@ -79,11 +79,11 @@
             background-color: #e0e0e0;
         }
 
-    .youtube-filter/btn.active {
-        background-color: #030303;
-        color: #fff;
-        border-color: #030303;
-    }
+        .youtube-filter-btn.active {
+            background-color: #030303;
+            color: #fff;
+            border-color: #030303;
+        }
 
     /* Lưới video */
     .youtube-video-grid {
@@ -161,28 +161,137 @@
     /* Phân trang */
     .youtube-pagination {
         font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 16px;
+        gap: 12px; /* Khoảng cách giữa các phần tử */
     }
+
+        /* Dropdown và thông tin phân trang */
+        .youtube-pagination .navbar-nav {
+            display: flex;
+            align-items: center;
+        }
 
         .youtube-pagination .nav-link {
             color: #606060;
+            font-size: 14px;
+            padding: 6px 12px;
+            text-decoration: none;
+            transition: color 0.2s ease;
         }
 
-        .youtube-pagination .btn-group .btn {
+            .youtube-pagination .nav-link:hover {
+                color: #030303;
+            }
+
+        /* Dropdown cho số mục mỗi trang */
+        .youtube-pagination .dropdown-toggle {
+            border: 1px solid #e0e0e0;
             border-radius: 20px;
-            margin: 0 4px;
             background-color: #f8f8f8;
-            border: 1px solid #ccc;
+            padding: 6px 12px;
+            font-size: 14px;
             color: #606060;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s ease;
+        }
+
+            .youtube-pagination .dropdown-toggle:hover {
+                background-color: #e0e0e0;
+            }
+
+            .youtube-pagination .dropdown-toggle::after {
+                margin-left: 8px;
+                border-top-color: #606060;
+            }
+
+    .youtube-items-per-page {
+        min-width: 180px; /* Đảm bảo đủ chỗ cho nội dung */
+    }
+
+    .youtube-pagination .dropdown-menu {
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: none;
+        padding: 8px 0;
+    }
+
+    .youtube-pagination .dropdown-header {
+        font-size: 13px;
+        color: #606060;
+        padding: 8px 16px;
+        font-weight: 500;
+    }
+
+    .youtube-pagination .dropdown-item {
+        font-size: 14px;
+        padding: 8px 16px;
+        color: #030303;
+        transition: background-color 0.2s ease;
+    }
+
+        .youtube-pagination .dropdown-item:hover {
+            background-color: #f1f1f1;
+        }
+
+        .youtube-pagination .dropdown-item.active {
+            background-color: #e0e0e0;
+            color: #030303;
+            font-weight: 500;
+        }
+
+    /* Nút chuyển trang */
+    .youtube-pagination .btn-group {
+        display: flex;
+        gap: 8px; /* Khoảng cách giữa các nút */
+    }
+
+        .youtube-pagination .btn-group .btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f8f8;
+            border: 1px solid #e0e0e0;
+            color: #606060;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
             .youtube-pagination .btn-group .btn:hover {
                 background-color: #e0e0e0;
+                border-color: #d0d0d0;
+                color: #030303;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
             }
 
             .youtube-pagination .btn-group .btn.active {
                 background-color: #606060;
-                color: #fff;
                 border-color: #606060;
+                color: #fff;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            }
+
+            /* Biểu tượng trong nút */
+            .youtube-pagination .btn-group .btn i {
+                font-size: 16px;
+                line-height: 1;
+            }
+
+            /* Vô hiệu hóa nút khi không thể nhấn */
+            .youtube-pagination .btn-group .btn.disabled {
+                background-color: #f1f1f1;
+                border-color: #e0e0e0;
+                color: #a0a0a0;
+                cursor: not-allowed;
+                box-shadow: none;
             }
 </style>
 

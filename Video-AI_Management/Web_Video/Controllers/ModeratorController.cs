@@ -18,7 +18,7 @@ namespace Web_Video.Controllers
         public async Task<IActionResult> AllVideos()
         {
             var moderatorVideo = await UnitOfWork.VideoRepo.GetAllAsync(includeProperties: "Category,Channel");
-            var toReturn = Mapper.Map<IEnumerable<VideoDisplayGridViewModel>>(moderatorVideo);
+            var toReturn = Mapper.Map<IEnumerable<VideoDisplayGridViewModel>>(moderatorVideo).OrderByDescending(moderatorVideo => moderatorVideo.UploadDate);
             return View(toReturn);
         }
         [HttpPost]

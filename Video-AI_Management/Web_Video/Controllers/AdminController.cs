@@ -34,6 +34,7 @@ namespace Web_Video.Controllers
             var users = await _userManager.Users
                 .Include(x => x.Channel)
                 .Where(x => x.UserName != "admin")
+                .OrderBy(x => x.FullName)
                 .ToListAsync();
             foreach (var user in users)
             {
@@ -271,7 +272,7 @@ namespace Web_Video.Controllers
             {
                 Id = x.Id,
                 Name = x.CategoryName,
-            });
+            }).OrderBy(x => x.Name);
             return Json(new ApiResponse(200, result: toReturn));
 
         }
@@ -317,7 +318,7 @@ namespace Web_Video.Controllers
                 }).ToListAsync();
             if (categoryVideoIdsAndThumbnails.Any())
             {
-                foreach(var video in categoryVideoIdsAndThumbnails)
+                foreach (var video in categoryVideoIdsAndThumbnails)
                 {
                     PhotoService.DeletePhotoLocally(video.Thumbnail);
                     await UnitOfWork.VideoRepo.RemoveVideoAsync(video.Id);

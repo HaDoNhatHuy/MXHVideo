@@ -1,6 +1,8 @@
 ﻿@model Web_Video.ViewModels.Video.VideoWatchViewModel
 @using Web_Video.Extensions
-
+@{
+    ViewData["CurrentPage"] = "Watch";
+}
 <style>
     /* Container cho video */
     .video-container {
@@ -266,7 +268,7 @@
         <div class="comments-section">
             @* <h5>@(Model.CommentVM.AvailableComments?.Count() ?? 0) Comments</h5> *@
             <partial name="_CommentPartial" model="Model.CommentVM" />
-         </div>
+        </div>
     </div>
 
 

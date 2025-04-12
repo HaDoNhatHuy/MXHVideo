@@ -7,11 +7,165 @@
         background-color: #f9f9f9;
     }
 
+    /* Channel form (Create/Edit) */
+    .channel-form-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 24px;
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+        .channel-form-container h2 {
+            font-size: 24px;
+            font-weight: 500;
+            color: #030303;
+            margin-bottom: 24px;
+        }
+
+    .avatar-section {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+
+    .avatar-preview {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid #e0e0e0;
+        display: block;
+        margin: 0 auto 12px;
+    }
+
+    .avatar-upload-btn {
+        background-color: #f1f1f1;
+        color: #606060;
+        border: none;
+        padding: 8px 16px;
+        font-size: 14px;
+        border-radius: 18px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .avatar-upload-btn:hover {
+            background-color: #e0e0e0;
+        }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+        .form-group label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #030303;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: #030303;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background-color: #fafafa;
+            transition: border-color 0.2s;
+        }
+
+            .form-group input:focus,
+            .form-group textarea:focus {
+                border-color: #065fd4;
+                outline: none;
+                background-color: #fff;
+            }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .form-group .text-danger {
+            font-size: 12px;
+            color: #cc0000;
+            margin-top: 4px;
+        }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .btn-submit {
+        background-color: #065fd4;
+        color: #fff;
+        border: none;
+        padding: 10px 24px;
+        font-size: 14px;
+        font-weight: 500;
+        border-radius: 18px;
+        text-transform: uppercase;
+        transition: background-color 0.2s;
+    }
+
+        .btn-submit:hover {
+            background-color: #003087;
+        }
+
+    .btn-cancel {
+        background-color: #f1f1f1;
+        color: #606060;
+        border: none;
+        padding: 10px 24px;
+        font-size: 14px;
+        font-weight: 500;
+        border-radius: 18px;
+        text-transform: uppercase;
+        transition: background-color 0.2s;
+    }
+
+        .btn-cancel:hover {
+            background-color: #e0e0e0;
+        }
+
+    /* Modal */
+    .modal-content {
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header {
+        border-bottom: 1px solid #e0e0e0;
+        padding: 16px 24px;
+    }
+
+    .modal-title {
+        font-size: 20px;
+        font-weight: 500;
+        color: #030303;
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .modal-footer {
+        border-top: 1px solid #e0e0e0;
+        padding: 16px 24px;
+    }
+
+    /* Các style khác giữ nguyên */
     .channel-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
+        margin: 20px 0;
     }
 
         .channel-header h4 {
@@ -159,6 +313,7 @@
             .pagination-section .btn-group .btn:disabled {
                 color: #b0b0b0;
             }
+
     /* Style cho tab About */
     .about-section {
         max-width: 800px;
@@ -204,9 +359,10 @@
             .about-section .edit-btn:hover {
                 background-color: #e0e0e0;
             }
+
     /* Style cho tab Analytics */
     .analytics-section {
-        max-width: 1000px;
+        max-width: 100%;
         margin: 20px 0;
     }
 
@@ -276,7 +432,7 @@
             }
 </style>
 
-<!-- Spinner toàn màn hình (tùy chọn) -->
+<!-- Spinner toàn màn hình -->
 <div id="globalLoading">
     <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
@@ -292,22 +448,27 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="editChannelForm" asp-action="EditChannel" asp-controller="Channel" method="post">
-                    <div class="mb-3">
+                <form id="editChannelForm" asp-action="EditChannel" asp-controller="Channel" method="post" enctype="multipart/form-data">
+                    <div class="avatar-section">
+                        <img id="editAvatarPreview" src="@(string.IsNullOrEmpty(Model.AvatarUrl) ? "/avatarUser/avt-default.jpg" : Model.AvatarUrl)" alt="Avatar Preview" class="avatar-preview" />
+                        <input type="file" id="editAvatarInput" name="Avatar" accept="image/*" style="display: none;" />
+                        <button type="button" class="avatar-upload-btn" onclick="document.getElementById('editAvatarInput').click()">Change Avatar</button>
+                    </div>
+                    <div class="form-group">
                         <label asp-for="Name" class="form-label">Channel name</label>
                         <input id="modal_profile_name" asp-for="Name" type="text" class="form-control" />
                         <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
-                    <div class="mb-3">
+                    <div class="form-group">
                         <label asp-for="About" class="form-label">About your channel</label>
-                        <textarea id="modal_profile_about" asp-for="About" type="text" class="form-control" rows="6"></textarea>
+                        <textarea id="modal_profile_about" asp-for="About" class="form-control" rows="6"></textarea>
                         <span asp-validation-for="About" class="text-danger"></span>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitEditChannelForm()">Update</button>
+                <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-submit" onclick="submitEditChannelForm()">Update</button>
             </div>
         </div>
     </div>
@@ -315,24 +476,29 @@
 
 @if (string.IsNullOrEmpty(Model.Name) || Model.Errors.Count > 0)
 {
-    <p>You don't have any channel yet. Use the form below to create your channel.</p>
-    <form asp-action="CreateChannel" class="mt-2">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label asp-for="Name" class="form-label"></label>
-                    <input asp-for="Name" type="text" class="form-control" />
-                    <span asp-validation-for="Name" class="text-danger"></span>
-                </div>
-                <div class="mb-3">
-                    <label asp-for="About" class="form-label"></label>
-                    <textarea asp-for="About" rows="6" class="form-control"></textarea>
-                    <span asp-validation-for="About" class="text-danger"></span>
-                </div>
-                <button class="btn btn-success" type="submit">Create</button>
+    <div class="channel-form-container">
+        <h2>Create Your Channel</h2>
+        <form asp-action="CreateChannel" method="post" enctype="multipart/form-data">
+            <div class="avatar-section">
+                <img id="createAvatarPreview" src="/images/default-avatar.png" alt="Avatar Preview" class="avatar-preview" />
+                <input type="file" id="createAvatarInput" name="Avatar" accept="image/*" style="display: none;" />
+                <button type="button" class="avatar-upload-btn" onclick="document.getElementById('createAvatarInput').click()">Upload Avatar</button>
             </div>
-        </div>
-    </form>
+            <div class="form-group">
+                <label asp-for="Name" class="form-label">Channel name</label>
+                <input asp-for="Name" type="text" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="About" class="form-label">About your channel</label>
+                <textarea asp-for="About" rows="6" class="form-control"></textarea>
+                <span asp-validation-for="About" class="text-danger"></span>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-submit">Create</button>
+            </div>
+        </form>
+    </div>
 }
 else
 {
@@ -464,6 +630,29 @@ else
 
             getMyVideos();
             getTotalViewsForAbout();
+
+            // Xử lý preview avatar khi upload
+            $('#createAvatarInput').on('change', function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#createAvatarPreview').attr('src', e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            $('#editAvatarInput').on('change', function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#editAvatarPreview').attr('src', e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
         });
 
         function getMyVideos() {

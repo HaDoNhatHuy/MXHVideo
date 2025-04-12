@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Web_Video.ViewModels.Channel
@@ -16,5 +17,7 @@ namespace Web_Video.ViewModels.Channel
         public string About { get; set; }
         public List<ModelErrorViewModel> Errors { get; set; } = new List<ModelErrorViewModel>();
         public int SubcribersCount { get; set; }
+        public IFormFile Avatar { get; set; } // Thêm thuộc tính để upload avatar
+        public string AvatarUrl { get; set; } // URL của avatar hiện tại (dùng khi chỉnh sửa)
     }
 }
