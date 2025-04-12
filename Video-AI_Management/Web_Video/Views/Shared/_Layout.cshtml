@@ -296,7 +296,7 @@
             </button>
             @if (User.Identity.IsAuthenticated)
             {
-                <a href="/Member/Channel" class="btn btn-outline-secondary me-2">Kênh của tôi</a>
+                <a asp-action="Index" asp-controller="Channel" class="btn btn-outline-secondary me-2">Kênh của tôi</a>
                 <a href="/Account/Logout" class="btn btn-outline-secondary">Đăng xuất</a>
             }
             else

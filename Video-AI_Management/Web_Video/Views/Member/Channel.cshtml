@@ -1,21 +1,28 @@
 ﻿@model Web_Video.ViewModels.Member.MemberChannelViewModel
 
-<div class="card border-primary mb-3">
-    <div class="card-header">
-        <div class="row">
-            <div class="col">
-                <h3 class="text-warning">@Model.Name</h3>
-                <span>Created on @Model.CreatedAt.ToShortDateString()</span>
+<div class="container-fluid youtube-content p-0">
+    <!-- Phần tiêu đề kênh và thông tin -->
+    <div class="channel-header bg-light p-4 border-bottom">
+        <div class="row align-items-center">
+            <!-- Tên kênh và ngày tạo -->
+            <div class="col-md-8">
+                <h1 class="channel-title fw-bold mb-1" style="font-size: 24px;">@Model.Name</h1>
+                <div class="channel-meta text-muted" style="font-size: 14px;">
+                    <span>Created on @Model.CreatedAt.ToShortDateString()</span> •
+                    <span>@Model.NumberOfSubscribers.ToString("N0") @(Model.NumberOfSubscribers > 1 ? "Subscribers" : "Subscriber")</span> •
+                    <span>@Model.NumberOfAvailableVideos.ToString("N0") @(Model.NumberOfAvailableVideos > 1 ? "Videos" : "Video")</span>
+                </div>
+                <p class="channel-about mt-2" style="font-size: 14px;">@Model.About</p>
             </div>
-            <div class="col text-end">
-                <section>
-                    @Model.NumberOfSubscribers.ToString("N0") @(Model.NumberOfSubscribers > 1 ? "Subscribers" : "Subscriber"),
-                    @Model.NumberOfAvailableVideos.ToString("N0") @(Model.NumberOfAvailableVideos > 1 ? "Videos" : "Video")
-                </section>
+            <!-- Nút Subscribe -->
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
                 @if (User.GetUserChannelId() != Model.ChannelId.ToString())
                 {
-                    <form method="post">
-                        <button asp-action="SubscribeChannel" asp-route-channelId="@Model.ChannelId" type="submit" class="btn btn@(Model.UserIsSubscribed == true ? "" : "-outline")-dark">
+                    <form method="post" class="d-inline">
+                        <button asp-action="SubscribeChannel" asp-route-channelId="@Model.ChannelId" type="submit"
+                                class="btn btn@(Model.UserIsSubscribed ? "" : "-outline")-dark rounded-pill px-4 py-2"
+                                style="font-size: 14px; font-weight: 500;">
+                            <i class="bi @(Model.UserIsSubscribed ? "bi-bell-fill" : "bi-bell") me-1"></i>
                             @(Model.UserIsSubscribed ? "Subscribed" : "Subscribe")
                         </button>
                     </form>
@@ -23,66 +30,60 @@
             </div>
         </div>
     </div>
-    <div class="card-body">
-        <h5 class="card-title">
-            @Model.About
-        </h5>
-        <hr />
-        <label>Available Videos</label>
 
-        <div class="p-4 border rounded table-wrapper">
-            <table id="tbData" class="table-striped table-bordered" style="width: 100%">
-                <thead class="thead-light">
-                    <tr class="table-info">
-                        <th>Title</th>
-                        <th>Created at</th>
-                        <th>Views</th>
-                    </tr>
-                </thead>
-            </table>
+    <!-- Phần danh sách video -->
+    <div class="channel-videos p-4">
+        <h5 class="section-title fw-bold mb-3" style="font-size: 18px;">Available Videos</h5>
+        <div class="youtube-video-grid" id="videosContainer">
+            <!-- Video sẽ được tải động bằng JavaScript -->
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        var dataTable;
-
         $(function () {
             loadAvailableVideos();
         });
 
         function loadAvailableVideos() {
-            dataTable = $('#tbData').DataTable({
-                "ajax": {
-                    "url": "/Member/GetMemberChannelVideos?channelId=" + '@Model.ChannelId',
-                    dataSrc: 'result'
+            $.ajax({
+                url: "/Member/GetMemberChannelVideos?channelId=" + '@Model.ChannelId',
+                type: "GET",
+                success: function (data) {
+                    const result = data.result;
+                    populateVideos(result);
                 },
-                "columns": [
-                    {
-                        "data": {
-                            title: "title"
-                        },
-                        "render": function (data) {
-                            var divTag = '<div class="row">';
-                            divTag += `<div class="col-lg-6 text-center"><a href="/Video/Watch/${data.id}" class="text-dark">${data.title}</a></div>`;
-                            divTag += `<div class="col-lg-6 text-center"><img src="${data.thumbnail}" class="card-img-top rounded preview-image" /></div>`;
-                            divTag += '</div>';
-                            return divTag;
-                        }
-                    },
-                    {
-                        "data": {
-                            channelName: "createdAtTimeAgo"
-                        },
-                        "render": function (data) {
-                            var spanTag = `<span class="text-dark"><span class="hidden">${data.uploadDate}</span> ${data.createdAtTimeAgo}</span>`;
-                            return spanTag;
-                        }
-                    },
-                    { "data": "numberOfViews" },
-                ]
+                error: function (xhr, status, error) {
+                    console.error('Error fetching videos:', error);
+                    $('#videosContainer').html('<div class="text-center p-3">Không có video nào để hiển thị.</div>');
+                }
             });
+        }
+
+        function populateVideos(videos) {
+            let html = '';
+
+            if (videos && videos.length > 0) {
+                videos.forEach(v => {
+                    html += `
+                        <div class="youtube-video-card">
+                            <a href="/Video/Watch/${v.id}" class="thumbnail-link">
+                                <img src="${v.thumbnail}" alt="Video Thumbnail" class="thumbnail-img" />
+                            </a>
+                            <div class="video-details">
+                                <a href="/Video/Watch/${v.id}" class="video-title">${v.title}</a>
+                                <div class="video-meta">
+                                    <span class="video-stats">${v.numberOfViews} lượt xem • ${v.createdAtTimeAgo}</span>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+            } else {
+                html = '<div class="text-center p-3">Không có video nào để hiển thị.</div>';
+            }
+
+            $('#videosContainer').html(html);
         }
     </script>
 }

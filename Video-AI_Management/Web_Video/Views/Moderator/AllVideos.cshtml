@@ -1,54 +1,155 @@
 ﻿@model IEnumerable<Web_Video.ViewModels.Moderator.VideoDisplayGridViewModel>
 
-<div class="card border-primary my-3">
-    <div class="card-header">All Videos (@Model.Count())</div>
-    <div class="card-body">
-        <div class="table-wrapper">
-            <table class="table table-striped" style="width: 100%">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Channel</th>
-                        <th>Category</th>
-                        <th>Created At</th>
-                        <th class="text-center">Delete</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model)
-                    {
-                        <tr>
-                            <td class="d-flex flex-column">
-                                <a asp-controller="Video" asp-action="Watch" asp-route-id="@item.Id" class="text-dark">
-                                    @item.Title
-                                </a>
-                                <img src="@item.Thumbnail" class="card-img-top rounded preview-image" />
-                            </td>
-                            <td>
-                                <a asp-controller="Member" asp-action="Channel" asp-route-id="@item.ChannelId" class="text-dark">
-                                    @item.ChannelName
-                                </a>
-                            </td>
-                            <td>@item.CategoryName</td>
-                            <td>@item.UploadDate.ToLongDateString()</td>
-                            <td class="text-center">
-                                <form method="post">
-                                    <button asp-action="DeleteVideo" asp-route-id="@item.Id" type="submit" class="btn btn-danger btn-sm">
-                                        Delete
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
+<div class="youtube-moderator-container p-4">
+    <!-- Tiêu đề -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="section-title fw-bold" style="font-size: 24px;">
+            Tất cả video (@Model.Count())
+        </h2>
+    </div>
 
-                    @if (Model.Count() == 0)
-                    {
-                        <tr>
-                            <td colspan="5" class="text-center">No Videos</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+    <!-- Danh sách video -->
+    <div class="youtube-video-list">
+        @if (!Model.Any())
+        {
+            <div class="text-center p-3">Không có video nào để hiển thị.</div>
+        }
+        else
+        {
+            @foreach (var item in Model)
+            {
+                <div class="video-card">
+                    <div class="video-content d-flex flex-column flex-md-row align-items-md-center gap-3">
+                        <!-- Thumbnail và tiêu đề -->
+                        <div class="video-preview">
+                            <a href="@Url.Action("Watch", "Video", new { id = item.Id })" class="thumbnail-link">
+                                <img src="@item.Thumbnail" alt="Video Thumbnail" class="thumbnail-img" />
+                            </a>
+                        </div>
+
+                        <!-- Thông tin video -->
+                        <div class="video-details flex-grow-1">
+                            <a href="@Url.Action("Watch", "Video", new { id = item.Id })" class="video-title fw-bold" style="font-size: 16px;">
+                                @item.Title
+                            </a>
+                            <div class="video-meta text-muted" style="font-size: 14px;">
+                                <span>
+                                    Kênh:
+                                    <a href="@Url.Action("Channel", "Member", new { id = item.ChannelId })" class="text-primary">
+                                        @item.ChannelName
+                                    </a>
+                                </span> •
+                                <span>Danh mục: @item.CategoryName</span> •
+                                <span>Ngày đăng: @item.UploadDate.ToLongDateString()</span>
+                            </div>
+                        </div>
+
+                        <!-- Nút hành động -->
+                        <div class="video-actions">
+                            <form method="post" class="d-inline">
+                                <button asp-action="DeleteVideo" asp-route-id="@item.Id" type="submit" class="btn btn-outline-danger rounded-pill px-3 py-1">
+                                    <i class="bi bi-trash me-1"></i> Xóa
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
     </div>
 </div>
+
+<style>
+    .youtube-moderator-container {
+        background-color: #f9f9f9;
+        font-family: 'Roboto', sans-serif;
+        min-height: calc(100vh - 56px);
+    }
+
+    .youtube-video-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .video-card {
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e0e0e0;
+        padding: 16px;
+        transition: transform 0.2s ease-in-out;
+    }
+
+        .video-card:hover {
+            transform: translateY(-4px);
+        }
+
+    .video-content {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .video-preview {
+        width: 100%;
+        max-width: 200px;
+    }
+
+    .thumbnail-link {
+        display: block;
+        position: relative;
+        padding-top: 56.25%; /* Tỷ lệ 16:9 */
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .thumbnail-img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .video-details {
+        flex-grow: 1;
+    }
+
+    .video-title {
+        display: block;
+        color: #030303;
+        text-decoration: none;
+        margin-bottom: 8px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+        .video-title:hover {
+            color: #065fd4;
+        }
+
+    .video-meta {
+        color: #606060;
+    }
+
+    .video-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-outline-danger {
+        border-color: #ff0000;
+        color: #ff0000;
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+        .btn-outline-danger:hover {
+            background-color: #ff0000;
+            color: #fff;
+        }
+</style>

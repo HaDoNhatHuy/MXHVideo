@@ -1,80 +1,98 @@
 ﻿@model IEnumerable<Web_Video.ViewModels.Admin.UserDisplayGridViewModel>
-<a class="btn btn-primary" asp-action="AddEditUser">Create User</a>
-<div class="card border-primary my-3">
-    <div class="card-header">All Users</div>
-    <div class="card-body">
-        <div class="table-wrapper">
-            <table class="table table-striped" style="width:100%">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Join Date</th>
-                        <th>Channel Name</th>
-                        <th>Assigned Roles</th>
-                        <th>Is Locked</th>
-                        <th class="text-center">
-                            Lock / Unlock
-                        </th>
-                        <th class="text-center">
-                            Edit / Delete
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var user in Model)
-                    {
-                        <tr>
-                            <td>@user.FullName</td>
-                            <td>@user.Email</td>
-                            <td>@user.JoinDate.ToLongDateString()</td>
-                            <td>
-                                <a asp-controller="Member" asp-action="Channel" asp-route-id="@user.ChannelId">@user.ChannelName</a>
-                            </td>
-                            <td>
-                                @for (int i = 0; i < user.AssignedRoles.Count(); i++)
-                                {
-                                    <span>
-                                        @user.AssignedRoles.ElementAt(i) @(i + 1 < user.AssignedRoles.Count() ? "," : "")
+
+<div class="youtube-admin-container p-4">
+    <!-- Tiêu đề và nút Create User -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="section-title fw-bold" style="font-size: 24px;">Tất cả người dùng</h2>
+        <a class="btn btn-danger rounded-pill px-4 py-2" asp-action="AddEditUser">
+            <i class="bi bi-person-plus me-1"></i> Tạo người dùng
+        </a>
+    </div>
+
+    <!-- Danh sách người dùng -->
+    <div class="youtube-user-list">
+        @if (!Model.Any())
+        {
+            <div class="text-center p-3">Không có người dùng nào để hiển thị.</div>
+        }
+        else
+        {
+            @foreach (var user in Model)
+            {
+                <div class="user-card">
+                    <div class="user-content">
+                        <!-- Thông tin người dùng -->
+                        <div class="user-info d-flex flex-column flex-md-row align-items-md-center gap-3">
+                            <div class="user-details flex-grow-1">
+                                <div class="user-name fw-bold" style="font-size: 16px;">
+                                    @user.FullName
+                                    <span class="user-locked ms-2" style="font-size: 14px;">
+                                        @if (user.IsLocked)
+                                        {
+                                            <i class="bi bi-lock-fill text-danger"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-unlock-fill text-success"></i>
+                                        }
                                     </span>
-                                }
-                            </td>
-                            <td>@user.IsLocked</td>
-                            <td class="text-center">
-                                <form method="post">
+                                </div>
+                                <div class="user-meta text-muted" style="font-size: 14px;">
+                                    <span>Email: @user.Email</span> •
+                                    <span>Ngày tham gia: @user.JoinDate.ToLongDateString()</span> •
+                                    <span>
+                                        Kênh:
+                                        <a href="@Url.Action("Channel", "Member", new { id = user.ChannelId })" class="text-primary">
+                                            @user.ChannelName
+                                        </a>
+                                    </span>
+                                </div>
+                                <div class="user-roles mt-1" style="font-size: 14px;">
+                                    Vai trò:
+                                    @for (int i = 0; i < user.AssignedRoles.Count(); i++)
+                                    {
+                                        <span class="badge bg-primary rounded-pill me-1">
+                                            @user.AssignedRoles.ElementAt(i)
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Nút hành động -->
+                            <div class="user-actions d-flex flex-wrap gap-2">
+                                <form method="post" class="d-inline">
                                     @if (!user.IsLocked)
                                     {
-                                        <button asp-action="LockUser" asp-route-id="@user.Id" class="btn btn-warning btn-sm me-2">
-                                            Lock
+                                        <button asp-action="LockUser" asp-route-id="@user.Id" class="btn btn-outline-warning rounded-pill px-3 py-1">
+                                            <i class="bi bi-lock me-1"></i> Khóa
                                         </button>
                                     }
                                     else
                                     {
-                                        <button asp-action="UnlockUser" asp-route-id="@user.Id" class="btn btn-info btn-sm me-2">
-                                            Unlock
+                                        <button asp-action="UnlockUser" asp-route-id="@user.Id" class="btn btn-outline-info rounded-pill px-3 py-1">
+                                            <i class="bi bi-unlock me-1"></i> Mở khóa
                                         </button>
                                     }
                                 </form>
-                            </td>
-                            <td class="text-center">
-                                <a class="btn btn-primary btn-sm me-2" asp-action="AddEditUser" asp-route-id="@user.Id">
-                                    Edit
+                                <a class="btn btn-outline-primary rounded-pill px-3 py-1" asp-action="AddEditUser" asp-route-id="@user.Id">
+                                    <i class="bi bi-pencil me-1"></i> Sửa
                                 </a>
-                                <a class="btn btn-danger btn-sm me-2" onclick="deleteUser('@user.Id', '@user.FullName')">
-                                    Delete
-                                </a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                                <button class="btn btn-outline-danger rounded-pill px-3 py-1" onclick="deleteUser('@user.Id', '@user.FullName')">
+                                    <i class="bi bi-trash me-1"></i> Xóa
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
     </div>
 </div>
+
 @section Scripts {
     <script>
         async function deleteUser(id, name) {
-            const result = await confirmation('Warning: You are about to permanently delete user "' + name + '". Once deleted, this action cannot be restored. Are you sure you want to delete?');
+            const result = await confirmation('Cảnh báo: Bạn sắp xóa vĩnh viễn người dùng "' + name + '". Hành động này không thể khôi phục. Bạn có chắc chắn muốn xóa không?');
             if (result) {
                 $.ajax({
                     url: "/Admin/DeleteUser/" + id,
@@ -85,9 +103,134 @@
                         } else {
                             displayNotification(data.isSuccess, data.title, data.message, 'modal');
                         }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error deleting user:', error);
+                        displayNotification(false, 'Lỗi', 'Có lỗi xảy ra khi xóa người dùng.', 'modal');
                     }
                 });
             }
         }
     </script>
+
+    <style>
+        .youtube-admin-container {
+            background-color: #f9f9f9;
+            font-family: 'Roboto', sans-serif;
+            min-height: calc(100vh - 56px);
+        }
+
+        .youtube-user-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .user-card {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+            padding: 16px;
+            transition: transform 0.2s ease-in-out;
+        }
+
+            .user-card:hover {
+                transform: translateY(-4px);
+            }
+
+        .user-content {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .user-details {
+            flex-grow: 1;
+        }
+
+        .user-name {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-meta {
+            color: #606060;
+        }
+
+        .user-roles .badge {
+            font-size: 12px;
+            padding: 4px 8px;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-danger {
+            background-color: #ff0000;
+            border: none;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+            .btn-danger:hover {
+                background-color: #e60000;
+            }
+
+        .btn-outline-danger {
+            border-color: #ff0000;
+            color: #ff0000;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+            .btn-outline-danger:hover {
+                background-color: #ff0000;
+                color: #fff;
+            }
+
+        .btn-outline-primary {
+            border-color: #065fd4;
+            color: #065fd4;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+            .btn-outline-primary:hover {
+                background-color: #065fd4;
+                color: #fff;
+            }
+
+        .btn-outline-warning {
+            border-color: #fbbc05;
+            color: #fbbc05;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+            .btn-outline-warning:hover {
+                background-color: #fbbc05;
+                color: #fff;
+            }
+
+        .btn-outline-info {
+            border-color: #34a853;
+            color: #34a853;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+            .btn-outline-info:hover {
+                background-color: #34a853;
+                color: #fff;
+            }
+    </style>
 }

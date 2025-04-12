@@ -85,14 +85,17 @@ namespace DataAccess.Repo
                     Views = x.Viewers.Count()
                 })
                 .AsQueryable();
+
             if (parameters.CategoryId != Guid.Empty)
             {
                 query = query.Where(x => x.CategoryId == parameters.CategoryId);
             }
-            if (!string.IsNullOrEmpty(parameters.SearchBy))
+
+            if (!string.IsNullOrEmpty(parameters.SearchBy) && parameters.SearchBy.ToLower() != "all")
             {
                 query = query.Where(x => x.Title.ToLower().Contains(parameters.SearchBy) || x.Description.ToLower().Contains(parameters.SearchBy));
             }
+
             return await PaginatedList<VideoForHomeGridDto>.CreateAsync(query.AsNoTracking(), parameters.PageNumber, parameters.PageSize);
         }
 

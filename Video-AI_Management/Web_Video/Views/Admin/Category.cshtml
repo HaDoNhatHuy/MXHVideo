@@ -1,17 +1,16 @@
-﻿<div class="p-4">
-    <h2>Categories</h2>
-    <button type="button" class="btn btn-primary actions" onclick="createNewRecord()">Create</button>
-    <table class="table table-striped table-bordered mt-2">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody">
-        </tbody>
-    </table>
+﻿<div class="youtube-admin-container p-4">
+    <!-- Tiêu đề và nút Create -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="section-title fw-bold" style="font-size: 24px;">Danh mục</h2>
+        <button type="button" class="btn btn-danger rounded-pill px-4 py-2 actions" onclick="createNewRecord()">
+            <i class="bi bi-plus-circle me-1"></i> Tạo mới
+        </button>
+    </div>
+
+    <!-- Danh sách danh mục -->
+    <div class="youtube-category-list" id="categoryList">
+        <!-- Danh mục sẽ được hiển thị động bằng JavaScript -->
+    </div>
 </div>
 
 @section Scripts {
@@ -27,112 +26,126 @@
                 url: "/Admin/GetCategories",
                 type: "GET",
                 success: function (data) {
-                    // console.log(data);
-                    $('#tableBody').empty();
                     categories = data.result;
-                    categories.map((value, index) => {
-                        const trTag = `<tr id="trId_${index}"><td></td><td></td><td></td></tr>"`;
-                        $('#tableBody').append(trTag);
-                        displayTableRow('display', index, value.id, value.name);
-                    });
+                    displayCategories();
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error fetching categories:', error);
+                    $('#categoryList').html('<div class="text-center p-3">Có lỗi xảy ra khi tải danh sách danh mục.</div>');
                 }
             });
         }
 
-        function displayTableRow(mode, index, id, name) {
-            $('#trId_' + index).empty();
-
-            let innerHtml = "";
-            innerHtml += `<td>${index + 1}</td>`; // Thay Id thành số thứ tự (STT)
-
-            if (mode == 'display') {
-                $('.actions').prop('disabled', false);
-                innerHtml += '<td>';
-                innerHtml += `<input id="inputId_${index}" type="text" class="form-control" value="${name}" disabled />`;
-                innerHtml += '</td>';
-                innerHtml += '<td>';
-                innerHtml += `<button onclick="displayTableRow('edit', ${index}, '${id}', '${name}')" class="btn btn-warning text-white me-2 actions">Edit</button>`;
-                innerHtml += `<button onclick="deleteRecord('${id}', '${name}')" class="btn btn-danger text-white me-2 actions">Delete</button>`;
-                innerHtml += '</td>';
-            } else {
-                $('.actions').prop('disabled', true);
-                innerHtml += '<td>';
-                innerHtml += `<input id="inputId_${index}" type="text" class="form-control" value="${name}" />`;
-                innerHtml += `<span class="text-danger" id="validateionTextId_${index}"></span>`;
-                innerHtml += '</td>';
-                innerHtml += '<td>';
-                innerHtml += `<button onclick="save(${index}, '${id}')" class="btn btn-success text-white me-2">Save</button>`;
-                innerHtml += `<button onclick="displayTableRow('display', ${index}, '${id}', '${name}')" class="btn btn-danger text-white">Cancel</button>`;
-                innerHtml += '</td>';
+        function displayCategories() {
+            $('#categoryList').empty();
+            if (categories.length === 0) {
+                $('#categoryList').html('<div class="text-center p-3">Không có danh mục nào để hiển thị.</div>');
+                return;
             }
 
-            $('#trId_' + index).append(innerHtml);
+            categories.forEach((value, index) => {
+                const cardHtml = `
+                    <div class="category-card" id="cardId_${index}">
+                        <div class="category-content d-flex align-items-center">
+                            <span class="category-index me-3" style="font-size: 16px; color: #606060;">${index + 1}</span>
+                            <div class="category-name flex-grow-1" id="nameId_${index}">${value.name}</div>
+                            <div class="category-actions">
+                                <button class="btn btn-outline-warning rounded-pill px-3 py-1 me-2 actions" onclick="displayTableRow('edit', ${index}, '${value.id}', '${value.name}')">
+                                    <i class="bi bi-pencil me-1"></i> Sửa
+                                </button>
+                                <button class="btn btn-outline-danger rounded-pill px-3 py-1 actions" onclick="deleteRecord('${value.id}', '${value.name}')">
+                                    <i class="bi bi-trash me-1"></i> Xóa
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+                $('#categoryList').append(cardHtml);
+            });
+        }
+
+        function displayTableRow(mode, index, id, name) {
+            const $card = $(`#cardId_${index}`);
+            $card.empty();
+
+            let innerHtml = '';
+            if (mode === 'display') {
+                $('.actions').prop('disabled', false);
+                innerHtml = `
+                    <div class="category-content d-flex align-items-center">
+                        <span class="category-index me-3" style="font-size: 16px; color: #606060;">${index + 1}</span>
+                        <div class="category-name flex-grow-1" id="nameId_${index}">${name}</div>
+                        <div class="category-actions">
+                            <button class="btn btn-outline-warning rounded-pill px-3 py-1 me-2 actions" onclick="displayTableRow('edit', ${index}, '${id}', '${name}')">
+                                <i class="bi bi-pencil me-1"></i> Sửa
+                            </button>
+                            <button class="btn btn-outline-danger rounded-pill px-3 py-1 actions" onclick="deleteRecord('${id}', '${name}')">
+                                <i class="bi bi-trash me-1"></i> Xóa
+                            </button>
+                        </div>
+                    </div>`;
+            } else {
+                $('.actions').prop('disabled', true);
+                innerHtml = `
+                    <div class="category-content d-flex align-items-center">
+                        <span class="category-index me-3" style="font-size: 16px; color: #606060;">${index + 1}</span>
+                        <div class="category-name flex-grow-1">
+                            <input type="text" class="form-control rounded-pill" id="inputId_${index}" value="${name}" />
+                            <span class="text-danger" id="validateionTextId_${index}" style="font-size: 14px;"></span>
+                        </div>
+                        <div class="category-actions">
+                            <button class="btn btn-success rounded-pill px-3 py-1 me-2" onclick="save(${index}, '${id}')">
+                                <i class="bi bi-check-circle me-1"></i> Lưu
+                            </button>
+                            <button class="btn btn-danger rounded-pill px-3 py-1" onclick="displayTableRow('display', ${index}, '${id}', '${name}')">
+                                <i class="bi bi-x-circle me-1"></i> Hủy
+                            </button>
+                        </div>
+                    </div>`;
+            }
+
+            $card.append(innerHtml);
         }
 
         function createNewRecord() {
             $('.actions').prop('disabled', true);
             const index = categories.length;
-            let innerHtml = `<tr id="trId_${index}">`;
-            innerHtml += '<td></td>';
-            innerHtml += '<td>';
-            innerHtml += `<input type="text" class="form-control" id="inputId_${index}" />`;
-            innerHtml += `<span class="text-danger" id="validateionTextId_${index}"></span>`;
-            innerHtml += '</td>';
-            innerHtml += `<td id="tdActionId_${index}"></td>`;
-            $('#tableBody').append(innerHtml);
-
-            const $tdActionId = $('#tdActionId_' + index);
-            const $saveButton = $('<button class="btn btn-success text-white me-2">Save</button>');
-            const $cancelButton = $('<button class="btn btn-danger text-white">Cancel</button>');
-
-            $tdActionId.append($saveButton);
-            $tdActionId.append($cancelButton);
-
-            $saveButton.on('click', function () {
-                save(index);
-            });
-
-            $cancelButton.on('click', function () {
-                $('#trId_' + index).remove();
-                $('.actions').prop('disabled', false);
-            });
+            const cardHtml = `
+                <div class="category-card" id="cardId_${index}">
+                    <div class="category-content d-flex align-items-center">
+                        <span class="category-index me-3" style="font-size: 16px; color: #606060;">${index + 1}</span>
+                        <div class="category-name flex-grow-1">
+                            <input type="text" class="form-control rounded-pill" id="inputId_${index}" />
+                            <span class="text-danger" id="validateionTextId_${index}" style="font-size: 14px;"></span>
+                        </div>
+                        <div class="category-actions" id="tdActionId_${index}">
+                            <button class="btn btn-success rounded-pill px-3 py-1 me-2" onclick="save(${index})">
+                                <i class="bi bi-check-circle me-1"></i> Lưu
+                            </button>
+                            <button class="btn btn-danger rounded-pill px-3 py-1" onclick="cancelNewRecord(${index})">
+                                <i class="bi bi-x-circle me-1"></i> Hủy
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            $('#categoryList').append(cardHtml);
         }
 
-        // function save(index, id) {
-        //     const name = $('#inputId_' + index).val();
+        function cancelNewRecord(index) {
+            $(`#cardId_${index}`).remove();
+            $('.actions').prop('disabled', false);
+        }
 
-        //     if (name !== "") {
-        //         const model = {
-        //             id, name
-        //         };
-
-        //         $.ajax({
-        //             url: "/Admin/AddEditCategory",
-        //             type: "POST",
-        //             data: model,
-        //             success: function (data) {
-        //                 displayNotification(data.isSuccess, data.title, data.message, 'toastr');
-        //                 if (data.isSuccess) {
-        //                     getCategories();
-        //                 }
-        //             }
-        //         })
-        //     } else {
-        //         $('#validateionTextId_' + index).text('Name is required');
-        //     }
-        // }
         function save(index, id) {
-            const name = $('#inputId_' + index).val().trim();
+            const name = $(`#inputId_${index}`).val().trim();
 
             if (!name) {
-                $('#validateionTextId_' + index).text('Name is required');
+                $(`#validateionTextId_${index}`).text('Tên danh mục là bắt buộc');
                 return;
             }
 
-            // Kiểm tra trùng tên
             const isDuplicate = categories.some(cat => cat.name.toLowerCase() === name.toLowerCase() && cat.id !== id);
             if (isDuplicate) {
-                $('#validateionTextId_' + index).text('Category name already exists');
+                $(`#validateionTextId_${index}`).text('Tên danh mục đã tồn tại');
                 return;
             }
 
@@ -147,12 +160,16 @@
                     if (data.isSuccess) {
                         getCategories();
                     }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error saving category:', error);
+                    displayNotification(false, 'Lỗi', 'Có lỗi xảy ra khi lưu danh mục.', 'toastr');
                 }
             });
         }
 
         async function deleteRecord(id, name) {
-            const result = await confirmation('Are you sure you want to remove ' + name + '?');
+            const result = await confirmation('Bạn có chắc chắn muốn xóa danh mục ' + name + ' không?');
             if (result) {
                 $.ajax({
                     url: "/Admin/DeleteCategory/" + id,
@@ -160,10 +177,108 @@
                     success: function (data) {
                         displayNotification(data.isSuccess, data.title, data.message, 'modal');
                         getCategories();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error deleting category:', error);
+                        displayNotification(false, 'Lỗi', 'Có lỗi xảy ra khi xóa danh mục.', 'modal');
                     }
                 });
             }
         }
-
     </script>
+
+    <style>
+        .youtube-admin-container {
+            background-color: #f9f9f9;
+            font-family: 'Roboto', sans-serif;
+            min-height: calc(100vh - 56px);
+        }
+
+        .youtube-category-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .category-card {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+            padding: 16px;
+            transition: transform 0.2s ease-in-out;
+        }
+
+            .category-card:hover {
+                transform: translateY(-4px);
+            }
+
+        .category-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .category-name {
+            font-size: 16px;
+            color: #030303;
+            flex-grow: 1;
+        }
+
+            .category-name input {
+                font-size: 16px;
+                padding: 8px 16px;
+            }
+
+        .category-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-danger {
+            background-color: #ff0000;
+            border: none;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+            .btn-danger:hover {
+                background-color: #e60000;
+            }
+
+        .btn-outline-danger {
+            border-color: #ff0000;
+            color: #ff0000;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+            .btn-outline-danger:hover {
+                background-color: #ff0000;
+                color: #fff;
+            }
+
+        .btn-success {
+            background-color: #34a853;
+            border: none;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+            .btn-success:hover {
+                background-color: #2e9445;
+            }
+
+        .btn-outline-warning {
+            border-color: #fbbc05;
+            color: #fbbc05;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+            .btn-outline-warning:hover {
+                background-color: #fbbc05;
+                color: #fff;
+            }
+    </style>
 }

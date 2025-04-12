@@ -1,7 +1,7 @@
 ﻿let pageNumber = 1;
 let pageSize = 10;
 let searchBy = '';
-let categoryId = 0;
+let categoryId = null; // Đổi mặc định thành null
 let utcDateTimeNowString;
 
 function getUtcDateTimeNow() {
@@ -17,7 +17,7 @@ function getMyVideos() {
         pageNumber,
         pageSize,
         searchBy,
-        categoryId
+        categoryId // categoryId sẽ là null khi không chọn danh mục
     }
 
     $.ajax({
@@ -92,7 +92,7 @@ function getMyVideos() {
     // On dropdown "CategoryDropdown" selection event
     $('#categoryDropdown').on('change', function () {
         var selectedValue = $(this).val();
-        categoryId = selectedValue;
+        categoryId = selectedValue === '0' ? null : selectedValue; // Nếu chọn "Tất cả danh mục", categoryId là null
         getMyVideos();
     });
 
@@ -101,6 +101,11 @@ function getMyVideos() {
         $('.youtube-filter-btn').removeClass('active');
         $(this).addClass('active');
         searchBy = $(this).data('filter');
+        // Nếu nhấn nút "Tất cả", đặt lại categoryId về null để bỏ lọc theo danh mục
+        if (searchBy === 'all') {
+            categoryId = null;
+            $('#categoryDropdown').val('0'); // Đặt lại dropdown về giá trị mặc định
+        }
         getMyVideos();
     });
 
