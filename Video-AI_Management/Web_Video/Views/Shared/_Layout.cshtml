@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - YouTube Clone</title>
+    <link rel="icon" type="image/x-icon" href="/icons/youtube.png">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" integrity="sha512-vKMx8UnXk60zUwyUnUPM3HbQo8QfmNx7+ltw8Pm5zLusl1XIfwcxo8DbWCqMGKaWeNxWA8yrx5v3SaVpMvR3CA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -189,7 +190,7 @@
             const currentPage = '@ViewData["CurrentPage"]';
 
             // Ẩn sidebar trên Watch và Channel ở màn hình lớn
-            if (currentPage === 'Watch' /* || currentPage === 'Channel' */) {
+            if (currentPage === 'Watch' /* || currentPage === 'Login' || currentPage === 'Register' */) {
                 sidebar.addClass('hidden');
                 content.addClass('full-width');
             } else {
@@ -229,7 +230,7 @@
                 if ($(window).width() >= 992) {
                     sidebar.removeClass('active');
                     overlay.removeClass('active');
-                    if (currentPage === 'Watch' /* || currentPage === 'Channel' */) {
+                    if (currentPage === 'Watch' /* || currentPage === 'Login' || currentPage === 'Register' */) {
                         sidebar.addClass('hidden');
                         content.addClass('full-width');
                     } else {

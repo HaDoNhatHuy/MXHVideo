@@ -52,7 +52,7 @@
         }
 
         .comment-actions .btn-comment {
-            background-color: #065fd4; /* Màu xanh của YouTube */
+            background-color: #065fd4;
             color: #fff;
         }
 
@@ -99,29 +99,56 @@
             margin: 0;
         }
 
-    /* Nút Edit và Delete */
-    .comment-actions-owner {
-        display: none;
-        margin-top: 5px;
+    /* Biểu tượng ba chấm và menu */
+    .comment-actions-wrapper {
+        position: absolute;
+        right: 0;
+        top: 0;
     }
 
-    .comment-item:hover .comment-actions-owner {
-        display: flex;
-        gap: 10px;
-    }
-
-    .comment-actions-owner button {
-        font-size: 0.85rem;
-        color: #606060;
+    .btn-more-actions {
         background: none;
         border: none;
-        padding: 5px 10px;
-        border-radius: 2px;
+        color: #606060;
+        padding: 5px;
+        display: none;
     }
 
-        .comment-actions-owner button:hover {
-            background-color: #f1f1f1;
+    .comment-item:hover .btn-more-actions {
+        display: block;
+    }
+
+    .comment-actions-menu {
+        position: absolute;
+        right: 0;
+        top: 25px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        display: none;
+    }
+
+        .comment-actions-menu button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            font-size: 0.85rem;
+            color: #606060;
+            background: none;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 2px;
         }
+
+            .comment-actions-menu button:hover {
+                background-color: #f1f1f1;
+            }
+
+    .comment-actions-owner {
+        display: none !important;
+    }
 
     /* Form chỉnh sửa bình luận */
     .edit-comment-form {
@@ -161,120 +188,84 @@
             background-color: #065fd4;
             color: #fff;
         }
+
+    .edited-label {
+        font-size: 0.85rem;
+        color: #606060;
+        margin-left: 5px;
+    }
 </style>
 
 <div class="container my-4">
     <!-- Tiêu đề số lượng bình luận -->
-    <h2 class="comments-header">@SD.FormatView(Model.AvailableComments.Count()) @(Model.AvailableComments.Count() > 1 ? "Comments" : "Comment")</h2>
+    <h2 class="comments-header">@SD.FormatView(Model.AvailableComments.Count()) @(Model.AvailableComments.Count() > 1 ? "Bình luận" : "Bình luận")</h2>
 
     <!-- Ô nhập bình luận -->
     <div class="comment-input">
         <img src="/avatarUser/avt-default.jpg" alt="User Avatar" /> <!-- Thay bằng ảnh đại diện người dùng -->
-        <form method="post" asp-action="CreateComment" asp-controller="Video" style="flex: 1;">
-            <input type="text" asp-for="PostComment.VideoId" hidden />
-            <input type="text" id="textComment" asp-for="PostComment.Content" class="form-control" placeholder="Add a comment..." />
+        <form id="create-comment-form" style="flex: 1;">
+            <input type="hidden" name="PostComment.VideoId" value="@Model.PostComment.VideoId" />
+            <input type="hidden" name="__RequestVerificationToken" value="@Html.AntiForgeryToken().ToString()" />
+            <input type="text" id="textComment" name="PostComment.Content" class="form-control" placeholder="Add a comment..." />
             <div class="comment-actions" id="sectionCommentBtns">
-                <button id="btnCancel" type="button" class="btn btn-cancel">Cancel</button>
-                <button id="btnComment" type="submit" class="btn btn-comment">Comment</button>
+                <button id="btnCancel" type="button" class="btn btn-cancel">Hủy</button>
+                <button id="btnComment" type="submit" class="btn btn-comment">Bình luận</button>
             </div>
         </form>
     </div>
 
     <!-- Danh sách bình luận -->
-    @foreach (var comment in Model.AvailableComments)
-    {
-        var isOwner = comment.AppUserId == User.GetUserId();
-        <div class="comment-item" id="comment-@comment.Id">
-            <img src="/avatarUser/avt-default.jpg" alt="User Avatar" /> <!-- Thay bằng ảnh đại diện người dùng -->
-            <div class="comment-content">
-                <div class="comment-header">
-                    @if (comment.FromChannelId != Guid.Empty)
-                    {
-                        <a asp-controller="Member" asp-action="Channel" asp-route-id="@comment.FromChannelId" class="comment-author">@comment.FromName</a>
-                    }
-                    else
-                    {
-                        <span class="comment-author">@comment.FromName</span>
-                    }
-                    <span class="comment-time">@SD.TimeAgo(comment.PostedAt)</span>
-                </div>
-                <p class="comment-text">@comment.Content</p>
+    <div id="comments-list">
+        @foreach (var comment in Model.AvailableComments)
+        {
+            var isOwner = comment.AppUserId == User.GetUserId();
+            <div class="comment-item" id="comment-@comment.Id">
+                <img src="/avatarUser/avt-default.jpg" alt="User Avatar" />
+                <div class="comment-content">
+                    <div class="comment-header">
+                        @if (comment.FromChannelId != Guid.Empty)
+                        {
+                            <a asp-controller="Member" asp-action="Channel" asp-route-id="@comment.FromChannelId" class="comment-author">@comment.FromName</a>
+                        }
+                        else
+                        {
+                            <span class="comment-author">@comment.FromName</span>
+                        }
+                        <span class="comment-time">
+                            @SD.TimeAgo(comment.PostedAt)
+                            @if (comment.IsEdited)
+                            {
+                                <span class="edited-label">(đã chỉnh sửa)</span>
+                            }
+                        </span>
+                    </div>
+                    <p class="comment-text">@comment.Content</p>
 
-                <!-- Nút Sửa và Xóa (chỉ hiển thị khi hover) -->
-                @if (isOwner)
-                {
-                    <div class="comment-actions-owner">
-                        <button class="btn btn-edit-comment" data-comment-id="@comment.Id">Edit</button>
-                        <form method="post" asp-action="DeleteComment" asp-controller="Video" style="display: inline;">
+                    @if (isOwner)
+                    {
+                        <div class="comment-actions-wrapper">
+                            <button class="btn btn-more-actions" data-comment-id="@comment.Id">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <div class="comment-actions-menu" id="actions-menu-@comment.Id" style="display: none;">
+                                <button class="btn btn-edit-comment" data-comment-id="@comment.Id">Sửa</button>
+                                <button class="btn btn-delete-comment" data-comment-id="@comment.Id" data-video-id="@Model.PostComment.VideoId">Xóa</button>
+                            </div>
+                        </div>
+
+                        <form class="edit-comment-form" id="edit-form-@comment.Id">
                             <input type="hidden" name="commentId" value="@comment.Id" />
                             <input type="hidden" name="videoId" value="@Model.PostComment.VideoId" />
                             @Html.AntiForgeryToken()
-                            <button type="submit" class="btn" onclick="return confirm('Are you sure you want to delete this comment?')">Delete</button>
+                            <textarea name="content" class="form-control" rows="2">@comment.Content</textarea>
+                            <div class="edit-actions">
+                                <button type="button" class="btn btn-cancel btn-cancel-edit" data-comment-id="@comment.Id">Hủy</button>
+                                <button type="submit" class="btn btn-save">Lưu</button>
+                            </div>
                         </form>
-                    </div>
-
-                    <!-- Form chỉnh sửa bình luận (ẩn ban đầu) -->
-                    <form method="post" asp-action="EditComment" asp-controller="Video" class="edit-comment-form" id="edit-form-@comment.Id">
-                        <input type="hidden" name="commentId" value="@comment.Id" />
-                        <input type="hidden" name="videoId" value="@Model.PostComment.VideoId" />
-                        @Html.AntiForgeryToken()
-                        <textarea name="content" class="form-control" rows="2">@comment.Content</textarea>
-                        <div class="edit-actions">
-                            <button type="button" class="btn btn-cancel btn-cancel-edit" data-comment-id="@comment.Id">Cancel</button>
-                            <button type="submit" class="btn btn-save">Save</button>
-                        </div>
-                    </form>
-                }
+                    }
+                </div>
             </div>
-        </div>
-    }
+        }
+    </div>
 </div>
-
-@section Scripts {
-    <script>
-        // Hiển thị/Ẩn form chỉnh sửa khi nhấn nút Edit
-            document.querySelectorAll('.btn-edit-comment').forEach(button => {
-            button.addEventListener('click', function () {
-                const commentId = this.getAttribute('data-comment-id');
-                console.log('Edit button clicked, commentId:', commentId);
-
-                const commentText = document.querySelector(`#comment-${commentId} .comment-text`);
-                const actionsOwner = document.querySelector(`#comment-${commentId} .comment-actions-owner`);
-                const editForm = document.querySelector(`#comment-${commentId} .edit-comment-form`);
-
-                if (commentText && actionsOwner && editForm) {
-                    console.log('Elements found, updating display...');
-                    commentText.style.display = 'none';
-                    actionsOwner.style.display = 'none';
-                    editForm.style.display = 'block';
-                } else {
-                    console.error('Cannot find elements for commentId:', commentId);
-                }
-            });
-        });
-
-        // Ẩn form chỉnh sửa khi nhấn Cancel
-        document.querySelectorAll('.btn-cancel-edit').forEach(button => {
-            button.addEventListener('click', function () {
-                const commentId = this.getAttribute('data-comment-id');
-                document.querySelector(`#comment-${commentId} .comment-text`).style.display = 'block';
-                document.querySelector(`#comment-${commentId} .edit-comment-form`).style.display = 'none';
-                document.querySelector(`#comment-${commentId} .comment-actions-owner`).style.display = 'none'; // Sẽ hiển thị lại khi hover
-            });
-        });
-
-        // Hiển thị/Ẩn nút Comment và Cancel khi nhập nội dung
-        document.getElementById('textComment').addEventListener('input', function () {
-            if (this.value.trim().length > 0) {
-                document.getElementById('sectionCommentBtns').style.display = 'flex';
-            } else {
-                document.getElementById('sectionCommentBtns').style.display = 'none';
-            }
-        });
-
-        document.getElementById('btnCancel').addEventListener('click', function () {
-            document.getElementById('textComment').value = '';
-            document.getElementById('sectionCommentBtns').style.display = 'none';
-        });
-    </script>
-}

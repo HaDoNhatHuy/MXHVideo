@@ -50,79 +50,174 @@ namespace Web_Video.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+        //[HttpPost]
+        //public async Task<IActionResult> CreateComment(CommentViewModel model)
+        //{
+        //    var video = await UnitOfWork.VideoRepo.GetFirstOrDefaultAsync(x => x.Id == model.PostComment.VideoId, "Comments");
+        //    if (video != null)
+        //    {
+        //        video.Comments.Add(new Comment(model.PostComment.VideoId, User.GetUserId(), model.PostComment.Content.Trim()));
+        //        await UnitOfWork.CompleteAsync();
+        //        return RedirectToAction("Watch", new { id = model.PostComment.VideoId });
+        //    }
+        //    TempData["notification"] = "false;Not Found;Requested video was not found";
+        //    return RedirectToAction("Index", "Home");
+        //}
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> EditComment(Guid commentId, Guid videoId, string content)
+        //{
+        //    if (commentId == Guid.Empty || videoId == Guid.Empty)
+        //    {
+        //        TempData["notification"] = "false;Invalid;Invalid comment or video ID";
+        //        return RedirectToAction("Watch", new { id = videoId });
+        //    }
+
+        //    if (string.IsNullOrWhiteSpace(content))
+        //    {
+        //        TempData["notification"] = "false;Invalid;Comment content cannot be empty";
+        //        return RedirectToAction("Watch", new { id = videoId });
+        //    }
+        //    var comment = await UnitOfWork.CommentRepo.GetFirstOrDefaultAsync(c => c.Id == commentId);
+        //    if (comment == null)
+        //    {
+        //        TempData["notification"] = "false;Not Found;Comment not found";
+        //        return RedirectToAction("Watch", new { id = videoId });
+        //    }
+
+        //    // Kiểm tra quyền: Chỉ người tạo comment mới được sửa
+        //    if (comment.AppUserId != User.GetUserId())
+        //    {
+        //        TempData["notification"] = "false;Unauthorized;You are not authorized to edit this comment";
+        //        return RedirectToAction("Watch", new { id = videoId });
+        //    }
+
+        //    // Cập nhật nội dung comment
+        //    comment.Content = content.Trim();
+        //    comment.ModifiedDate = DateTime.Now;
+        //    comment.ModifiedBy = User.GetUserId();
+
+        //    await UnitOfWork.CompleteAsync();
+        //    TempData["notification"] = "true;Success;Comment updated successfully";
+        //    return RedirectToAction("Watch", new { id = videoId });
+        //}
+
+        //[HttpPost]
+        //public async Task<IActionResult> DeleteComment(Guid commentId, Guid videoId)
+        //{
+        //    var comment = await UnitOfWork.CommentRepo.GetFirstOrDefaultAsync(c => c.Id == commentId);
+        //    if (comment == null)
+        //    {
+        //        TempData["notification"] = "false;Not Found;Comment not found";
+        //        return RedirectToAction("Watch", new { id = videoId });
+        //    }
+
+        //    // Kiểm tra quyền: Chỉ người tạo comment mới được xóa
+        //    if (comment.AppUserId != User.GetUserId())
+        //    {
+        //        TempData["notification"] = "false;Unauthorized;You are not authorized to delete this comment";
+        //        return RedirectToAction("Watch", new { id = videoId });
+        //    }
+
+        //    UnitOfWork.CommentRepo.Remove(comment);
+        //    await UnitOfWork.CompleteAsync();
+        //    TempData["notification"] = "true;Success;Comment deleted successfully";
+        //    return RedirectToAction("Watch", new { id = videoId });
+        //}
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateComment(CommentViewModel model)
         {
-            var video = await UnitOfWork.VideoRepo.GetFirstOrDefaultAsync(x => x.Id == model.PostComment.VideoId, "Comments");
-            if (video != null)
+            if (model.PostComment == null || model.PostComment.VideoId == Guid.Empty)
             {
-                video.Comments.Add(new Comment(model.PostComment.VideoId, User.GetUserId(), model.PostComment.Content.Trim()));
-                await UnitOfWork.CompleteAsync();
-                return RedirectToAction("Watch", new { id = model.PostComment.VideoId });
+                return Json(new { isSuccess = false, title = "Invalid", message = "Invalid video ID" });
             }
-            TempData["notification"] = "false;Not Found;Requested video was not found";
-            return RedirectToAction("Index", "Home");
+
+            if (string.IsNullOrWhiteSpace(model.PostComment.Content))
+            {
+                return Json(new { isSuccess = false, title = "Invalid", message = "Comment content cannot be empty" });
+            }
+
+            var video = await UnitOfWork.VideoRepo.GetFirstOrDefaultAsync(x => x.Id == model.PostComment.VideoId, "Comments");
+            if (video == null)
+            {
+                return Json(new { isSuccess = false, title = "Not Found", message = "Requested video was not found" });
+            }
+
+            var newComment = new Comment(model.PostComment.VideoId, User.GetUserId(), model.PostComment.Content.Trim());
+            video.Comments.Add(newComment);
+            await UnitOfWork.CompleteAsync();
+
+            return Json(new
+            {
+                isSuccess = true,
+                title = "Success",
+                message = "Comment added successfully",
+                comment = new
+                {
+                    id = newComment.Id,
+                    content = newComment.Content,
+                    postedAt = newComment.CreatedDate,
+                    //fromName = User.Identity.Name, // Tên người dùng (có thể cần điều chỉnh)
+                    fromName = User.GetFullName(), 
+                    //fromChannelId = Guid.Empty, // Điều chỉnh nếu bạn có logic lấy channel ID
+                    fromChannelId = User.GetUserChannelId(), 
+                    appUserId = newComment.AppUserId
+                }
+            });
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditComment(Guid commentId, Guid videoId, string content)
         {
             if (commentId == Guid.Empty || videoId == Guid.Empty)
             {
-                TempData["notification"] = "false;Invalid;Invalid comment or video ID";
-                return RedirectToAction("Watch", new { id = videoId });
+                return Json(new { isSuccess = false, title = "Invalid", message = "Invalid comment or video ID" });
             }
 
             if (string.IsNullOrWhiteSpace(content))
             {
-                TempData["notification"] = "false;Invalid;Comment content cannot be empty";
-                return RedirectToAction("Watch", new { id = videoId });
+                return Json(new { isSuccess = false, title = "Invalid", message = "Comment content cannot be empty" });
             }
+
             var comment = await UnitOfWork.CommentRepo.GetFirstOrDefaultAsync(c => c.Id == commentId);
             if (comment == null)
             {
-                TempData["notification"] = "false;Not Found;Comment not found";
-                return RedirectToAction("Watch", new { id = videoId });
+                return Json(new { isSuccess = false, title = "Not Found", message = "Comment not found" });
             }
 
-            // Kiểm tra quyền: Chỉ người tạo comment mới được sửa
             if (comment.AppUserId != User.GetUserId())
             {
-                TempData["notification"] = "false;Unauthorized;You are not authorized to edit this comment";
-                return RedirectToAction("Watch", new { id = videoId });
+                return Json(new { isSuccess = false, title = "Unauthorized", message = "You are not authorized to edit this comment" });
             }
 
-            // Cập nhật nội dung comment
             comment.Content = content.Trim();
             comment.ModifiedDate = DateTime.Now;
             comment.ModifiedBy = User.GetUserId();
 
             await UnitOfWork.CompleteAsync();
-            TempData["notification"] = "true;Success;Comment updated successfully";
-            return RedirectToAction("Watch", new { id = videoId });
+            return Json(new { isSuccess = true, title = "Success", message = "Comment updated successfully" });
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteComment(Guid commentId, Guid videoId)
         {
             var comment = await UnitOfWork.CommentRepo.GetFirstOrDefaultAsync(c => c.Id == commentId);
             if (comment == null)
             {
-                TempData["notification"] = "false;Not Found;Comment not found";
-                return RedirectToAction("Watch", new { id = videoId });
+                return Json(new { isSuccess = false, title = "Not Found", message = "Comment not found" });
             }
 
-            // Kiểm tra quyền: Chỉ người tạo comment mới được xóa
             if (comment.AppUserId != User.GetUserId())
             {
-                TempData["notification"] = "false;Unauthorized;You are not authorized to delete this comment";
-                return RedirectToAction("Watch", new { id = videoId });
+                return Json(new { isSuccess = false, title = "Unauthorized", message = "You are not authorized to delete this comment" });
             }
 
             UnitOfWork.CommentRepo.Remove(comment);
             await UnitOfWork.CompleteAsync();
-            TempData["notification"] = "true;Success;Comment deleted successfully";
-            return RedirectToAction("Watch", new { id = videoId });
+            return Json(new { isSuccess = true, title = "Success", message = "Comment deleted successfully" });
         }
         public async Task<IActionResult> GetVideoFile(Guid videoId)
         {

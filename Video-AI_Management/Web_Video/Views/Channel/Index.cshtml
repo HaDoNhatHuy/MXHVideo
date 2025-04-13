@@ -594,7 +594,7 @@ else
                 <h2>@Model.Name</h2>
                 <p class="description">@Model.About</p>
                 <div class="stats">
-                    <span>Joined @* @Model.CreatedAt.ToString("MMMM d, yyyy") *@</span>
+                    <span>Joined @Model.CreatedDate.ToString("dd - MMMM/yyyy")</span>
                     <span id="totalViewsAbout">0 views</span>
                 </div>
                 <button class="edit-btn" data-bs-toggle="modal" data-bs-target="#editChannelModal">Edit Channel</button>

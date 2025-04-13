@@ -25,5 +25,7 @@ namespace Web_Video.ViewModels.Video
         public string FromName { get; set; }
         public Guid FromChannelId { get; set; }
         public DateTime PostedAt { get; set; }
+        public DateTime? ModifiedDate { get; set; }
+        public bool IsEdited => ModifiedDate.HasValue && ModifiedDate > PostedAt;
     }
 }

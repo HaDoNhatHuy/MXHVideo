@@ -13,12 +13,20 @@ using Web_Video.ViewModels;
 using Web_Video.ViewModels.Channel;
 using WebVideo.Utility;
 using System.IO;
+using Microsoft.EntityFrameworkCore;
+using DataAccess.Data;
 
 namespace Web_Video.Controllers
 {
     [Authorize(Roles = $"{SD.UserRole}")]
     public class ChannelController : CoreController
     {
+        private readonly DataContext _context;
+
+        public ChannelController(DataContext context)
+        {
+            _context = context;
+        }
         public async Task<IActionResult> Index(string stringModel)
         {
             ViewData["CurrentPage"] = "Channel";
@@ -37,11 +45,13 @@ namespace Web_Video.Controllers
                     return View(model);
                 }
             }
-            var channel = await UnitOfWork.ChannelRepo.GetFirstOrDefaultAsync(x => x.AppUserId == User.GetUserId(),includeProperties: "Subscribers");
+            var channel = await UnitOfWork.ChannelRepo.GetFirstOrDefaultAsync(x => x.AppUserId == User.GetUserId(), includeProperties: "Subscribers");
             if (channel != null)
             {
                 model.Name = channel.ChannelName;
                 model.About = channel.About;
+                model.CreatedDate = channel.CreatedDate ?? DateTime.UtcNow;
+                model.AvatarUrl = channel.ChannelPicture;
                 model.SubcribersCount = channel.Subscribers.Count();
             }
             return View(model);
@@ -109,6 +119,140 @@ namespace Web_Video.Controllers
             }
             TempData["notification"] = "false;Channel not found; Your channel was not found";
             return RedirectToAction("Index");
+        }
+        [HttpGet]
+        public async Task<IActionResult> GetAnalytics(string timeFilter)
+        {
+            // Xác định khoảng thời gian
+            DateTime startDate;
+            int groupByDays;
+            switch (timeFilter?.ToLower())
+            {
+                case "7":
+                    startDate = DateTime.UtcNow.AddDays(-7);
+                    groupByDays = 1; // Nhóm theo ngày
+                    break;
+                case "28":
+                    startDate = DateTime.UtcNow.AddDays(-28);
+                    groupByDays = 4; // Nhóm theo 4 ngày
+                    break;
+                case "90":
+                    startDate = DateTime.UtcNow.AddDays(-90);
+                    groupByDays = 10; // Nhóm theo 10 ngày
+                    break;
+                case "all":
+                default:
+                    startDate = DateTime.MinValue; // Lấy tất cả dữ liệu
+                    groupByDays = 30; // Nhóm mặc định theo tháng cho dữ liệu lớn
+                    break;
+            }
+
+            // Lấy channelId từ user hiện tại
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User not authenticated.");
+            }
+
+            var channelId = await UnitOfWork.ChannelRepo.GetChannelIdByUserId(userId);
+            if (channelId == Guid.Empty)
+            {
+                return NotFound("Channel not found for the user.");
+            }
+
+            // Truy vấn video theo channel và khoảng thời gian
+            var videosQuery = _context.Videos
+                .Where(v => v.ChannelId == channelId && v.UploadDate >= startDate);
+            // Tính tổng lượt xem
+            var totalViews = await videosQuery.SumAsync(v => v.Views ?? 0);
+            // Tính tổng lượt thích
+            var totalLikes = await videosQuery
+                .SelectMany(v => v.LikeDislikes)
+                .CountAsync(ld => ld.Liked == true);
+            // Tính tổng bình luận
+            var totalComments = await videosQuery
+                .SelectMany(v => v.Comments)
+                .CountAsync();
+            //// Tính tổng lượt xem, lượt thích, bình luận
+            //var analytics = await videosQuery
+            //    .GroupBy(_ => 1)
+            //    .Select(g => new
+            //    {
+            //        TotalViews = g.Sum(v => v.Views ?? 0),
+            //        TotalLikes = g.Sum(v => v.LikeDislikes.Count(ld => ld.Liked == true)),
+            //        TotalComments = g.Sum(v => v.Comments.Count())
+            //    })
+            //    .FirstOrDefaultAsync();
+
+            // Lấy số lượng subscribers
+            var subscribers = await _context.Channels
+                .Where(c => c.Id == channelId)
+                .Select(c => c.Subscribers.Count())
+                .FirstOrDefaultAsync();
+
+            // Dữ liệu cho biểu đồ Views Over Time
+            var viewsOverTime = new
+            {
+                Labels = new List<string>(),
+                Data = new List<int>()
+            };
+
+            if (timeFilter != "all")
+            {
+                // Nhóm theo ngày cố định
+                var endDate = DateTime.UtcNow.Date;
+                for (var date = startDate.Date; date <= endDate; date = date.AddDays(groupByDays))
+                {
+                    var nextDate = date.AddDays(groupByDays);
+                    viewsOverTime.Labels.Add(date.ToString("MMM d"));
+                    viewsOverTime.Data.Add(await videosQuery
+                        .Where(v => v.UploadDate.Date >= date && v.UploadDate.Date < nextDate)
+                        .SumAsync(v => v.Views ?? 0));
+                }
+            }
+            else
+            {
+                // Nhóm động cho "all"
+                var firstVideoDate = await videosQuery.MinAsync(v => (DateTime?)v.UploadDate) ?? DateTime.UtcNow;
+                var totalDays = (DateTime.UtcNow.Date - firstVideoDate.Date).Days;
+                groupByDays = Math.Max(1, totalDays / 10); // Đảm bảo tối đa 10 điểm dữ liệu
+
+                for (var i = totalDays; i >= 0; i -= groupByDays)
+                {
+                    var date = DateTime.UtcNow.AddDays(-i).Date;
+                    var nextDate = date.AddDays(groupByDays);
+                    viewsOverTime.Labels.Add(date.ToString("MMM d"));
+                    viewsOverTime.Data.Add(await videosQuery
+                        .Where(v => v.UploadDate.Date >= date && v.UploadDate.Date < nextDate)
+                        .SumAsync(v => v.Views ?? 0));
+                }
+            }
+
+            // Dữ liệu cho biểu đồ Traffic Sources (giả lập hoặc lấy từ nguồn thực nếu có)
+            var trafficSources = new
+            {
+                Labels = new[] { "Direct", "Search", "External", "Social" },
+                Data = new[] { 40, 30, 20, 10 } // Có thể thay bằng dữ liệu thực từ DB
+            };
+
+            // Kết quả trả về
+            var result = new
+            {
+                TotalViews = totalViews,
+                Subscribers = subscribers,
+                Likes = totalLikes,
+                Comments = totalComments,
+                ViewsOverTime = viewsOverTime,
+                TrafficSources = trafficSources
+            };
+
+            return Json(result);
+        }
+        [HttpGet]
+        public IActionResult GetTotalViews()
+        {
+            var totalViews = _context.VideoViews.Count();
+            return Json(new { totalViews });
         }
     }
 }

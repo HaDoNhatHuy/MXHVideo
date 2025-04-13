@@ -98,7 +98,6 @@ namespace DataAccess.Repo
 
             return await PaginatedList<VideoForHomeGridDto>.CreateAsync(query.AsNoTracking(), parameters.PageNumber, parameters.PageSize);
         }
-
         public async Task RemoveVideoAsync(Guid videoId)
         {
             var video = await GetFirstOrDefaultAsync(x => x.Id == videoId, "Comments,LikeDislikes,Viewers");

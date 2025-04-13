@@ -2,29 +2,29 @@
 @using Web_Video.Extensions
 @{
     ViewData["CurrentPage"] = "Watch";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
+
 <style>
     /* Container cho video */
     .video-container {
         position: relative;
         width: 100%;
-        padding-top: 56.25%; /* Tỷ lệ 16:9 (9/16 = 0.5625) */
+        padding-top: 56.25%;
     }
 
-    /* Định dạng video */
     video {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        border-radius: 10px; /* Bỏ border-radius để giống YouTube */
-        box-shadow: none; /* Bỏ box-shadow để giống YouTube */
+        border-radius: 10px;
+        box-shadow: none;
         outline: none;
-        object-fit: cover; /* Đảm bảo video lấp đầy khung mà không bị méo */
+        object-fit: cover;
     }
 
-    /* Định dạng tiêu đề video */
     .video-title {
         font-size: 1.25rem;
         font-weight: 600;
@@ -32,7 +32,6 @@
         margin: 10px 0;
     }
 
-    /* Định dạng thông tin kênh */
     .channel-info {
         display: flex;
         align-items: center;
@@ -52,9 +51,8 @@
             margin-top: 2px;
         }
 
-    /* Nút Subscribe */
     .subscribe-btn {
-        background-color: #c00; /* Màu đỏ của YouTube */
+        background-color: #c00;
         color: #fff;
         border: none;
         padding: 8px 16px;
@@ -65,11 +63,10 @@
     }
 
         .subscribe-btn.subscribed {
-            background-color: #ccc; /* Màu xám khi đã subscribe */
+            background-color: #ccc;
             color: #000;
         }
 
-    /* Nút tương tác (Like, Dislike, Share) */
     .action-buttons {
         display: flex;
         align-items: center;
@@ -97,7 +94,6 @@
                 font-size: 1rem;
             }
 
-    /* Mô tả video */
     .description-box {
         background-color: #f9f9f9;
         padding: 15px;
@@ -111,41 +107,10 @@
             margin: 0;
         }
 
-    /* Phần bình luận */
     .comments-section {
         margin-top: 20px;
     }
 
-        .comments-section h5 {
-            font-size: 1rem;
-            font-weight: 500;
-            color: #000;
-            margin-bottom: 15px;
-        }
-
-    .comment-input {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 20px;
-    }
-
-        .comment-input img {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-        }
-
-        .comment-input input {
-            flex: 1;
-            border: none;
-            border-bottom: 1px solid #ccc;
-            padding: 5px 0;
-            font-size: 0.9rem;
-            outline: none;
-        }
-
-    /* CSS cho video đề xuất */
     .recommended-video {
         display: flex;
         margin-bottom: 15px;
@@ -153,9 +118,9 @@
 
         .recommended-video img {
             width: 168px;
-            height: 94px; /* Tỷ lệ 16:9 */
+            height: 94px;
             object-fit: cover;
-            border-radius: 5px; /* Bỏ border-radius để giống YouTube */
+            border-radius: 5px;
             margin-right: 10px;
         }
 
@@ -185,7 +150,6 @@
         margin-top: 0;
     }
 
-    /* CSS cho tag */
     .tag-container {
         margin-top: 10px;
     }
@@ -203,32 +167,28 @@
 
 <div class="row mt-3">
     <div class="col-lg-8 mb-2">
-        <!-- Khung video chính -->
         <div class="video-container">
             <video controls>
                 <source src="/Video/GetVideoFile?videoId=@Model.Id" type="@Model.VideoContentType" />
-                Your browser does not support the video tag.
+                Trình duyệt của bạn không hỗ trợ thẻ video.
             </video>
         </div>
 
-        <!-- Tiêu đề video -->
         <h1 class="video-title">@Model.Title</h1>
 
-        <!-- Thông tin kênh và nút Subscribe -->
         <div class="channel-info">
             <div>
                 <a asp-action="Channel" asp-controller="Member" asp-route-id="@Model.ChannelId" class="text-decoration-none channel-name">@Model.ChannelName</a>
-                <p class="subscribers">@SD.FormatView(Model.SubscribersCount) subscribers</p>
+                <p class="subscribers">@SD.FormatView(Model.SubscribersCount) người đăng ký</p>
             </div>
             @if (User.GetUserChannelId() != Model.ChannelId.ToString())
             {
                 <button id="subscribeBtn" class="subscribe-btn @(Model.IsSubscribed ? "subscribed" : "")">
-                    @(Model.IsSubscribed ? "Subscribed" : "Subscribe")
+                    @(Model.IsSubscribed ? "Đã đăng ký" : "Đăng ký")
                 </button>
             }
         </div>
 
-        <!-- Nút tương tác -->
         <div class="action-buttons">
             <button class="btn @(Model.IsLiked ? "active" : "")" id="likeBtn" onclick="likeDislike('likeBtn', 'like')">
                 <i class="bi bi-hand-thumbs-up-fill"></i> <span>@SD.FormatView(Model.LikesCount)</span>
@@ -237,16 +197,15 @@
                 <i class="bi bi-hand-thumbs-down-fill"></i> <span>@SD.FormatView(Model.DislikesCount)</span>
             </button>
             <button class="btn">
-                <i class="bi bi-share-fill"></i> Share
+                <i class="bi bi-share-fill"></i> Chia sẻ
             </button>
             <form method="post">
-                <button asp-action="DownloadVideoFile" asp-route-videoId="@Model.Id" type="submit" class="btn">Download</button>
+                <button asp-action="DownloadVideoFile" asp-route-videoId="@Model.Id" type="submit" class="btn">Tải xuống</button>
             </form>
         </div>
 
-        <!-- Mô tả video -->
         <div class="description-box">
-            <p><strong>@SD.FormatView(Model.ViewersCount) views • @SD.TimeAgo(Model.CreatedAt)</strong></p>
+            <p><strong>@SD.FormatView(Model.ViewersCount) lượt xem • @SD.TimeAgo(Model.CreatedAt)</strong></p>
             @if (!string.IsNullOrEmpty(Model.RecognizedCelebrities))
             {
                 <div class="tag-container">
@@ -264,15 +223,11 @@
             <p>@Model.Description</p>
         </div>
 
-        <!-- Phần bình luận -->
         <div class="comments-section">
-            @* <h5>@(Model.CommentVM.AvailableComments?.Count() ?? 0) Comments</h5> *@
             <partial name="_CommentPartial" model="Model.CommentVM" />
         </div>
     </div>
 
-
-    <!-- Cột bên phải: Video đề xuất -->
     <div class="col-lg-4">
         <div class="recommended-videos">
             @foreach (var video in Model.RecommendedVideos)
@@ -285,7 +240,7 @@
                         <a asp-action="Watch" asp-controller="Video" asp-route-id="@video.Id" class="text-decoration-none text-dark">
                             <h6>@video.Title</h6>
                         </a>
-                        <p>@video.ChannelName • @SD.FormatView(video.ViewersCount) views • @SD.TimeAgo(video.CreatedAt)</p>
+                        <p>@video.ChannelName • @SD.FormatView(video.ViewersCount) lượt xem • @SD.TimeAgo(video.CreatedAt)</p>
                     </div>
                 </div>
             }
@@ -293,9 +248,19 @@
     </div>
 </div>
 
-
 @section Scripts {
     <script>
+        function timeAgo(date) {
+            const now = new Date();
+            const posted = new Date(date);
+            const diffInSeconds = Math.floor((now - posted) / 1000);
+
+            if (diffInSeconds < 60) return "vừa xong";
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
+            return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
+        }
+
         $('#subscribeBtn').on('click', function () {
             $.ajax({
                 url: "/Video/SubscribeChannel",
@@ -304,17 +269,17 @@
                 success: function (data) {
                     if (data.title == "Unsubscribed") {
                         $('#subscribeBtn').removeClass('subscribed');
-                        $('#subscribeBtn').text('Subscribe');
+                        $('#subscribeBtn').text('Đăng ký');
                         displayNotification(false, data.title, data.message, 'toastr');
                     } else if (data.title == "Subscribed") {
                         $('#subscribeBtn').addClass('subscribed');
-                        $('#subscribeBtn').text('Subscribed');
+                        $('#subscribeBtn').text('Đã đăng ký');
                         displayNotification(true, data.title, data.message, 'toastr');
                     } else {
                         displayNotification(data.isSuccess, data.title, data.message, 'modal');
                     }
                 }
-            })
+            });
         });
 
         function likeDislike(id, action) {
@@ -374,6 +339,208 @@
         $('#btnCancel').on('click', function () {
             $('#textComment').val('');
             $('#sectionCommentBtns').fadeOut();
+        });
+
+        // Xử lý form tạo bình luận
+        document.getElementById('create-comment-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const content = document.getElementById('textComment').value.trim();
+            const videoId = document.querySelector('input[name="PostComment.VideoId"]').value;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            const data = {
+                PostComment: {
+                    VideoId: videoId,
+                    Content: content
+                },
+                __RequestVerificationToken: token
+            };
+
+            $.ajax({
+                url: '/Video/CreateComment',
+                type: 'POST',
+                data: data,
+                success: function (data) {
+                    if (data.isSuccess) {
+                        const newComment = data.comment;
+                        const isOwner = newComment.appUserId === '@User.GetUserId()';
+                        const commentHtml = `
+                            <div class="comment-item" id="comment-${newComment.id}">
+                                <img src="/avatarUser/avt-default.jpg" alt="User Avatar" />
+                                <div class="comment-content">
+                                    <div class="comment-header">
+                                        <span class="comment-author">${newComment.fromName}</span>
+                                        <span class="comment-time">${timeAgo(newComment.postedAt)}</span>
+                                    </div>
+                                    <p class="comment-text">${newComment.content}</p>
+                                    ${isOwner ? `
+                                        <div class="comment-actions-wrapper">
+                                            <button class="btn btn-more-actions" data-comment-id="${newComment.id}">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <div class="comment-actions-menu" id="actions-menu-${newComment.id}" style="display: none;">
+                                                <button class="btn btn-edit-comment" data-comment-id="${newComment.id}">Sửa</button>
+                                                <button class="btn btn-delete-comment" data-comment-id="${newComment.id}" data-video-id="${videoId}">Xóa</button>
+                                            </div>
+                                        </div>
+                                        <form class="edit-comment-form" id="edit-form-${newComment.id}">
+                                            <input type="hidden" name="commentId" value="${newComment.id}" />
+                                            <input type="hidden" name="videoId" value="${videoId}" />
+                                            <input type="hidden" name="__RequestVerificationToken" value="${token}" />
+                                            <textarea name="content" class="form-control" rows="2">${newComment.content}</textarea>
+                                            <div class="edit-actions">
+                                                <button type="button" class="btn btn-cancel btn-cancel-edit" data-comment-id="${newComment.id}">Hủy</button>
+                                                <button type="submit" class="btn btn-save">Lưu</button>
+                                            </div>
+                                        </form>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+
+                        const commentsList = document.getElementById('comments-list');
+                        commentsList.insertAdjacentHTML('afterbegin', commentHtml);
+
+                        const commentCount = document.querySelectorAll('.comment-item').length;
+                        document.querySelector('.comments-header').textContent = `${commentCount} ${commentCount > 1 ? 'Bình luận' : 'Bình luận'}`;
+
+                        $('#textComment').val('');
+                        $('#sectionCommentBtns').fadeOut();
+
+                        displayNotification(true, data.title, data.message, 'toastr');
+                    } else {
+                        displayNotification(false, data.title, data.message, 'toastr');
+                    }
+                },
+                error: function (xhr) {
+                    displayNotification(false, 'Lỗi', `Đã xảy ra lỗi khi thêm bình luận: ${xhr.statusText}`, 'toastr');
+                }
+            });
+        });
+
+        document.addEventListener('click', function (event) {
+            if (event.target.closest('.btn-more-actions')) {
+                const button = event.target.closest('.btn-more-actions');
+                const commentId = button.getAttribute('data-comment-id');
+                const menu = document.getElementById(`actions-menu-${commentId}`);
+
+                document.querySelectorAll('.comment-actions-menu').forEach(m => {
+                    if (m !== menu) {
+                        m.style.display = 'none';
+                    }
+                });
+
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            }
+
+            if (!event.target.closest('.btn-more-actions') && !event.target.closest('.comment-actions-menu')) {
+                document.querySelectorAll('.comment-actions-menu').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+            }
+
+            if (event.target.classList.contains('btn-edit-comment')) {
+                event.preventDefault();
+                const commentId = event.target.getAttribute('data-comment-id');
+                const commentText = document.querySelector(`#comment-${commentId} .comment-text`);
+                const editForm = document.querySelector(`#comment-${commentId} .edit-comment-form`);
+
+                if (commentText && editForm) {
+                    commentText.style.display = 'none';
+                    editForm.style.display = 'block';
+                    document.getElementById(`actions-menu-${commentId}`).style.display = 'none';
+                } else {
+                    console.error('Không tìm thấy phần tử cho commentId:', commentId);
+                }
+            }
+
+            if (event.target.classList.contains('btn-cancel-edit')) {
+                const commentId = event.target.getAttribute('data-comment-id');
+                const commentText = document.querySelector(`#comment-${commentId} .comment-text`);
+                const editForm = document.querySelector(`#comment-${commentId} .edit-comment-form`);
+
+                if (commentText && editForm) {
+                    commentText.style.display = 'block';
+                    editForm.style.display = 'none';
+                }
+            }
+
+            if (event.target.classList.contains('btn-delete-comment')) {
+                if (!confirm('Bạn có chắc muốn xóa bình luận này không?')) {
+                    return;
+                }
+
+                const commentId = event.target.getAttribute('data-comment-id');
+                const videoId = event.target.getAttribute('data-video-id');
+
+                $.ajax({
+                    url: '/Video/DeleteComment',
+                    type: 'POST',
+                    data: { commentId: commentId, videoId: videoId, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
+                    success: function (data) {
+                        if (data.isSuccess) {
+                            document.getElementById(`comment-${commentId}`).remove();
+                            const commentCount = document.querySelectorAll('.comment-item').length;
+                            document.querySelector('.comments-header').textContent = `${commentCount} ${commentCount > 1 ? 'Bình luận' : 'Bình luận'}`;
+                            displayNotification(true, data.title, data.message, 'toastr');
+                        } else {
+                            displayNotification(false, data.title, data.message, 'toastr');
+                        }
+                    },
+                    error: function () {
+                        displayNotification(false, 'Lỗi', 'Đã xảy ra lỗi khi xóa bình luận', 'toastr');
+                    }
+                });
+            }
+        });
+
+        document.querySelectorAll('.edit-comment-form').forEach(form => {
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const commentId = form.querySelector('input[name="commentId"]').value;
+                const videoId = form.querySelector('input[name="videoId"]').value;
+                const content = form.querySelector('textarea[name="content"]').value.trim();
+                const token = form.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                const data = {
+                    commentId: commentId,
+                    videoId: videoId,
+                    content: content,
+                    __RequestVerificationToken: token
+                };
+
+                $.ajax({
+                    url: '/Video/EditComment',
+                    type: 'POST',
+                    data: data,
+                    success: function (data) {
+                        if (data.isSuccess) {
+                            const commentText = document.querySelector(`#comment-${commentId} .comment-text`);
+                            commentText.textContent = content;
+                            commentText.style.display = 'block';
+
+                            form.style.display = 'none';
+
+                            const commentTime = document.querySelector(`#comment-${commentId} .comment-time`);
+                            if (!commentTime.querySelector('.edited-label')) {
+                                const editedLabel = document.createElement('span');
+                                editedLabel.className = 'edited-label';
+                                editedLabel.textContent = '(đã chỉnh sửa)';
+                                commentTime.appendChild(editedLabel);
+                            }
+
+                            displayNotification(true, data.title, data.message, 'toastr');
+                        } else {
+                            displayNotification(false, data.title, data.message, 'toastr');
+                        }
+                    },
+                    error: function (xhr) {
+                        displayNotification(false, 'Lỗi', `Đã xảy ra lỗi khi cập nhật bình luận: ${xhr.statusText}`, 'toastr');
+                    }
+                });
+            });
         });
     </script>
 }
