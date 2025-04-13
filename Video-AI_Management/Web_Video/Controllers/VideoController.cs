@@ -159,9 +159,9 @@ namespace Web_Video.Controllers
                     content = newComment.Content,
                     postedAt = newComment.CreatedDate,
                     //fromName = User.Identity.Name, // Tên người dùng (có thể cần điều chỉnh)
-                    fromName = User.GetFullName(), 
+                    fromName = User.GetFullName(),
                     //fromChannelId = Guid.Empty, // Điều chỉnh nếu bạn có logic lấy channel ID
-                    fromChannelId = User.GetUserChannelId(), 
+                    fromChannelId = User.GetUserChannelId(),
                     appUserId = newComment.AppUserId
                 }
             });
@@ -927,6 +927,7 @@ namespace Web_Video.Controllers
                             FromName = c.AppUser.FullName,
                             FromChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(c.AppUserId).GetAwaiter().GetResult(),
                             PostedAt = c.CreatedDate ?? DateTime.UtcNow,
+                            ModifiedDate = c.ModifiedDate,
                             Content = c.Content
                         })
                     }

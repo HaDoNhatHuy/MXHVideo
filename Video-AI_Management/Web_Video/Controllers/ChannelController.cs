@@ -249,9 +249,12 @@ namespace Web_Video.Controllers
             return Json(result);
         }
         [HttpGet]
-        public IActionResult GetTotalViews()
+        public async Task<IActionResult> GetTotalViews()
         {
-            var totalViews = _context.VideoViews.Count();
+            var userId = User.GetUserId();
+            var totalViews = _context.VideoViews
+                .Where(v => v.AppUserId == userId)
+                .Count();
             return Json(new { totalViews });
         }
     }
