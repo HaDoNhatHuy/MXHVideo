@@ -84,16 +84,38 @@ namespace Web_Video.Controllers
                     Key = "Name",
                     ErrorMessage = $"Channel name of {model.Name} is taken. Please try another name."
                 });
-                //return RedirectToAction("Index", new { stringModel = JsonConvert.SerializeObject(model) });
                 HttpContext.Session.SetString("ChannelModelFromSession", JsonConvert.SerializeObject(model));
                 return RedirectToAction("Index");
             }
+
             var channelToAdd = new Channel
             {
                 AppUserId = User.GetUserId(),
                 ChannelName = model.Name,
-                About = model.About
+                About = model.About,
+                ChannelPicture = "/avatarUser/avt-default.jpg" // Ảnh mặc định nếu không upload
             };
+
+            // Xử lý upload ảnh đại diện kênh
+            if (model.Avatar != null && model.Avatar.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/avatarUser");
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+
+                var uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(model.Avatar.FileName);
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await model.Avatar.CopyToAsync(fileStream);
+                }
+
+                channelToAdd.ChannelPicture = "/avatarUser/" + uniqueFileName; // Lưu đường dẫn ảnh
+            }
+
             UnitOfWork.ChannelRepo.Add(channelToAdd);
             await UnitOfWork.CompleteAsync();
 
@@ -111,6 +133,37 @@ namespace Web_Video.Controllers
                 {
                     channel.ChannelName = model.Name;
                     channel.About = model.About;
+
+                    // Xử lý upload ảnh đại diện kênh
+                    if (model.Avatar != null && model.Avatar.Length > 0)
+                    {
+                        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/avatarUser");
+                        if (!Directory.Exists(uploadsFolder))
+                        {
+                            Directory.CreateDirectory(uploadsFolder);
+                        }
+
+                        var uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(model.Avatar.FileName);
+                        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                        using (var fileStream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await model.Avatar.CopyToAsync(fileStream);
+                        }
+
+                        // Xóa ảnh cũ nếu không phải ảnh mặc định
+                        if (!string.IsNullOrEmpty(channel.ChannelPicture) && channel.ChannelPicture != "/avatarUser/avt-default.jpg")
+                        {
+                            var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", channel.ChannelPicture.TrimStart('/'));
+                            if (System.IO.File.Exists(oldFilePath))
+                            {
+                                System.IO.File.Delete(oldFilePath);
+                            }
+                        }
+
+                        channel.ChannelPicture = "/avatarUser/" + uniqueFileName; // Cập nhật đường dẫn ảnh mới
+                    }
+
                     await UnitOfWork.CompleteAsync();
 
                     TempData["notification"] = "true;Channel updated; Your channel has been updated";
@@ -164,7 +217,10 @@ namespace Web_Video.Controllers
             var videosQuery = _context.Videos
                 .Where(v => v.ChannelId == channelId && v.UploadDate >= startDate);
             // Tính tổng lượt xem
-            var totalViews = await videosQuery.SumAsync(v => v.Views ?? 0);
+            //var totalViews = await videosQuery.SumAsync(v => v.Views ?? 0);
+            var totalViews = _context.VideoViews
+                .Where(v => v.AppUserId == userId)
+                .Count();
             // Tính tổng lượt thích
             var totalLikes = await videosQuery
                 .SelectMany(v => v.LikeDislikes)

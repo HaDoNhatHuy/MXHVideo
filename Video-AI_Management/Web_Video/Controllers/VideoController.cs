@@ -892,6 +892,49 @@ namespace Web_Video.Controllers
             }
             return null;
         }
+        //private async Task<VideoWatchViewModel> GetVideoWatch_VMWithProjections(Guid id)
+        //{
+        //    string userId = User.GetUserId();
+        //    var toReturn = await Context.Videos
+        //        .Where(x => x.Id == id)
+        //        .Select(x => new VideoWatchViewModel
+        //        {
+        //            Id = x.Id,
+        //            Title = x.Title,
+        //            Description = x.Description,
+        //            CreatedAt = x.UploadDate,
+        //            ChannelId = x.ChannelId ?? Guid.Empty,
+        //            ChannelName = x.Channel.ChannelName,
+        //            IsSubscribed = x.Channel.Subscribers.Any(s => s.AppUserId == userId),
+        //            IsLiked = x.LikeDislikes.Any(l => l.AppUserId == userId && l.Liked == true),
+        //            IsDisiked = x.LikeDislikes.Any(l => l.AppUserId == userId && l.Liked == false),
+        //            SubscribersCount = x.Channel.Subscribers.Count(),
+        //            ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
+        //            LikesCount = x.LikeDislikes.Where(l => l.Liked == true).Count(),
+        //            DislikesCount = x.LikeDislikes.Where(l => l.Liked == false).Count(),
+        //            VideoContentType = x.VideoFile.ContentType, // Thêm ContentType
+        //            RecognizedCelebrities = x.RecognizedCelebrities, // Thêm RecognizedCelebrities vào ViewModel
+        //            CommentVM = new CommentViewModel
+        //            {
+        //                PostComment = new CommentPostViewModel
+        //                {
+        //                    VideoId = x.Id,
+        //                },
+        //                AvailableComments = x.Comments.Select(c => new AvailableCommentViewModel
+        //                {
+        //                    Id = c.Id,
+        //                    AppUserId = c.AppUserId,
+        //                    FromName = c.AppUser.FullName,
+        //                    FromChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(c.AppUserId).GetAwaiter().GetResult(),
+        //                    PostedAt = c.CreatedDate ?? DateTime.UtcNow,
+        //                    ModifiedDate = c.ModifiedDate,
+        //                    Content = c.Content
+        //                })
+        //            }
+        //        }).FirstOrDefaultAsync();
+        //    return toReturn;
+        //}
+
         private async Task<VideoWatchViewModel> GetVideoWatch_VMWithProjections(Guid id)
         {
             string userId = User.GetUserId();
@@ -905,6 +948,7 @@ namespace Web_Video.Controllers
                     CreatedAt = x.UploadDate,
                     ChannelId = x.ChannelId ?? Guid.Empty,
                     ChannelName = x.Channel.ChannelName,
+                    ChannelAvatar = x.Channel.ChannelPicture ?? "/avatarUser/avt-default.jpg", // Giả sử cột Avatar, mặc định nếu null
                     IsSubscribed = x.Channel.Subscribers.Any(s => s.AppUserId == userId),
                     IsLiked = x.LikeDislikes.Any(l => l.AppUserId == userId && l.Liked == true),
                     IsDisiked = x.LikeDislikes.Any(l => l.AppUserId == userId && l.Liked == false),
@@ -912,24 +956,27 @@ namespace Web_Video.Controllers
                     ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
                     LikesCount = x.LikeDislikes.Where(l => l.Liked == true).Count(),
                     DislikesCount = x.LikeDislikes.Where(l => l.Liked == false).Count(),
-                    VideoContentType = x.VideoFile.ContentType, // Thêm ContentType
-                    RecognizedCelebrities = x.RecognizedCelebrities, // Thêm RecognizedCelebrities vào ViewModel
+                    VideoContentType = x.VideoFile.ContentType,
+                    RecognizedCelebrities = x.RecognizedCelebrities,
                     CommentVM = new CommentViewModel
                     {
                         PostComment = new CommentPostViewModel
                         {
                             VideoId = x.Id,
                         },
-                        AvailableComments = x.Comments.Select(c => new AvailableCommentViewModel
-                        {
-                            Id = c.Id,
-                            AppUserId = c.AppUserId,
-                            FromName = c.AppUser.FullName,
-                            FromChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(c.AppUserId).GetAwaiter().GetResult(),
-                            PostedAt = c.CreatedDate ?? DateTime.UtcNow,
-                            ModifiedDate = c.ModifiedDate,
-                            Content = c.Content
-                        })
+                        AvailableComments = x.Comments
+                            .OrderByDescending(c => c.CreatedDate)
+                            .Take(5) // Giới hạn 5 bình luận ban đầu
+                            .Select(c => new AvailableCommentViewModel
+                            {
+                                Id = c.Id,
+                                AppUserId = c.AppUserId,
+                                FromName = c.AppUser.FullName,
+                                FromChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(c.AppUserId).GetAwaiter().GetResult(),
+                                PostedAt = c.CreatedDate ?? DateTime.UtcNow,
+                                ModifiedDate = c.ModifiedDate,
+                                Content = c.Content
+                            })
                     }
                 }).FirstOrDefaultAsync();
             return toReturn;
@@ -1062,6 +1109,32 @@ namespace Web_Video.Controllers
             }
 
             return recommendedVideos.Take(10).ToList(); // Đảm bảo chỉ trả về 10 video
+        }
+        [HttpGet]
+        public async Task<IActionResult> GetCommentsByPage(Guid videoId, int page, int pageSize)
+        {
+            if (videoId == Guid.Empty || page < 1 || pageSize < 1)
+            {
+                return Json(new { isSuccess = false, message = "Invalid parameters" });
+            }
+
+            var comments = await Context.Comments
+                .Where(c => c.VideoId == videoId)
+                .OrderByDescending(c => c.CreatedDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(c => new
+                {
+                    id = c.Id,
+                    content = c.Content,
+                    postedAt = c.CreatedDate,
+                    fromName = c.AppUser.FullName,
+                    fromChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(c.AppUserId).GetAwaiter().GetResult(),
+                    appUserId = c.AppUserId
+                })
+                .ToListAsync();
+
+            return Json(new { isSuccess = true, comments });
         }
         #endregion
     }

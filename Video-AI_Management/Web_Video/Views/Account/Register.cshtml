@@ -1,6 +1,7 @@
 ﻿@model Web_Video.ViewModels.Account.RegisterViewModel
 @{
     ViewData["CurrentPage"] = "Register";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="youtube-auth-container d-flex justify-content-center align-items-center min-vh-100">
@@ -31,17 +32,23 @@
                 <span asp-validation-for="Email" class="text-danger d-block mt-1" style="font-size: 14px;"></span>
             </div>
 
-            <!-- Trường Password -->
-            <div class="form-floating mb-3">
-                <input asp-for="Password" type="password" placeholder="Password" class="form-control rounded-pill" />
+            <!-- Trường Password với con mắt -->
+            <div class="form-floating mb-3 password-wrapper">
+                <input asp-for="Password" type="password" placeholder="Password" class="form-control rounded-pill password-input" id="registerPassword" />
                 <label asp-for="Password">Mật khẩu</label>
+                <span class="toggle-password" onclick="togglePassword('registerPassword')">
+                    <i class="bi bi-eye-slash toggle-icon"></i>
+                </span>
                 <span asp-validation-for="Password" class="text-danger d-block mt-1" style="font-size: 14px;"></span>
             </div>
 
-            <!-- Trường Confirm Password -->
-            <div class="form-floating mb-3">
-                <input asp-for="ConfirmPassword" type="password" placeholder="Confirm Password" class="form-control rounded-pill" />
+            <!-- Trường Confirm Password với con mắt -->
+            <div class="form-floating mb-3 password-wrapper">
+                <input asp-for="ConfirmPassword" type="password" placeholder="Confirm Password" class="form-control rounded-pill password-input" id="confirmPassword" />
                 <label asp-for="ConfirmPassword">Xác nhận mật khẩu</label>
+                <span class="toggle-password" onclick="togglePassword('confirmPassword')">
+                    <i class="bi bi-eye-slash toggle-icon"></i>
+                </span>
                 <span asp-validation-for="ConfirmPassword" class="text-danger d-block mt-1" style="font-size: 14px;"></span>
             </div>
 
@@ -69,6 +76,21 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        function togglePassword(inputId) {
+            const passwordInput = document.getElementById(inputId);
+            const toggleIcon = passwordInput.nextElementSibling.querySelector('.toggle-icon');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('bi-eye-slash');
+                toggleIcon.classList.add('bi-eye');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('bi-eye');
+                toggleIcon.classList.add('bi-eye-slash');
+            }
+        }
+    </script>
 }
 
 <style>
@@ -85,7 +107,7 @@
 
         .youtube-auth-card .form-control {
             border: 1px solid #ccc;
-            padding: 12px 16px;
+            padding: 12px 40px 12px 16px;
             font-size: 16px;
             height: auto;
         }
@@ -106,4 +128,22 @@
             .youtube-auth-card .btn-danger:hover {
                 background-color: #e60000;
             }
+
+    .password-wrapper {
+        position: relative;
+    }
+
+    .password-input {
+        padding-right: 40px !important;
+    }
+
+    .toggle-password {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #606060;
+        font-size: 16px;
+    }
 </style>

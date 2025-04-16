@@ -10,6 +10,7 @@ namespace Web_Video.ViewModels.Video
         public string Description { get; set; }
         public Guid ChannelId { get; set; }
         public string ChannelName { get; set; }
+        public string ChannelAvatar { get; set; }
         public bool IsSubscribed { get; set; }
         public bool IsLiked { get; set; }
         public bool IsDisiked { get; set; }

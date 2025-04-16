@@ -103,7 +103,8 @@ namespace Web_Video.Controllers
                 {
                     Email = model.Email,
                     UserName = model.Name.ToLower(),
-                    FullName = model.Name
+                    FullName = model.Name,
+                    Avatar = "/avatarUser/avt-default.jpg" // default avatar
                 };
                 var result = await _userManager.CreateAsync(userToAdd, model.Password);
                 await _userManager.AddToRoleAsync(userToAdd, SD.UserRole);

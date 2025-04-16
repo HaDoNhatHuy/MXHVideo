@@ -75,7 +75,7 @@
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
                     <a asp-action="Index" asp-controller="Home" asp-route-page="Home" class="nav-link @Html.IsActivePage("Home")">
-                        <i class="bi bi-house-door-fill me-2"></i><span class="nav-text">Trang chủ</span>
+                        <i class="bi bi-house-door me-2"></i><span class="nav-text">Trang chủ</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -88,17 +88,17 @@
                 </li>
                 <li class="nav-item">
                     <a asp-action="Index" asp-controller="Home" asp-route-page="History" class="nav-link @Html.IsActivePage("History")">
-                        <i class="bi bi-clock-fill me-2"></i><span class="nav-text">Lịch sử</span>
+                        <i class="bi bi-clock-history me-2"></i><span class="nav-text">Lịch sử</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a asp-action="Index" asp-controller="Home" asp-route-page="Likes" class="nav-link @Html.IsActivePage("Likes")">
-                        <i class="bi bi-hand-thumbs-up-fill me-2"></i><span class="nav-text">Video đã thích</span>
+                        <i class="bi bi-hand-thumbs-up me-2"></i><span class="nav-text">Video đã thích</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a asp-action="Index" asp-controller="Home" asp-route-page="Dislikes" class="nav-link @Html.IsActivePage("Dislikes")">
-                        <i class="bi bi-hand-thumbs-down-fill me-2"></i><span class="nav-text">Video không thích</span>
+                        <i class="bi bi-hand-thumbs-down me-2"></i><span class="nav-text">Video không thích</span>
                     </a>
                 </li>
                 @if (User.IsInRole(SD.AdminRole))

@@ -501,7 +501,7 @@
                     </div>
                     <div class="form-group">
                         <label asp-for="About" class="form-label">Mô tả kênh</label>
-                        <textarea id="modal_profile_about" asp-for="About" class="form-control" rows="6"></textarea>
+                        <textarea id="modal_profile_about" asp-for="About" class="form-control AboutChannel" rows="6"></textarea>
                         <span asp-validation-for="About" class="text-danger"></span>
                     </div>
                 </form>
@@ -531,7 +531,7 @@
             </div>
             <div class="form-group">
                 <label asp-for="About" class="form-label">Mô tả kênh</label>
-                <textarea asp-for="About" rows="6" class="form-control"></textarea>
+                <textarea asp-for="About" rows="6" class="form-control AboutChannel"></textarea>
                 <span asp-validation-for="About" class="text-danger"></span>
             </div>
             <div class="form-actions">
@@ -632,7 +632,7 @@ else
         <div class="tab-pane fade" id="profile">
             <div class="about-section">
                 <div class="about-header">
-                    <img src="@(string.IsNullOrEmpty(Model.AvatarUrl) ? "/avatarUser/avt-default.jpg" : Model.AvatarUrl)" alt="Channel Avatar" class="about-avatar" />
+                    <img src="@(string.IsNullOrEmpty(Model.AvatarUrl) ? "/avatarChannel/channel-default.jpg" : Model.AvatarUrl)" alt="Channel Avatar" class="about-avatar" />
                     <h2 class="about-title">@Model.Name</h2>
                 </div>
                 <p class="about-description">@Model.About</p>
@@ -648,8 +648,19 @@ else
     </div>
 }
 
+@section Css {
+    <!-- include summernote css/js -->
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.css" rel="stylesheet">
+}
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.js"></script>
+    <script>
+        $(document).ready(function() {
+          $('.AboutChannel').summernote();
+        });
+    </script>
     <!-- Thêm Chart.js để vẽ biểu đồ -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
