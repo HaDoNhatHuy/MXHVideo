@@ -1,0 +1,12 @@
+numpy==1.26.4
+facenet-pytorch==2.6.0
+torch
+torchvision
+torchaudio
+tensorflow==2.19.0
+opencv-python==4.9.0.80
+opencv-python-headless==4.9.0.80
+albumentations==2.0.8
+scikit-learn
+pillow
+deepface
