@@ -4,7 +4,7 @@ import face_recognition
 import pickle
 
 # Thư mục ảnh
-celebrity_dir = "D:/GraduateProjectFaceRecognition/MXHVideo-main/Video-AI_Management/Web_Video/wwwroot/celebrity_images"
+celebrity_dir = "D:/DoAnTotNghiep/MXHVideo/Video-AI_Management/Web_Video/wwwroot/celebrity_images"
 # File lưu embeddings
 embeddings_file = "celebrity_embeddings.pkl"
 
