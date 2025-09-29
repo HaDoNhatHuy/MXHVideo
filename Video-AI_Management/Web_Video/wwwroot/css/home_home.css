@@ -1,0 +1,143 @@
+﻿/* Container video */
+#videosTableBody {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Card video */
+.youtube-video-card {
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    transform: translateY(20px);
+    opacity: 0;
+    animation: fadeUp 0.6s forwards;
+}
+
+    /* Hiệu ứng hover */
+    .youtube-video-card:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+    }
+
+/* Thumbnail */
+.thumbnail-link {
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+
+.thumbnail-img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.youtube-video-card:hover .thumbnail-img {
+    transform: scale(1.1);
+}
+
+/* Info video */
+.video-details {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.video-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111;
+    text-decoration: none;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+    .video-title:hover {
+        color: #065fd4; /* xanh YouTube */
+    }
+
+.video-meta {
+    font-size: 13px;
+    color: #606060;
+}
+
+.channel-name {
+    color: #111;
+    font-weight: 500;
+    margin-right: 6px;
+    text-decoration: none;
+}
+
+    .channel-name:hover {
+        color: #065fd4;
+    }
+
+.video-stats {
+    display: block;
+    margin-top: 2px;
+    color: #606060;
+}
+
+/* Hiệu ứng fadeUp khi video mới load */
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loading Indicator */
+#home-loading-indicator {
+    text-align: center;
+    margin: 20px 0;
+    font-size: 14px;
+    color: #606060;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.5;
+    }
+}
+
+/* Responsive mobile */
+@media (max-width: 600px) {
+    #videosTableBody {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+    }
+
+    .thumbnail-img {
+        height: 140px;
+    }
+
+    .video-title {
+        font-size: 14px;
+    }
+}

@@ -47,6 +47,7 @@ else
     }
 }
 @section Css{
+    <link rel="stylesheet" href="~/css/home_home.css" />
     <style>
         .subscription-channel-card {
             position: relative;
@@ -153,7 +154,7 @@ else
 
 @section Scripts {
     <script src="~/js/site.js"></script>
-    <script src="~/js/home_home.js"></script>
+    @* <script src="~/js/home_home.js"></script> *@
     <script>
         var dataTable;
         setUtcDateTimeNow('@DateTime.UtcNow.ToString("o")');
