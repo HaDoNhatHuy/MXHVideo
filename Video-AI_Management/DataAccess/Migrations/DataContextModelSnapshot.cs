@@ -310,6 +310,9 @@ namespace DataAccess.Migrations
                     b.Property<Guid?>("CategoryId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CelebrityFrames")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid?>("ChannelId")
                         .HasColumnType("uniqueidentifier");
 

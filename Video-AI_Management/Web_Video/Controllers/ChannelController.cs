@@ -1,20 +1,19 @@
-﻿using Database_Video.Entities;
-using Database_Video.IRepo;
+﻿using DataAccess.Data;
+using Database_Video.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Web_Video.Extensions;
 using Web_Video.ViewModels;
 using Web_Video.ViewModels.Channel;
 using WebVideo.Utility;
-using System.IO;
-using Microsoft.EntityFrameworkCore;
-using DataAccess.Data;
 
 namespace Web_Video.Controllers
 {
@@ -315,189 +314,3 @@ namespace Web_Video.Controllers
         }
     }
 }
-
-//PHẦN CODE MẪU CHO TAB ANALYTICS
-
-//public class ChannelController : Controller
-//{
-//    private readonly IChannelService _channelService;
-//    private readonly IVideoService _videoService;
-
-//    public ChannelController(IChannelService channelService, IVideoService videoService)
-//    {
-//        _channelService = channelService;
-//        _videoService = videoService;
-//    }
-
-//    // ... Các action khác ...
-
-//    [HttpGet]
-//    public IActionResult GetAnalytics(string timeFilter)
-//    {
-//        // Xác định khoảng thời gian dựa trên timeFilter
-//        DateTime startDate;
-//        switch (timeFilter)
-//        {
-//            case "7":
-//                startDate = DateTime.Now.AddDays(-7);
-//                break;
-//            case "28":
-//                startDate = DateTime.Now.AddDays(-28);
-//                break;
-//            case "90":
-//                startDate = DateTime.Now.AddDays(-90);
-//                break;
-//            case "all":
-//            default:
-//                startDate = DateTime.MinValue; // Lấy tất cả thời gian
-//                break;
-//        }
-
-//        // Lấy dữ liệu từ service (giả lập hoặc thực tế)
-//        var videos = _videoService.GetVideosForChannel(User.Identity.Name)
-//            .Where(v => v.CreatedAt >= startDate)
-//            .ToList();
-
-//        var totalViews = videos.Sum(v => v.Views);
-//        var totalLikes = videos.Sum(v => v.Likes);
-//        var totalComments = videos.Sum(v => v.Comments);
-//        var subscribers = _channelService.GetChannelByUser(User.Identity.Name).SubcribersCount;
-
-//        // Dữ liệu cho biểu đồ Views Over Time
-//        var viewsOverTime = new
-//        {
-//            labels = new List<string>(),
-//            data = new List<int>()
-//        };
-//        if (timeFilter == "7")
-//        {
-//            for (int i = 6; i >= 0; i--)
-//            {
-//                var date = DateTime.Now.AddDays(-i).Date;
-//                viewsOverTime.labels.Add(date.ToString("MMM d"));
-//                viewsOverTime.data.Add(videos.Where(v => v.CreatedAt.Date == date).Sum(v => v.Views));
-//            }
-//        }
-//        else if (timeFilter == "28")
-//        {
-//            for (int i = 27; i >= 0; i -= 4)
-//            {
-//                var date = DateTime.Now.AddDays(-i).Date;
-//                viewsOverTime.labels.Add(date.ToString("MMM d"));
-//                viewsOverTime.data.Add(videos.Where(v => v.CreatedAt.Date >= date && v.CreatedAt.Date < date.AddDays(4)).Sum(v => v.Views));
-//            }
-//        }
-//        else if (timeFilter == "90")
-//        {
-//            for (int i = 89; i >= 0; i -= 10)
-//            {
-//                var date = DateTime.Now.AddDays(-i).Date;
-//                viewsOverTime.labels.Add(date.ToString("MMM d"));
-//                viewsOverTime.data.Add(videos.Where(v => v.CreatedAt.Date >= date && v.CreatedAt.Date < date.AddDays(10)).Sum(v => v.Views));
-//            }
-//        }
-//        else
-//        {
-//            var firstVideoDate = videos.Any() ? videos.Min(v => v.CreatedAt).Date : DateTime.Now.Date;
-//            var days = (DateTime.Now.Date - firstVideoDate).Days;
-//            for (int i = days; i >= 0; i -= Math.Max(1, days / 10))
-//            {
-//                var date = DateTime.Now.AddDays(-i).Date;
-//                viewsOverTime.labels.Add(date.ToString("MMM d"));
-//                viewsOverTime.data.Add(videos.Where(v => v.CreatedAt.Date >= date && v.CreatedAt.Date < date.AddDays(Math.Max(1, days / 10))).Sum(v => v.Views));
-//            }
-//        }
-
-//        // Dữ liệu cho biểu đồ Traffic Sources (giả lập)
-//        var trafficSources = new
-//        {
-//            labels = new[] { "Direct", "Search", "External", "Social" },
-//            data = new[] { 40, 30, 20, 10 } // Giả lập tỷ lệ phần trăm
-//        };
-
-//        var result = new
-//        {
-//            totalViews,
-//            subscribers,
-//            likes = totalLikes,
-//            comments = totalComments,
-//            viewsOverTime,
-//            trafficSources
-//        };
-
-//        return Json(result);
-//    }
-
-//    [HttpGet]
-//    public IActionResult GetTotalViews()
-//    {
-//        var videos = _videoService.GetVideosForChannel(User.Identity.Name).ToList();
-//        var totalViews = videos.Sum(v => v.Views);
-//        return Json(new { totalViews });
-//    }
-//}
-
-//[HttpPost]
-//public async Task<IActionResult> CreateChannel(ChannelAddEditViewModel model)
-//{
-//    if (ModelState.IsValid)
-//    {
-//        string avatarUrl = null;
-//        if (model.Avatar != null && model.Avatar.Length > 0)
-//        {
-//            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(model.Avatar.FileName);
-//            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/avatars", fileName);
-//            using (var stream = new FileStream(filePath, FileMode.Create))
-//            {
-//                await model.Avatar.CopyToAsync(stream);
-//            }
-//            avatarUrl = $"/uploads/avatars/{fileName}";
-//        }
-
-//        // Lưu thông tin channel vào database, bao gồm avatarUrl
-//        // Ví dụ:
-//        // var channel = new Channel
-//        // {
-//        //     Name = model.Name,
-//        //     About = model.About,
-//        //     AvatarUrl = avatarUrl ?? "/images/default-avatar.png"
-//        // };
-//        // await _context.Channels.AddAsync(channel);
-//        // await _context.SaveChangesAsync();
-
-//        return RedirectToAction("Channel", "Member");
-//    }
-
-//    return View(model);
-//}
-
-//[HttpPost]
-//public async Task<IActionResult> EditChannel(ChannelAddEditViewModel model)
-//{
-//    if (ModelState.IsValid)
-//    {
-//        string avatarUrl = model.AvatarUrl; // Giữ avatar hiện tại nếu không upload mới
-//        if (model.Avatar != null && model.Avatar.Length > 0)
-//        {
-//            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(model.Avatar.FileName);
-//            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/avatars", fileName);
-//            using (var stream = new FileStream(filePath, FileMode.Create))
-//            {
-//                await model.Avatar.CopyToAsync(stream);
-//            }
-//            avatarUrl = $"/uploads/avatars/{fileName}";
-//        }
-
-//        // Cập nhật thông tin channel trong database
-//        // Ví dụ:
-//        // var channel = await _context.Channels.FindAsync(channelId);
-//        // channel.Name = model.Name;
-//        // channel.About = model.About;
-//        // channel.AvatarUrl = avatarUrl;
-//        // await _context.SaveChangesAsync();
-
-//        return RedirectToAction("Channel", "Member");
-//    }
-
-//    return View("Channel", model);
-//}

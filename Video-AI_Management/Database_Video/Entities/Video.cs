@@ -22,6 +22,7 @@ namespace Database_Video.Entities
         public Channel? Channel { get; set; }
         public VideoFile VideoFile { get; set; }
         public string? RecognizedCelebrities { get; set; }
+        public string? CelebrityFrames { get; set; }  // Thêm mới: Lưu JSON như "{\"Celeb1\": [{\"time\": 5.2, \"frame\": \"base64_data\"}, ...], ...}"
         public ICollection<RecognizeCelebrities> RecognizeCelebrities { get; set; } = new HashSet<RecognizeCelebrities>();
         public ICollection<Comment> Comments { get; set; } = new HashSet<Comment>();
         public ICollection<LikeDislike> LikeDislikes { get; set; } = new HashSet<LikeDislike>();

@@ -128,26 +128,45 @@ namespace Web_Video.Seed
                     IFormFile imageFile = ConvertToFile(imageFiles[i]);
                     IFormFile videoFile = ConvertToFile(videoFiles[i]);
 
+                    //var videoToAdd = new Video
+                    //{
+                    //    Id = Guid.NewGuid(),
+                    //    Title = title,
+                    //    Description = description,
+                    //    CategoryId = categoryId,
+                    //    VideoFile = new VideoFile
+                    //    {
+                    //        Id = Guid.NewGuid(),
+                    //        ContentType = SD.GetContentType(videoFiles[i].Extension),
+                    //        Contents = GetContentsAsync(videoFile).GetAwaiter().GetResult(),
+                    //        Extension = videoFiles[i].Extension,
+                    //    },
+                    //    Thumbnail = photoService.UploadPhotoLocally(imageFile),
+                    //    ChannelId = (i % 2 == 0) ? johnChannel.Id : peterChannel.Id,
+                    //    UploadDate = SD.GetRandomDate(new DateTime(2015, 1, 1), DateTime.UtcNow, i),
+                    //};
                     var videoToAdd = new Video
                     {
                         Id = Guid.NewGuid(),
                         Title = title,
                         Description = description,
                         CategoryId = categoryId,
-                        VideoFile = new VideoFile
-                        {
-                            Id = Guid.NewGuid(),
-                            ContentType = SD.GetContentType(videoFiles[i].Extension),
-                            Contents = GetContentsAsync(videoFile).GetAwaiter().GetResult(),
-                            Extension = videoFiles[i].Extension,
-                        },
                         Thumbnail = photoService.UploadPhotoLocally(imageFile),
                         ChannelId = (i % 2 == 0) ? johnChannel.Id : peterChannel.Id,
                         UploadDate = SD.GetRandomDate(new DateTime(2015, 1, 1), DateTime.UtcNow, i),
                     };
+
+                    videoToAdd.VideoFile = new VideoFile
+                    {
+                        Id = Guid.NewGuid(),
+                        VideoId = videoToAdd.Id, //Important
+                        ContentType = SD.GetContentType(videoFiles[i].Extension),
+                        Contents = GetContentsAsync(videoFile).GetAwaiter().GetResult(),
+                        Extension = videoFiles[i].Extension,
+                    };
                     context.Videos.Add(videoToAdd);
                     await context.SaveChangesAsync();
-                }                
+                }
             }
         }
         #region Private Helper Methods

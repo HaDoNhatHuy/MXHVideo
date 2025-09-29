@@ -8,7 +8,7 @@
 <div class="row mt-3">
     <div class="col-lg-8 mb-2">
         <div class="video-container">
-            <video controls>
+            <video id="videoPlayer" controls>
                 <source src="/Video/GetVideoFile?videoId=@Model.Id" type="@Model.VideoContentType" />
                 Trình duyệt của bạn không hỗ trợ thẻ video.
             </video>
@@ -73,6 +73,34 @@
                     }
                 </div>
             }
+            @if (Model.CelebrityFrames != null && Model.CelebrityFrames.Any())
+            {
+                <div class="celebrity-frame-label">Khung hình xuất hiện</div>
+                <div class="frame-carousel">
+                    <button class="carousel-btn prev" onclick="moveCarousel(-1)"><i class="bi bi-chevron-left"></i></button>
+                    <div class="carousel-content" id="carouselContent">
+                        @foreach (var celebEntry in Model.CelebrityFrames.OrderBy(x => x.Value.First().Time))
+                        {
+                            var celebName = celebEntry.Key;
+                            foreach (var frame in celebEntry.Value)
+                            {
+                                <div class="frame-card">
+                                    <img src="data:image/jpeg;base64,@frame.FrameImage" alt="@celebName tại @frame.Time giây" class="frame-image" />
+                                    @{
+                                        var ts = TimeSpan.FromSeconds(frame.Time);
+                                    }
+                                    <p class="frame-time">@ts.ToString(@"mm\:ss")</p>
+                                </div>
+                            }
+                        }
+                    </div>
+                    <button class="carousel-btn next" onclick="moveCarousel(1)"><i class="bi bi-chevron-right"></i></button>
+                </div>
+            }
+            else
+            {
+                <p class="no-duration">Không có thông tin khung hình người nổi tiếng.</p>
+            }
             <span class="description-label">Description</span>
             <div class="description-content" id="descriptionContent">
                 <p>@Html.Raw(@Model.Description)</p>
@@ -106,11 +134,105 @@
     </div>
 </div>
 
-@section Css{
+@section Css {
     <link rel="stylesheet" href="~/css/video-watch.css" />
+    <style>
+        .celebrity-frame-label {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-top: 15px;
+            color: #333;
+        }
+
+        .frame-carousel {
+                    position: relative;
+                    margin-top: 10px;
+                    display: flex;
+                    align-items: center;
+                }
+
+                .carousel-btn {
+                    background-color: #fff;
+                    border: 1px solid #ddd;
+                    border-radius: 50%;
+                    width: 30px;
+                    height: 30px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: background-color 0.2s;
+                }
+
+                    .carousel-btn:hover {
+                        background-color: #f1f1f1;
+                    }
+
+                .carousel-content {
+                    display: flex;
+                    overflow-x: hidden;
+                    scroll-behavior: smooth;
+                    width: 100%;
+                    gap: 10px;
+                    padding: 0 10px;
+                }
+
+                .frame-card {
+                    min-width: 100px;
+                    background-color: #fff;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    padding: 5px;
+                    text-align: center;
+                }
+
+                .frame-image {
+                    width: 80px;
+                    height: 80px;
+                    object-fit: cover;
+                    border-radius: 4px;
+                }
+
+                .frame-time {
+                    font-size: 0.9em;
+                    color: #555;
+                    margin-top: 5px;
+                }
+
+                .no-duration {
+                    color: #888;
+                    margin-top: 10px;
+                    font-style: italic;
+                }        
+    </style>
 }
 
 @section Scripts {
+    <script>
+        let scrollPosition = 0;
+        const carouselContent = document.getElementById('carouselContent');
+        const cardWidth = 120; // Độ rộng của mỗi card (bao gồm padding/margin)
+
+        // function moveCarousel(direction) {
+        //     scrollPosition += direction * cardWidth;
+        //     const maxScroll = carouselContent.scrollWidth - carouselContent.clientWidth;
+        //     scrollPosition = Math.max(0, Math.min(scrollPosition, maxScroll));
+        //     carouselContent.scrollLeft = scrollPosition;
+        // }
+                function moveCarousel(direction) {
+            const carousel = document.getElementById('carouselContent');
+            const cards = carousel.getElementsByClassName('frame-card');
+            const cardWidth = cards[0].offsetWidth + 10; // Cộng margin
+            const currentScroll = carousel.scrollLeft;
+            const maxScroll = (cards.length - Math.floor(carousel.offsetWidth / cardWidth)) * cardWidth;
+
+            let newScroll = currentScroll + (direction * cardWidth);
+            if (newScroll < 0) newScroll = 0;
+            if (newScroll > maxScroll) newScroll = maxScroll;
+
+            carousel.scrollTo({ left: newScroll, behavior: 'smooth' });
+        }
+    </script>
     <script>
         function timeAgo(date) {
             const now = new Date();

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20250408112755_createDB")]
+    [Migration("20250929123809_createDB")]
     partial class createDB
     {
         /// <inheritdoc />
@@ -165,6 +165,30 @@ namespace DataAccess.Migrations
                     b.ToTable("Category");
                 });
 
+            modelBuilder.Entity("Database_Video.Entities.Celebrity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Age")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Gender")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Job")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Celebrity");
+                });
+
             modelBuilder.Entity("Database_Video.Entities.Channel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -178,6 +202,9 @@ namespace DataAccess.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ChannelName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ChannelPicture")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("CreatedDate")
@@ -247,6 +274,21 @@ namespace DataAccess.Migrations
                     b.ToTable("LikeDislike");
                 });
 
+            modelBuilder.Entity("Database_Video.Entities.RecognizeCelebrities", b =>
+                {
+                    b.Property<Guid?>("CelebrityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("VideoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("CelebrityId", "VideoId");
+
+                    b.HasIndex("VideoId");
+
+                    b.ToTable("RecognizeCelebrities");
+                });
+
             modelBuilder.Entity("Database_Video.Entities.Subscribe", b =>
                 {
                     b.Property<string>("AppUserId")
@@ -271,10 +313,16 @@ namespace DataAccess.Migrations
                     b.Property<Guid?>("CategoryId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CelebrityFrames")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid?>("ChannelId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RecognizedCelebrities")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Thumbnail")
@@ -538,6 +586,25 @@ namespace DataAccess.Migrations
                     b.Navigation("Video");
                 });
 
+            modelBuilder.Entity("Database_Video.Entities.RecognizeCelebrities", b =>
+                {
+                    b.HasOne("Database_Video.Entities.Celebrity", "Celebrity")
+                        .WithMany("RecognizeCelebrities")
+                        .HasForeignKey("CelebrityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Database_Video.Entities.Video", "Video")
+                        .WithMany("RecognizeCelebrities")
+                        .HasForeignKey("VideoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Celebrity");
+
+                    b.Navigation("Video");
+                });
+
             modelBuilder.Entity("Database_Video.Entities.Subscribe", b =>
                 {
                     b.HasOne("Database_Video.Entities.AppUser", "AppUser")
@@ -671,6 +738,11 @@ namespace DataAccess.Migrations
                     b.Navigation("Videos");
                 });
 
+            modelBuilder.Entity("Database_Video.Entities.Celebrity", b =>
+                {
+                    b.Navigation("RecognizeCelebrities");
+                });
+
             modelBuilder.Entity("Database_Video.Entities.Channel", b =>
                 {
                     b.Navigation("Subscribers");
@@ -683,6 +755,8 @@ namespace DataAccess.Migrations
                     b.Navigation("Comments");
 
                     b.Navigation("LikeDislikes");
+
+                    b.Navigation("RecognizeCelebrities");
 
                     b.Navigation("VideoFile")
                         .IsRequired();

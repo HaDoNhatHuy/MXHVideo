@@ -1,11 +1,12 @@
-# app.py
+# app.py (full code sau chỉnh)
 import face_recognition
 import pickle
 from flask import Flask, request, jsonify
+from process_video import process_video  # Import function từ process_video.py (đảm bảo cùng folder)
 
 app = Flask(__name__)
 
-# Load embeddings đã lưu
+# Load embeddings
 embeddings_file = "celebrity_embeddings.pkl"
 with open(embeddings_file, "rb") as f:
     known_faces_dict = pickle.load(f)
@@ -17,7 +18,6 @@ def recognize():
     frame_path = request.json['frame_path']
     print(f"Processing frame: {frame_path}")
     
-    # Load ảnh frame
     frame = face_recognition.load_image_file(frame_path)
     face_locations = face_recognition.face_locations(frame)
     face_encodings = face_recognition.face_encodings(frame, face_locations)
@@ -34,13 +34,23 @@ def recognize():
                 best_match_distance = min_distance
                 best_match_name = name
 
-        if best_match_distance < 0.4:
+        if best_match_distance < 0.45:
             recognized_celebrities.append(best_match_name)
             print(f"Matched {best_match_name} with distance {best_match_distance}")
         else:
             recognized_celebrities.append("Unknown")
 
     return jsonify({"celebrities": recognized_celebrities})
+
+@app.route('/process_video', methods=['POST'])
+def process_video_endpoint():
+    video_path = request.json['video_path']
+    try:
+        frames = process_video(video_path, known_faces_dict)  # Truyền known_faces_dict
+        return jsonify({"frames": frames})  # Trả về {"frames": {...}}
+    except Exception as e:
+        print(f"Error in process_video_endpoint: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='localhost', port=5000)

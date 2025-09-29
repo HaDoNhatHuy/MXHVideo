@@ -20,11 +20,15 @@ namespace Web_Video.ViewModels.Video
         public int ViewersCount { get; set; }
         public int SubscribersCount { get; set; }
         public CommentViewModel CommentVM { get; set; } = new();
-        // Thêm thuộc tính mới
         public string VideoContentType { get; set; } // Lưu ContentType của video
-
-        // Thêm thuộc tính mới - nhận diện người nổi tiếng
         public string RecognizedCelebrities { get; set; }
+        public string CelebrityFramesJson { get; set; } // JSON thô từ DB
+        public Dictionary<string, List<CelebrityFrame>> CelebrityFrames { get; set; } // Dữ liệu đã parse
+        public class CelebrityFrame
+        {
+            public float Time { get; set; } // Giây xuất hiện
+            public string FrameImage { get; set; } // Dữ liệu base64 của ảnh frame
+        }
 
         // Thêm thuộc tính cho danh sách video đề xuất
         public List<RecommendedVideoViewModel> RecommendedVideos { get; set; }
