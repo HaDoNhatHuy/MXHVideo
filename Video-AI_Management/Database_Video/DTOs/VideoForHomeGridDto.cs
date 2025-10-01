@@ -11,5 +11,7 @@
         public string ChannelName { get; set; }
         public Guid ChannelId { get; set; }
         public Guid CategoryId { get; set; }
+        public string CreatedAtTimeAgo { get; set; } // Thêm mới: Thời gian tương đối
+
     }
 }

@@ -2,7 +2,10 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using DataAccess.Data;
 using Database_Video.DTOs;
+using Database_Video.Entities;
+using Database_Video.IRepo;
 using Database_Video.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,37 +23,50 @@ namespace Web_Video.Controllers
     public class HomeController : CoreController
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly DataContext Context;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(DataContext context, IUnitOfWork unitOfWork, ILogger<HomeController> logger)
         {
             _logger = logger;
+            Context = context;
         }
 
-        public async Task<IActionResult> Index(string page)
+        public async Task<IActionResult> Index()
         {
             var toReturn = new HomeViewModel();
             if (User.Identity.IsAuthenticated)
             {
-                toReturn.Page = page;
-                if (page == null || page == "Home")
+                var allCategories = await UnitOfWork.CategoryRepo.GetAllAsync();
+                var categoryList = allCategories.Select(category => new SelectListItem
                 {
-                    var allCategories = await UnitOfWork.CategoryRepo.GetAllAsync();
-                    var categoryList = allCategories.Select(category => new SelectListItem
-                    {
-                        Text = category.CategoryName,
-                        Value = category.Id.ToString()
-                    }).ToList();
+                    Text = category.CategoryName,
+                    Value = category.Id.ToString()
+                }).ToList();
 
-                    categoryList.Insert(0, new SelectListItem
-                    {
-                        Text = "All",
-                        Value = "0",
-                        Selected = true
-                    });
-                    toReturn.CategoryDropdown = categoryList;
-                }
+                categoryList.Insert(0, new SelectListItem
+                {
+                    Text = "All",
+                    Value = "0",
+                    Selected = true
+                });
+                toReturn.CategoryDropdown = categoryList;
             }
             return View(toReturn);
+        }
+
+        public IActionResult History()
+        {
+            return View(new HomeViewModel());
+        }
+
+        public IActionResult Liked()
+        {
+            return View(new HomeViewModel());
+        }
+
+        public IActionResult Subscriptions()
+        {
+            return View(new HomeViewModel());
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -66,7 +82,6 @@ namespace Web_Video.Controllers
         {
             var items = await UnitOfWork.VideoRepo.GetVideosForHomeGridAsync(parameters);
             var paginatedResults = new PaginatedResult<VideoForHomeGridDto>(items, items.TotalItemsCount, items.PageNumber, items.PageSize, items.TotalPages);
-
             return Json(new ApiResponse(200, result: paginatedResults));
         }
 
@@ -75,25 +90,22 @@ namespace Web_Video.Controllers
         public async Task<IActionResult> GetSubscriptions()
         {
             var userSubscribedChannels = await Context.Subscribes
-               .Where(x => x.AppUserId == User.GetUserId())
-               // project the result into an anonymous object
-               .Select(x => new
-               {
-                   Id = x.ChannelId,
-                   ChannelName = x.Channel.ChannelName,
-                   VideosCount = x.Channel.Videos.Count
-               }).ToListAsync();
-
+                .Where(x => x.AppUserId == User.GetUserId())
+                .Select(x => new
+                {
+                    Id = x.ChannelId,
+                    ChannelName = x.Channel.ChannelName,
+                    VideosCount = x.Channel.Videos.Count
+                }).ToListAsync();
             return Json(new ApiResponse(200, result: userSubscribedChannels));
         }
 
         [Authorize(Roles = $"{SD.UserRole}")]
         [HttpGet]
-        public async Task<IActionResult> GetHistory()
+        public async Task<IActionResult> GetHistory(int pageNumber = 1, int pageSize = 12)
         {
-            var userWatchedVideoHistory = await Context.VideoViews
+            var query = Context.VideoViews
                 .Where(x => x.AppUserId == User.GetUserId())
-                // project the result into an anonymous object
                 .Select(x => new
                 {
                     Id = x.VideoId,
@@ -102,19 +114,28 @@ namespace Web_Video.Controllers
                     ChannelName = x.Video.Channel.ChannelName,
                     ChannelId = x.Video.Channel.Id,
                     LastVisitTimeAgo = SD.TimeAgo(x.LastVisit),
-                    x.LastVisit
-                }).ToListAsync();
-
-            return Json(new ApiResponse(200, result: userWatchedVideoHistory));
+                    x.LastVisit,
+                    //Duration = x.Video.Duration,
+                    //Progress = x.Progress,
+                    Views = x.Video.Views // Thêm tr??ng Views
+                });
+            var totalItems = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(x => x.LastVisit) // S?p x?p theo LastVisit gi?m d?n
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+            var paginatedResults = new PaginatedResult<object>(items, totalItems, pageNumber, pageSize, totalPages);
+            return Json(new ApiResponse(200, result: paginatedResults));
         }
 
         [Authorize(Roles = $"{SD.UserRole}")]
         [HttpGet]
-        public async Task<IActionResult> GetLikesDislikesVideos(bool liked)
+        public async Task<IActionResult> GetLikesDislikesVideos(bool liked, int pageNumber = 1, int pageSize = 12)
         {
-            var userLikedDislikedVideos = await Context.LikeDislikes
+            var query = Context.LikeDislikes
                 .Where(x => x.AppUserId == User.GetUserId() && x.Liked == liked)
-                // project the result into an anonymous object
                 .Select(x => new
                 {
                     Id = x.VideoId,
@@ -123,11 +144,97 @@ namespace Web_Video.Controllers
                     ChannelName = x.Video.Channel.ChannelName,
                     ChannelId = x.Video.Channel.Id,
                     CreatedAtTimeAgo = SD.TimeAgo(x.Video.UploadDate),
-                    x.Video.UploadDate
-                }).ToListAsync();
-
-            return Json(new ApiResponse(200, result: userLikedDislikedVideos));
+                    x.Video.UploadDate,
+                    //Duration = x.Video.Duration,
+                    //Progress = x.VideoView?.Progress ?? 0,
+                    Views = x.Video.Views // Thêm tr??ng Views
+                });
+            var totalItems = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(x => x.UploadDate)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+            var paginatedResults = new PaginatedResult<object>(items, totalItems, pageNumber, pageSize, totalPages);
+            return Json(new ApiResponse(200, result: paginatedResults));
         }
+
+        [Authorize(Roles = $"{SD.UserRole}")]
+        [HttpPost]
+        public async Task<IActionResult> RemoveHistory(Guid videoId)
+        {
+            var videoView = await Context.VideoViews
+                .FirstOrDefaultAsync(x => x.AppUserId == User.GetUserId() && x.VideoId == videoId);
+            if (videoView == null)
+            {
+                return Json(new ApiResponse(404, message: "Video not found in history."));
+            }
+
+            Context.VideoViews.Remove(videoView);
+            await Context.SaveChangesAsync();
+            return Json(new ApiResponse(200, message: "Video removed from history."));
+        }
+
+        [Authorize(Roles = $"{SD.UserRole}")]
+        [HttpPost]
+        public async Task<IActionResult> RemoveLike(Guid videoId)
+        {
+            var like = await Context.LikeDislikes
+                .FirstOrDefaultAsync(x => x.AppUserId == User.GetUserId() && x.VideoId == videoId && x.Liked == true);
+            if (like == null)
+            {
+                return Json(new ApiResponse(404, message: "Video not found in liked videos."));
+            }
+
+            Context.LikeDislikes.Remove(like);
+            await Context.SaveChangesAsync();
+            return Json(new ApiResponse(200, message: "Video removed from liked videos."));
+        }
+
+        [Authorize(Roles = $"{SD.UserRole}")]
+        [HttpPost]
+        public async Task<IActionResult> AddOrUpdateView(string videoId)
+        {
+            if (!Guid.TryParse(videoId, out var videoGuid))
+            {
+                return Json(new ApiResponse(400, message: "Invalid video ID."));
+            }
+
+            var videoView = await Context.VideoViews
+                .FirstOrDefaultAsync(x => x.AppUserId == User.GetUserId() && x.VideoId == videoGuid);
+
+            if (videoView == null)
+            {
+                // Thêm m?i b?n ghi VideoView
+                videoView = new VideoView
+                {
+                    AppUserId = User.GetUserId(),
+                    VideoId = videoGuid,
+                    LastVisit = DateTime.UtcNow,
+                    NumberOfVisit = 1,
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    // Các tr??ng khác nh? City, PostalCode, Country, Is_Proxy có th? ???c c?p nh?t t? d?ch v? IP2Location n?u có
+                };
+                Context.VideoViews.Add(videoView);
+            }
+            else
+            {
+                // C?p nh?t b?n ghi hi?n có
+                videoView.LastVisit = DateTime.UtcNow;
+                videoView.NumberOfVisit += 1;
+            }
+
+            // T?ng Views trong b?ng Video
+            var video = await Context.Videos.FirstOrDefaultAsync(x => x.Id == videoGuid);
+            if (video != null)
+            {
+                video.Views = (video.Views ?? 0) + 1;
+            }
+
+            await Context.SaveChangesAsync();
+            return Json(new ApiResponse(200, message: "View recorded successfully."));
+        }
+        #endregion
     }
-    #endregion
 }

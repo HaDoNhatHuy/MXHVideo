@@ -5,485 +5,317 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="row mt-3">
-    <div class="col-lg-8 mb-2">
-        <div class="video-container">
-            <video id="videoPlayer" controls>
-                <source src="/Video/GetVideoFile?videoId=@Model.Id" type="@Model.VideoContentType" />
-                Trình duyệt của bạn không hỗ trợ thẻ video.
-            </video>
-        </div>
-
-        <h1 class="video-title">@Model.Title</h1>
-
-        <div class="channel-action-row">
-            <div class="channel-info">
-                <img src="@Model.ChannelAvatar" alt="@Model.ChannelName Avatar" class="channel-avatar" />
-                <div class="channel-text">
-                    <a asp-action="Channel" asp-controller="Member" asp-route-id="@Model.ChannelId" class="text-decoration-none channel-name">@Model.ChannelName</a>
-                    <p class="subscribers">@SD.FormatView(Model.SubscribersCount) người đăng ký</p>
+<div class="video-block section-padding">
+    <div class="row">
+        <!-- Phần video chính -->
+        <div class="col-md-8">
+            <div class="single-video-left">
+                <!-- Video Player -->
+                <div class="single-video">
+                    <video id="videoPlayer" width="100%" height="315" controls>
+                        <source src="/Video/GetVideoFile?videoId=@Model.Id" type="@Model.VideoContentType" />
+                        Trình duyệt của bạn không hỗ trợ thẻ video.
+                    </video>
                 </div>
-            </div>
-
-            <div class="action-buttons">
-                @if (User.GetUserChannelId() != Model.ChannelId.ToString())
-                {
-                    <button id="subscribeBtn" class="subscribe-btn @(Model.IsSubscribed ? "subscribed" : "")">
-                        @(Model.IsSubscribed ? "Đã đăng ký" : "Đăng ký")
-                        @if (Model.IsSubscribed)
+                <!-- Tiêu đề và lượt xem -->
+                <div class="single-video-title box mb-3">
+                    <h2><a href="#">@Model.Title</a></h2>
+                    <p class="mb-0"><i class="fas fa-eye"></i> @SD.FormatView(Model.ViewersCount) views</p>
+                </div>
+                <!-- Thông tin kênh và nút hành động -->
+                <div class="single-video-author box mb-3">
+                    <div class="float-right">
+                        @if (User.GetUserChannelId() != Model.ChannelId.ToString())
                         {
-                            <i class="bi bi-bell-fill bell-icon"></i>
+                            <button id="subscribeBtn" class="btn btn-danger @(Model.IsSubscribed ? "subscribed" : "")">
+                                @(Model.IsSubscribed ? "Subscribed" : "Subscribe") <strong>@SD.FormatView(Model.SubscribersCount)</strong>
+                                @if (Model.IsSubscribed)
+                                {
+                                    <i class="fas fa-bell"></i>
+                                }
+                            </button>
                         }
-                    </button>
-                }
-                <button class="btn @(Model.IsLiked ? "active" : "")" id="likeBtn" onclick="likeDislike('likeBtn', 'like')">
-                    <i class="bi bi-hand-thumbs-up-fill"></i> <span>@SD.FormatView(Model.LikesCount)</span>
-                </button>
-                <button class="btn @(Model.IsDisiked ? "active" : "")" id="dislikeBtn" onclick="likeDislike('dislikeBtn', 'dislike')">
-                    <i class="bi bi-hand-thumbs-down-fill"></i>
-                </button>
-                <button class="btn">
-                    <i class="bi bi-share-fill"></i> Chia sẻ
-                </button>
-                <form method="post">
-                    <button asp-action="DownloadVideoFile" asp-route-videoId="@Model.Id" type="submit" class="btn">
-                        <i class="bi bi-download"></i> Tải xuống
-                    </button>
-                </form>
-                <button class="btn">
-                    <i class="bi bi-three-dots"></i>
-                </button>
-            </div>
-        </div>
-
-        <div class="description-box">
-            <p class="views-time"><strong>@SD.FormatView(Model.ViewersCount) lượt xem • @SD.TimeAgo(Model.CreatedAt)</strong></p>
-            @if (!string.IsNullOrEmpty(Model.RecognizedCelebrities))
-            {
-                <div class="celebrity-label">Nhân vật nổi tiếng trong video</div>
-                <div class="tag-container">
-                    @{
-                        var celebrities = Model.RecognizedCelebrities
-                        .Replace("Đã nhận diện: ", "")
-                        .Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
-                    }
-                    @foreach (var celebrity in celebrities)
-                    {
-                        <span class="tag">@celebrity</span>
-                    }
+                    </div>
+                    <img class="img-fluid" src="@Model.ChannelAvatar" alt="@Model.ChannelName Avatar">
+                    <p>
+                        <a href="@Url.Action("Channel", "Member", new { id = Model.ChannelId })"><strong>@Model.ChannelName</strong></a>
+                        <span title="" data-placement="top" data-toggle="tooltip" data-original-title="Verified"><i class="fas fa-check-circle text-success"></i></span>
+                    </p>
+                    <small>Published on @SD.TimeAgo(Model.CreatedAt)</small>
                 </div>
-            }
-            @if (Model.CelebrityFrames != null && Model.CelebrityFrames.Any())
-            {
-                <div class="celebrity-frame-label">Khung hình xuất hiện</div>
-                <div class="frame-carousel">
-                    <button class="carousel-btn prev" onclick="moveCarousel(-1)"><i class="bi bi-chevron-left"></i></button>
-                    <div class="carousel-content" id="carouselContent">
-                        @foreach (var celebEntry in Model.CelebrityFrames.OrderBy(x => x.Value.First().Time))
-                        {
-                            var celebName = celebEntry.Key;
-                            foreach (var frame in celebEntry.Value)
-                            {
-                                <div class="frame-card">
-                                    <img src="data:image/jpeg;base64,@frame.FrameImage" alt="@celebName tại @frame.Time giây" class="frame-image" />
-                                    @{
-                                        var ts = TimeSpan.FromSeconds(frame.Time);
+                <!-- Thông tin video và mô tả -->
+                <div class="single-video-info-content box mb-3">
+                    @if (!string.IsNullOrEmpty(Model.RecognizedCelebrities))
+                    {
+                        <h6>Cast:</h6>
+                        <p>@Model.RecognizedCelebrities.Replace("Đã nhận diện: ", "")</p>
+                    }
+                    <h6>Category:</h6>
+                    <p>@(Model.CategoryName ?? "Unknown")</p>
+                    <h6>About:</h6>
+                    <div class="description-content" id="descriptionContent">
+                        <p>@Html.Raw(Model.Description)</p>
+                    </div>
+                    @if (Model.CelebrityFrames != null && Model.CelebrityFrames.Any())
+                    {
+                        <h6>Frames:</h6>
+                        <div class="frame-carousel">
+                            <button class="carousel-btn prev" onclick="moveCarousel(-1)"><i class="fas fa-chevron-left"></i></button>
+                            <div class="carousel-content" id="carouselContent">
+                                @foreach (var celebEntry in Model.CelebrityFrames.OrderBy(x => x.Value.First().Time))
+                                {
+                                    var celebName = celebEntry.Key;
+                                    foreach (var frame in celebEntry.Value)
+                                    {
+                                        <div class="frame-card">
+                                            <img src="data:image/jpeg;base64,@frame.FrameImage" alt="@celebName tại @frame.Time giây" class="frame-image" />
+                                            @{
+                                                var ts = TimeSpan.FromSeconds(frame.Time);
+                                            }
+                                            <p class="frame-time">@ts.ToString(@"mm\:ss")</p>
+                                        </div>
                                     }
-                                    <p class="frame-time">@ts.ToString(@"mm\:ss")</p>
-                                </div>
+                                }
+                            </div>
+                            <button class="carousel-btn next" onclick="moveCarousel(1)"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="no-duration">No celebrity frame information available.</p>
+                    }
+                    <h6>Tags:</h6>
+                    <p class="tags mb-0">
+                        @if (!string.IsNullOrEmpty(Model.RecognizedCelebrities))
+                        {
+                            var celebrities = Model.RecognizedCelebrities
+                            .Replace("Đã nhận diện: ", "")
+                            .Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+                            foreach (var celebrity in celebrities)
+                            {
+                                <span><a href="#">@celebrity</a></span>
                             }
                         }
-                    </div>
-                    <button class="carousel-btn next" onclick="moveCarousel(1)"><i class="bi bi-chevron-right"></i></button>
+                        else
+                        {
+                            <span><a href="#">General</a></span>
+                        }
+                    </p>
                 </div>
-            }
-            else
-            {
-                <p class="no-duration">Không có thông tin khung hình người nổi tiếng.</p>
-            }
-            <span class="description-label">Description</span>
-            <div class="description-content" id="descriptionContent">
-                <p>@Html.Raw(@Model.Description)</p>
+                <!-- Bình luận -->
+                <div class="comments-section">
+                    <partial name="_CommentPartial" model="Model.CommentVM" />
+                    <button class="load-more-btn" id="loadMoreComments" style="display: none;">Load More</button>
+                </div>
             </div>
-            <button class="show-more-btn" id="showMoreBtn">Show more</button>
         </div>
-
-        <div class="comments-section">
-            <partial name="_CommentPartial" model="Model.CommentVM" />
-            <button class="load-more-btn" id="loadMoreComments" style="display: none;">Load More</button>
-        </div>
-    </div>
-
-    <div class="col-lg-4">
-        <div class="recommended-videos">
-            @foreach (var video in Model.RecommendedVideos)
-            {
-                <div class="recommended-video">
-                    <a asp-action="Watch" asp-controller="Video" asp-route-id="@video.Id">
-                        <img src="@video.Thumbnail" alt="@video.Title" />
-                    </a>
-                    <div class="video-info">
-                        <a asp-action="Watch" asp-controller="Video" asp-route-id="@video.Id" class="text-decoration-none text-dark">
-                            <h6>@video.Title</h6>
-                        </a>
-                        <p>@video.ChannelName • @SD.FormatView(video.ViewersCount) lượt xem • @SD.TimeAgo(video.CreatedAt)</p>
+        <!-- Phần video đề xuất -->
+        <div class="col-md-4">
+            <div class="single-video-right">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="adblock">
+                            <div class="img">
+                                Google AdSense<br>
+                                336 x 280
+                            </div>
+                        </div>
+                        <div class="main-title">
+                            <div class="btn-group float-right right-action">
+                                <a href="#" class="right-action-link text-gray" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Sort by <i class="fa fa-caret-down" aria-hidden="true"></i>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right">
+                                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> &nbsp; Top Rated</a>
+                                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-signal"></i> &nbsp; Viewed</a>
+                                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-times-circle"></i> &nbsp; Close</a>
+                                </div>
+                            </div>
+                            <h6>Up Next</h6>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        @foreach (var video in Model.RecommendedVideos)
+                        {
+                            <div class="video-card video-card-list">
+                                <div class="video-card-image">
+                                    <a class="play-icon" href="@Url.Action("Watch", "Video", new { id = video.Id })"><i class="fas fa-play-circle"></i></a>
+                                    <a href="@Url.Action("Watch", "Video", new { id = video.Id })"><img class="img-fluid" src="@video.Thumbnail" alt="@video.Title"></a>
+                                    @* <div class="time">@(video.Duration != null ? TimeSpan.FromSeconds(video.Duration.TotalSeconds).ToString(@"mm\:ss") : "3:50")</div> *@
+                                </div>
+                                <div class="video-card-body">
+                                    <div class="btn-group float-right right-action">
+                                        <a href="#" class="right-action-link text-gray" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-right">
+                                            <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> &nbsp; Top Rated</a>
+                                            <a class="dropdown-item" href="#"><i class="fas fa-fw fa-signal"></i> &nbsp; Viewed</a>
+                                            <a class="dropdown-item" href="#"><i class="fas fa-fw fa-times-circle"></i> &nbsp; Close</a>
+                                        </div>
+                                    </div>
+                                    <div class="video-title">
+                                        <a href="@Url.Action("Watch", "Video", new { id = video.Id })">@video.Title</a>
+                                    </div>
+                                    <div class="video-page text-success">
+                                        @video.ChannelName <a title="" data-placement="top" data-toggle="tooltip" href="#" data-original-title="Verified"><i class="fas fa-check-circle text-success"></i></a>
+                                    </div>
+                                    <div class="video-view">
+                                        @SD.FormatView(video.ViewersCount) views &nbsp;<i class="fas fa-calendar-alt"></i> @SD.TimeAgo(video.CreatedAt)
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        <div class="adblock mt-0">
+                            <div class="img">
+                                Google AdSense<br>
+                                336 x 280
+                            </div>
+                        </div>
                     </div>
                 </div>
-            }
+            </div>
         </div>
     </div>
 </div>
 
 @section Css {
-    <link rel="stylesheet" href="~/css/video-watch.css" />
+    <link rel="stylesheet" href="~/css_new/osahan.css" asp-append-version="true" />
     <style>
-        .celebrity-frame-label {
-            font-size: 1.1em;
+        .video-block {
+            margin-left:-150px;
+        }
+        .single-video-left .single-video {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+        }
+
+            .single-video-left .single-video video {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+            }
+
+        .single-video-title h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .single-video-author img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .single-video-author p {
+            margin-bottom: 0.25rem;
+        }
+
+        .single-video-info-content h6 {
+            font-size: 1rem;
             font-weight: 600;
-            margin-top: 15px;
-            color: #333;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
         }
 
         .frame-carousel {
-                    position: relative;
-                    margin-top: 10px;
-                    display: flex;
-                    align-items: center;
-                }
+            position: relative;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+        }
 
-                .carousel-btn {
-                    background-color: #fff;
-                    border: 1px solid #ddd;
-                    border-radius: 50%;
-                    width: 30px;
-                    height: 30px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    transition: background-color 0.2s;
-                }
+        .carousel-btn {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
 
-                    .carousel-btn:hover {
-                        background-color: #f1f1f1;
-                    }
+            .carousel-btn:hover {
+                background-color: #f1f1f1;
+            }
 
-                .carousel-content {
-                    display: flex;
-                    overflow-x: hidden;
-                    scroll-behavior: smooth;
-                    width: 100%;
-                    gap: 10px;
-                    padding: 0 10px;
-                }
+        .carousel-content {
+            display: flex;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            width: 100%;
+            gap: 10px;
+            padding: 0 10px;
+        }
 
-                .frame-card {
-                    min-width: 100px;
-                    background-color: #fff;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                    padding: 5px;
-                    text-align: center;
-                }
+        .frame-card {
+            min-width: 100px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 5px;
+            text-align: center;
+        }
 
-                .frame-image {
-                    width: 80px;
-                    height: 80px;
-                    object-fit: cover;
-                    border-radius: 4px;
-                }
+        .frame-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
 
-                .frame-time {
-                    font-size: 0.9em;
-                    color: #555;
-                    margin-top: 5px;
-                }
+        .frame-time {
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 5px;
+        }
 
-                .no-duration {
-                    color: #888;
-                    margin-top: 10px;
-                    font-style: italic;
-                }        
+        .no-duration {
+            color: #888;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .description-content {
+            max-height: 100px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+            .description-content.expanded {
+                max-height: none;
+            }
     </style>
 }
 
 @section Scripts {
+    <script src="~/js/site.js"></script>
     <script>
-        let scrollPosition = 0;
-        const carouselContent = document.getElementById('carouselContent');
-        const cardWidth = 120; // Độ rộng của mỗi card (bao gồm padding/margin)
-
-        // function moveCarousel(direction) {
-        //     scrollPosition += direction * cardWidth;
-        //     const maxScroll = carouselContent.scrollWidth - carouselContent.clientWidth;
-        //     scrollPosition = Math.max(0, Math.min(scrollPosition, maxScroll));
-        //     carouselContent.scrollLeft = scrollPosition;
-        // }
-                function moveCarousel(direction) {
-            const carousel = document.getElementById('carouselContent');
-            const cards = carousel.getElementsByClassName('frame-card');
-            const cardWidth = cards[0].offsetWidth + 10; // Cộng margin
-            const currentScroll = carousel.scrollLeft;
-            const maxScroll = (cards.length - Math.floor(carousel.offsetWidth / cardWidth)) * cardWidth;
-
-            let newScroll = currentScroll + (direction * cardWidth);
-            if (newScroll < 0) newScroll = 0;
-            if (newScroll > maxScroll) newScroll = maxScroll;
-
-            carousel.scrollTo({ left: newScroll, behavior: 'smooth' });
-        }
-    </script>
-    <script>
-        function timeAgo(date) {
-            const now = new Date();
-            const posted = new Date(date);
-            const diffInSeconds = Math.floor((now - posted) / 1000);
-
-            if (diffInSeconds < 60) return "vừa xong";
-            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
-            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
-            return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
-        }
-
-        $('#subscribeBtn').on('click', function () {
-            $.ajax({
-                url: "/Video/SubscribeChannel",
-                type: "PUT",
-                data: { channelId: '@Model.ChannelId' },
-                success: function (data) {
-                    if (data.title == "Unsubscribed") {
-                        $('#subscribeBtn').removeClass('subscribed');
-                        $('#subscribeBtn').html('Đăng ký');
-                        displayNotification(false, data.title, data.message, 'toastr');
-                    } else if (data.title == "Subscribed") {
-                        $('#subscribeBtn').addClass('subscribed');
-                        $('#subscribeBtn').html('Đã đăng ký <i class="bi bi-bell-fill bell-icon"></i>');
-                        displayNotification(true, data.title, data.message, 'toastr');
-                    } else {
-                        displayNotification(data.isSuccess, data.title, data.message, 'modal');
-                    }
-                }
-            });
-        });
-
-        function likeDislike(id, action) {
-            let model = {
-                videoId: '@Model.Id',
-                action
-            };
-
-            if ($('#' + id).hasClass('active')) {
-                model.like = false;
-            } else {
-                model.like = true;
-            }
-
-            $.ajax({
-                url: "/Video/LikeDislikeVideo",
-                type: "PUT",
-                data: model,
-                success: function (data) {
-                    const commands = data.title.split('-');
-                    commands.map(c => {
-                        if (c == 'addLike') {
-                            $('#likeBtn').addClass('active');
-                            var $span = $('#likeBtn').find('span');
-                            var currentNumber = parseInt($span.text());
-                            $span.text(currentNumber + 1);
-                        } else if (c == 'addDislike') {
-                            $('#dislikeBtn').addClass('active');
-                            var $span = $('#dislikeBtn').find('span');
-                            var currentNumber = parseInt($span.text());
-                            $span.text(currentNumber + 1);
-                        } else if (c == 'removeLike') {
-                            $('#likeBtn').removeClass('active');
-                            var $span = $('#likeBtn').find('span');
-                            var currentNumber = parseInt($span.text());
-                            $span.text(currentNumber - 1);
-                        } else if (c == 'removeDislike') {
-                            $('#dislikeBtn').removeClass('active');
-                            var $span = $('#dislikeBtn').find('span');
-                            var currentNumber = parseInt($span.text());
-                            $span.text(currentNumber - 1);
-                        }
-                    });
-                }
-            });
-        }
-
-        $('#textComment').on('input', function () {
-            var text = $(this).val().trim();
-            if (text.length > 0) {
-                $('#sectionCommentBtns').fadeIn();
-            } else {
-                $('#sectionCommentBtns').fadeOut();
-            }
-        });
-
-        $('#btnCancel').on('click', function () {
-            $('#textComment').val('');
-            $('#sectionCommentBtns').fadeOut();
-        });
-
-        document.getElementById('create-comment-form').addEventListener('submit', function (event) {
-            event.preventDefault();
-
-            const content = document.getElementById('textComment').value.trim();
-            const videoId = document.querySelector('input[name="PostComment.VideoId"]').value;
-            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-
-            const data = {
-                PostComment: {
-                    VideoId: videoId,
-                    Content: content
-                },
-                __RequestVerificationToken: token
-            };
-
-            $.ajax({
-                url: '/Video/CreateComment',
-                type: 'POST',
-                data: data,
-                success: function (data) {
-                    if (data.isSuccess) {
-                        const newComment = data.comment;
-                        const isOwner = newComment.appUserId === '@User.GetUserId()';
-                        const commentHtml = `
-                            <div class="comment-item" id="comment-${newComment.id}">
-                                <img src="/avatarUser/avt-default.jpg" alt="User Avatar" />
-                                <div class="comment-content">
-                                    <div class="comment-header">
-                                        <span class="comment-author">${newComment.fromName}</span>
-                                        <span class="comment-time">${timeAgo(newComment.postedAt)}</span>
-                                    </div>
-                                    <p class="comment-text">${newComment.content}</p>
-                                    ${isOwner ? `
-                                        <div class="comment-actions-wrapper">
-                                            <button class="btn btn-more-actions" data-comment-id="${newComment.id}">
-                                                <i class="bi bi-three-dots-vertical"></i>
-                                            </button>
-                                            <div class="comment-actions-menu" id="actions-menu-${newComment.id}" style="display: none;">
-                                                <button class="btn btn-edit-comment" data-comment-id="${newComment.id}">Sửa</button>
-                                                <button class="btn btn-delete-comment" data-comment-id="${newComment.id}" data-video-id="${videoId}">Xóa</button>
-                                            </div>
-                                        </div>
-                                        <form class="edit-comment-form" id="edit-form-${newComment.id}">
-                                            <input type="hidden" name="commentId" value="${newComment.id}" />
-                                            <input type="hidden" name="videoId" value="${videoId}" />
-                                            <input type="hidden" name="__RequestVerificationToken" value="${token}" />
-                                            <textarea name="content" class="form-control" rows="2">${newComment.content}</textarea>
-                                            <div class="edit-actions">
-                                                <button type="button" class="btn btn-cancel btn-cancel-edit" data-comment-id="${newComment.id}">Hủy</button>
-                                                <button type="submit" class="btn btn-save">Lưu</button>
-                                            </div>
-                                        </form>
-                                    ` : ''}
-                                </div>
-                            </div>
-                        `;
-
-                        const commentsList = document.getElementById('comments-list');
-                        commentsList.insertAdjacentHTML('afterbegin', commentHtml);
-
-                        const commentItems = document.querySelectorAll('.comment-item');
-                        if (commentItems.length > 5) {
-                            for (let i = 5; i < commentItems.length; i++) {
-                                commentItems[i].remove();
-                            }
-                        }
-
-                        const commentCount = document.querySelectorAll('.comment-item').length;
-                        document.querySelector('.comments-header').textContent = `${commentCount} ${commentCount > 1 ? 'Bình luận' : 'Bình luận'}`;
-                        $('#loadMoreComments').show();
-
-                        $('#textComment').val('');
-                        $('#sectionCommentBtns').fadeOut();
-
-                        displayNotification(true, data.title, data.message, 'toastr');
-                    } else {
-                        displayNotification(false, data.title, data.message, 'toastr');
-                    }
-                },
-                error: function (xhr) {
-                    displayNotification(false, 'Lỗi', `Đã xảy ra lỗi khi thêm bình luận: ${xhr.statusText}`, 'toastr');
-                }
-            });
-        });
-
-        let currentPage = 1;
-        const commentsPerPage = 5;
-        function loadMoreComments() {
-            $.ajax({
-                url: '/Video/GetCommentsByPage',
-                type: 'GET',
-                data: {
-                    videoId: '@Model.Id',
-                    page: currentPage + 1,
-                    pageSize: commentsPerPage
-                },
-                success: function (data) {
-                    if (data.isSuccess && data.comments && data.comments.length > 0) {
-                        currentPage++;
-                        const commentsList = document.getElementById('comments-list');
-                        data.comments.forEach(comment => {
-                            const isOwner = comment.appUserId === '@User.GetUserId()';
-                            const commentHtml = `
-                                <div class="comment-item" id="comment-${comment.id}">
-                                    <img src="/avatarUser/avt-default.jpg" alt="User Avatar" />
-                                    <div class="comment-content">
-                                        <div class="comment-header">
-                                            <span class="comment-author">${comment.fromName}</span>
-                                            <span class="comment-time">${timeAgo(comment.postedAt)}</span>
-                                        </div>
-                                        <p class="comment-text">${comment.content}</p>
-                                        ${isOwner ? `
-                                            <div class="comment-actions-wrapper">
-                                                <button class="btn btn-more-actions" data-comment-id="${comment.id}">
-                                                    <i class="bi bi-three-dots-vertical"></i>
-                                                </button>
-                                                <div class="comment-actions-menu" id="actions-menu-${comment.id}" style="display: none;">
-                                                    <button class="btn btn-edit-comment" data-comment-id="${comment.id}">Sửa</button>
-                                                    <button class="btn btn-delete-comment" data-comment-id="${comment.id}" data-video-id="@Model.Id">Xóa</button>
-                                                </div>
-                                            </div>
-                                            <form class="edit-comment-form" id="edit-form-${comment.id}">
-                                                <input type="hidden" name="commentId" value="${comment.id}" />
-                                                <input type="hidden" name="videoId" value="@Model.Id" />
-                                                <input type="hidden" name="__RequestVerificationToken" value="${$('input[name="__RequestVerificationToken"]').val()}" />
-                                                <textarea name="content" class="form-control" rows="2">${comment.content}</textarea>
-                                                <div class="edit-actions">
-                                                    <button type="button" class="btn btn-cancel btn-cancel-edit" data-comment-id="${comment.id}">Hủy</button>
-                                                    <button type="submit" class="btn btn-save">Lưu</button>
-                                                </div>
-                                            </form>
-                                        ` : ''}
-                                    </div>
-                                </div>
-                            `;
-                            commentsList.insertAdjacentHTML('beforeend', commentHtml);
-                        });
-
-                        if (data.comments.length < commentsPerPage) {
-                            $('#loadMoreComments').hide();
-                        }
-                    } else {
-                        $('#loadMoreComments').hide();
-                    }
-                },
-                error: function () {
-                    displayNotification(false, 'Lỗi', 'Không thể tải thêm bình luận', 'toastr');
-                }
-            });
-        }
-
+        // Gọi API AddOrUpdateView khi tải trang
         $(document).ready(function () {
-            const initialCommentCount = document.querySelectorAll('.comment-item').length;
-            if (initialCommentCount >= commentsPerPage) {
-                $('#loadMoreComments').show();
-            }
+            $.ajax({
+                url: `/Home/AddOrUpdateView?videoId=@Model.Id`,
+                type: 'POST',
+                success: function () {
+                    console.log(`View recorded for video @Model.Id`);
+                },
+                error: function (xhr, status, err) {
+                    console.error(`Error recording view for video @Model.Id:`, err);
+                }
+            });
 
-            $('#loadMoreComments').on('click', loadMoreComments);
+            // Khởi tạo tooltip cho Bootstrap 4
+            $('[data-toggle="tooltip"]').tooltip();
 
+            // Xử lý nút Show More/Show Less
             $('#showMoreBtn').on('click', function () {
                 const $description = $('#descriptionContent');
                 const isExpanded = $description.hasClass('expanded');
@@ -491,137 +323,372 @@
                 $(this).text(isExpanded ? 'Show more' : 'Show less');
             });
 
+            // Ẩn nút Show More nếu mô tả ngắn
             const descriptionHeight = $('#descriptionContent').height();
             if (descriptionHeight <= 50) {
                 $('#showMoreBtn').hide();
             }
-        });
 
-        document.addEventListener('click', function (event) {
-            if (event.target.closest('.btn-more-actions')) {
-                const button = event.target.closest('.btn-more-actions');
-                const commentId = button.getAttribute('data-comment-id');
-                const menu = document.getElementById(`actions-menu-${commentId}`);
-
-                document.querySelectorAll('.comment-actions-menu').forEach(m => {
-                    if (m !== menu) {
-                        m.style.display = 'none';
-                    }
-                });
-
-                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            // Xử lý carousel khung hình
+            function moveCarousel(direction) {
+                const carousel = document.getElementById('carouselContent');
+                const cards = carousel.getElementsByClassName('frame-card');
+                if (cards.length === 0) return;
+                const cardWidth = cards[0].offsetWidth + 10; // Cộng margin
+                const currentScroll = carousel.scrollLeft;
+                const maxScroll = (cards.length - Math.floor(carousel.offsetWidth / cardWidth)) * cardWidth;
+                let newScroll = currentScroll + (direction * cardWidth);
+                if (newScroll < 0) newScroll = 0;
+                if (newScroll > maxScroll) newScroll = maxScroll;
+                carousel.scrollTo({ left: newScroll, behavior: 'smooth' });
             }
 
-            if (!event.target.closest('.btn-more-actions') && !event.target.closest('.comment-actions-menu')) {
-                document.querySelectorAll('.comment-actions-menu').forEach(menu => {
-                    menu.style.display = 'none';
-                });
-            }
-
-            if (event.target.classList.contains('btn-edit-comment')) {
-                event.preventDefault();
-                const commentId = event.target.getAttribute('data-comment-id');
-                const commentText = document.querySelector(`#comment-${commentId} .comment-text`);
-                const editForm = document.querySelector(`#comment-${commentId} .edit-comment-form`);
-
-                if (commentText && editForm) {
-                    commentText.style.display = 'none';
-                    editForm.style.display = 'block';
-                    document.getElementById(`actions-menu-${commentId}`).style.display = 'none';
-                } else {
-                    console.error('Không tìm thấy phần tử cho commentId:', commentId);
-                }
-            }
-
-            if (event.target.classList.contains('btn-cancel-edit')) {
-                const commentId = event.target.getAttribute('data-comment-id');
-                const commentText = document.querySelector(`#comment-${commentId} .comment-text`);
-                const editForm = document.querySelector(`#comment-${commentId} .edit-comment-form`);
-
-                if (commentText && editForm) {
-                    commentText.style.display = 'block';
-                    editForm.style.display = 'none';
-                }
-            }
-
-            if (event.target.classList.contains('btn-delete-comment')) {
-                if (!confirm('Bạn có chắc muốn xóa bình luận này không?')) {
-                    return;
-                }
-
-                const commentId = event.target.getAttribute('data-comment-id');
-                const videoId = event.target.getAttribute('data-video-id');
-
+            // Xử lý Subscribe
+            $('#subscribeBtn').on('click', function () {
                 $.ajax({
-                    url: '/Video/DeleteComment',
-                    type: 'POST',
-                    data: { commentId: commentId, videoId: videoId, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
+                    url: "/Video/SubscribeChannel",
+                    type: "PUT",
+                    data: { channelId: '@Model.ChannelId' },
                     success: function (data) {
-                        if (data.isSuccess) {
-                            document.getElementById(`comment-${commentId}`).remove();
-                            const commentCount = document.querySelectorAll('.comment-item').length;
-                            document.querySelector('.comments-header').textContent = `${commentCount} ${commentCount > 1 ? 'Bình luận' : 'Bình luận'}`;
-                            if (commentCount >= commentsPerPage) {
-                                $('#loadMoreComments').show();
-                            }
+                        if (data.title == "Unsubscribed") {
+                            $('#subscribeBtn').removeClass('subscribed');
+                            $('#subscribeBtn').html('Subscribe <strong>@SD.FormatView(Model.SubscribersCount)</strong>');
+                            displayNotification(false, data.title, data.message, 'toastr');
+                        } else if (data.title == "Subscribed") {
+                            $('#subscribeBtn').addClass('subscribed');
+                            $('#subscribeBtn').html('Subscribed <strong>@SD.FormatView(Model.SubscribersCount)</strong> <i class="fas fa-bell"></i>');
                             displayNotification(true, data.title, data.message, 'toastr');
                         } else {
-                            displayNotification(false, data.title, data.message, 'toastr');
+                            displayNotification(data.isSuccess, data.title, data.message, 'modal');
                         }
-                    },
-                    error: function () {
-                        displayNotification(false, 'Lỗi', 'Đã xảy ra lỗi khi xóa bình luận', 'toastr');
+                    }
+                });
+            });
+
+            // Xử lý Like/Dislike
+            function likeDislike(id, action) {
+                let model = {
+                    videoId: '@Model.Id',
+                    action
+                };
+                if ($('#' + id).hasClass('active')) {
+                    model.like = false;
+                } else {
+                    model.like = true;
+                }
+                $.ajax({
+                    url: "/Video/LikeDislikeVideo",
+                    type: "PUT",
+                    data: model,
+                    success: function (data) {
+                        const commands = data.title.split('-');
+                        commands.forEach(c => {
+                            if (c == 'addLike') {
+                                $('#likeBtn').addClass('active');
+                                var $span = $('#likeBtn').find('span');
+                                var currentNumber = parseInt($span.text());
+                                $span.text(currentNumber + 1);
+                            } else if (c == 'addDislike') {
+                                $('#dislikeBtn').addClass('active');
+                                var $span = $('#dislikeBtn').find('span');
+                                $span.text(currentNumber + 1);
+                            } else if (c == 'removeLike') {
+                                $('#likeBtn').removeClass('active');
+                                var $span = $('#likeBtn').find('span');
+                                var currentNumber = parseInt($span.text());
+                                $span.text(currentNumber - 1);
+                            } else if (c == 'removeDislike') {
+                                $('#dislikeBtn').removeClass('active');
+                                var $span = $('#dislikeBtn').find('span');
+                                var currentNumber = parseInt($span.text());
+                                $span.text(currentNumber - 1);
+                            }
+                        });
                     }
                 });
             }
-        });
 
-        document.querySelectorAll('.edit-comment-form').forEach(form => {
-            form.addEventListener('submit', function (event) {
+            // Giữ nguyên logic bình luận từ code gốc
+            $('#textComment').on('input', function () {
+                var text = $(this).val().trim();
+                if (text.length > 0) {
+                    $('#sectionCommentBtns').fadeIn();
+                } else {
+                    $('#sectionCommentBtns').fadeOut();
+                }
+            });
+
+            $('#btnCancel').on('click', function () {
+                $('#textComment').val('');
+                $('#sectionCommentBtns').fadeOut();
+            });
+
+            document.getElementById('create-comment-form').addEventListener('submit', function (event) {
                 event.preventDefault();
-
-                const commentId = form.querySelector('input[name="commentId"]').value;
-                const videoId = form.querySelector('input[name="videoId"]').value;
-                const content = form.querySelector('textarea[name="content"]').value.trim();
-                const token = form.querySelector('input[name="__RequestVerificationToken"]').value;
-
+                const content = document.getElementById('textComment').value.trim();
+                const videoId = document.querySelector('input[name="PostComment.VideoId"]').value;
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
                 const data = {
-                    commentId: commentId,
-                    videoId: videoId,
-                    content: content,
+                    PostComment: {
+                        VideoId: videoId,
+                        Content: content
+                    },
                     __RequestVerificationToken: token
                 };
-
                 $.ajax({
-                    url: '/Video/EditComment',
+                    url: '/Video/CreateComment',
                     type: 'POST',
                     data: data,
                     success: function (data) {
                         if (data.isSuccess) {
-                            const commentText = document.querySelector(`#comment-${commentId} .comment-text`);
-                            commentText.textContent = content;
-                            commentText.style.display = 'block';
-
-                            form.style.display = 'none';
-
-                            const commentTime = document.querySelector(`#comment-${commentId} .comment-time`);
-                            if (!commentTime.querySelector('.edited-label')) {
-                                const editedLabel = document.createElement('span');
-                                editedLabel.className = 'edited-label';
-                                editedLabel.textContent = '(đã chỉnh sửa)';
-                                commentTime.appendChild(editedLabel);
+                            const newComment = data.comment;
+                            const isOwner = newComment.appUserId === '@User.GetUserId()';
+                            const commentHtml = `
+                                <div class="comment-item" id="comment-${newComment.id}">
+                                    <img src="/avatarUser/avt-default.jpg" alt="User Avatar" />
+                                    <div class="comment-content">
+                                        <div class="comment-header">
+                                            <span class="comment-author">${newComment.fromName}</span>
+                                            <span class="comment-time">${timeAgo(newComment.postedAt)}</span>
+                                        </div>
+                                        <p class="comment-text">${newComment.content}</p>
+                                        ${isOwner ? `
+                                            <div class="comment-actions-wrapper">
+                                                <button class="btn btn-more-actions" data-comment-id="${newComment.id}">
+                                                    <i class="fa fa-ellipsis-v"></i>
+                                                </button>
+                                                <div class="comment-actions-menu" id="actions-menu-${newComment.id}" style="display: none;">
+                                                    <button class="btn btn-edit-comment" data-comment-id="${newComment.id}">Edit</button>
+                                                    <button class="btn btn-delete-comment" data-comment-id="${newComment.id}" data-video-id="${videoId}">Delete</button>
+                                                </div>
+                                            </div>
+                                            <form class="edit-comment-form" id="edit-form-${newComment.id}">
+                                                <input type="hidden" name="commentId" value="${newComment.id}" />
+                                                <input type="hidden" name="videoId" value="${videoId}" />
+                                                <input type="hidden" name="__RequestVerificationToken" value="${token}" />
+                                                <textarea name="content" class="form-control" rows="2">${newComment.content}</textarea>
+                                                <div class="edit-actions">
+                                                    <button type="button" class="btn btn-cancel btn-cancel-edit" data-comment-id="${newComment.id}">Cancel</button>
+                                                    <button type="submit" class="btn btn-save">Save</button>
+                                                </div>
+                                            </form>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            `;
+                            const commentsList = document.getElementById('comments-list');
+                            commentsList.insertAdjacentHTML('afterbegin', commentHtml);
+                            const commentItems = document.querySelectorAll('.comment-item');
+                            if (commentItems.length > 5) {
+                                for (let i = 5; i < commentItems.length; i++) {
+                                    commentItems[i].remove();
+                                }
                             }
-
+                            const commentCount = document.querySelectorAll('.comment-item').length;
+                            document.querySelector('.comments-header').textContent = `${commentCount} ${commentCount > 1 ? 'Comments' : 'Comment'}`;
+                            $('#loadMoreComments').show();
+                            $('#textComment').val('');
+                            $('#sectionCommentBtns').fadeOut();
                             displayNotification(true, data.title, data.message, 'toastr');
                         } else {
                             displayNotification(false, data.title, data.message, 'toastr');
                         }
                     },
                     error: function (xhr) {
-                        displayNotification(false, 'Lỗi', `Đã xảy ra lỗi khi cập nhật bình luận: ${xhr.statusText}`, 'toastr');
+                        displayNotification(false, 'Error', `Failed to add comment: ${xhr.statusText}`, 'toastr');
                     }
                 });
             });
+
+            let currentPage = 1;
+            const commentsPerPage = 5;
+            function loadMoreComments() {
+                $.ajax({
+                    url: '/Video/GetCommentsByPage',
+                    type: 'GET',
+                    data: {
+                        videoId: '@Model.Id',
+                        page: currentPage + 1,
+                        pageSize: commentsPerPage
+                    },
+                    success: function (data) {
+                        if (data.isSuccess && data.comments && data.comments.length > 0) {
+                            currentPage++;
+                            const commentsList = document.getElementById('comments-list');
+                            data.comments.forEach(comment => {
+                                const isOwner = comment.appUserId === '@User.GetUserId()';
+                                const commentHtml = `
+                                    <div class="comment-item" id="comment-${comment.id}">
+                                        <img src="/avatarUser/avt-default.jpg" alt="User Avatar" />
+                                        <div class="comment-content">
+                                            <div class="comment-header">
+                                                <span class="comment-author">${comment.fromName}</span>
+                                                <span class="comment-time">${timeAgo(comment.postedAt)}</span>
+                                            </div>
+                                            <p class="comment-text">${comment.content}</p>
+                                            ${isOwner ? `
+                                                <div class="comment-actions-wrapper">
+                                                    <button class="btn btn-more-actions" data-comment-id="${comment.id}">
+                                                        <i class="fa fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <div class="comment-actions-menu" id="actions-menu-${comment.id}" style="display: none;">
+                                                        <button class="btn btn-edit-comment" data-comment-id="${comment.id}">Edit</button>
+                                                        <button class="btn btn-delete-comment" data-comment-id="${comment.id}" data-video-id="@Model.Id">Delete</button>
+                                                    </div>
+                                                </div>
+                                                <form class="edit-comment-form" id="edit-form-${comment.id}">
+                                                    <input type="hidden" name="commentId" value="${comment.id}" />
+                                                    <input type="hidden" name="videoId" value="@Model.Id" />
+                                                    <input type="hidden" name="__RequestVerificationToken" value="${$('input[name="__RequestVerificationToken"]').val()}" />
+                                                    <textarea name="content" class="form-control" rows="2">${comment.content}</textarea>
+                                                    <div class="edit-actions">
+                                                        <button type="button" class="btn btn-cancel btn-cancel-edit" data-comment-id="${comment.id}">Cancel</button>
+                                                        <button type="submit" class="btn btn-save">Save</button>
+                                                    </div>
+                                                </form>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                `;
+                                commentsList.insertAdjacentHTML('beforeend', commentHtml);
+                            });
+                            if (data.comments.length < commentsPerPage) {
+                                $('#loadMoreComments').hide();
+                            }
+                        } else {
+                            $('#loadMoreComments').hide();
+                        }
+                    },
+                    error: function () {
+                        displayNotification(false, 'Error', 'Failed to load more comments', 'toastr');
+                    }
+                });
+            }
+
+            $('#loadMoreComments').on('click', loadMoreComments);
+
+            // Xử lý click nút More và Edit/Delete bình luận
+            document.addEventListener('click', function (event) {
+                if (event.target.closest('.btn-more-actions')) {
+                    const button = event.target.closest('.btn-more-actions');
+                    const commentId = button.getAttribute('data-comment-id');
+                    const menu = document.getElementById(`actions-menu-${commentId}`);
+                    document.querySelectorAll('.comment-actions-menu').forEach(m => {
+                        if (m !== menu) {
+                            m.style.display = 'none';
+                        }
+                    });
+                    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                }
+                if (!event.target.closest('.btn-more-actions') && !event.target.closest('.comment-actions-menu')) {
+                    document.querySelectorAll('.comment-actions-menu').forEach(menu => {
+                        menu.style.display = 'none';
+                    });
+                }
+                if (event.target.classList.contains('btn-edit-comment')) {
+                    event.preventDefault();
+                    const commentId = event.target.getAttribute('data-comment-id');
+                    const commentText = document.querySelector(`#comment-${commentId} .comment-text`);
+                    const editForm = document.querySelector(`#comment-${commentId} .edit-comment-form`);
+                    if (commentText && editForm) {
+                        commentText.style.display = 'none';
+                        editForm.style.display = 'block';
+                        document.getElementById(`actions-menu-${commentId}`).style.display = 'none';
+                    } else {
+                        console.error('Không tìm thấy phần tử cho commentId:', commentId);
+                    }
+                }
+                if (event.target.classList.contains('btn-cancel-edit')) {
+                    const commentId = event.target.getAttribute('data-comment-id');
+                    const commentText = document.querySelector(`#comment-${commentId} .comment-text`);
+                    const editForm = document.querySelector(`#comment-${commentId} .edit-comment-form`);
+                    if (commentText && editForm) {
+                        commentText.style.display = 'block';
+                        editForm.style.display = 'none';
+                    }
+                }
+                if (event.target.classList.contains('btn-delete-comment')) {
+                    if (!confirm('Bạn có chắc muốn xóa bình luận này không?')) {
+                        return;
+                    }
+                    const commentId = event.target.getAttribute('data-comment-id');
+                    const videoId = event.target.getAttribute('data-video-id');
+                    $.ajax({
+                        url: '/Video/DeleteComment',
+                        type: 'POST',
+                        data: { commentId: commentId, videoId: videoId, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
+                        success: function (data) {
+                            if (data.isSuccess) {
+                                document.getElementById(`comment-${commentId}`).remove();
+                                const commentCount = document.querySelectorAll('.comment-item').length;
+                                document.querySelector('.comments-header').textContent = `${commentCount} ${commentCount > 1 ? 'Comments' : 'Comment'}`;
+                                if (commentCount >= commentsPerPage) {
+                                    $('#loadMoreComments').show();
+                                }
+                                displayNotification(true, data.title, data.message, 'toastr');
+                            } else {
+                                displayNotification(false, data.title, data.message, 'toastr');
+                            }
+                        },
+                        error: function () {
+                            displayNotification(false, 'Error', 'Failed to delete comment', 'toastr');
+                        }
+                    });
+                }
+            });
+
+            document.querySelectorAll('.edit-comment-form').forEach(form => {
+                form.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    const commentId = form.querySelector('input[name="commentId"]').value;
+                    const videoId = form.querySelector('input[name="videoId"]').value;
+                    const content = form.querySelector('textarea[name="content"]').value.trim();
+                    const token = form.querySelector('input[name="__RequestVerificationToken"]').value;
+                    const data = {
+                        commentId: commentId,
+                        videoId: videoId,
+                        content: content,
+                        __RequestVerificationToken: token
+                    };
+                    $.ajax({
+                        url: '/Video/EditComment',
+                        type: 'POST',
+                        data: data,
+                        success: function (data) {
+                            if (data.isSuccess) {
+                                const commentText = document.querySelector(`#comment-${commentId} .comment-text`);
+                                commentText.textContent = content;
+                                commentText.style.display = 'block';
+                                form.style.display = 'none';
+                                const commentTime = document.querySelector(`#comment-${commentId} .comment-time`);
+                                if (!commentTime.querySelector('.edited-label')) {
+                                    const editedLabel = document.createElement('span');
+                                    editedLabel.className = 'edited-label';
+                                    editedLabel.textContent = '(edited)';
+                                    commentTime.appendChild(editedLabel);
+                                }
+                                displayNotification(true, data.title, data.message, 'toastr');
+                            } else {
+                                displayNotification(false, data.title, data.message, 'toastr');
+                            }
+                        },
+                        error: function (xhr) {
+                            displayNotification(false, 'Error', `Failed to update comment: ${xhr.statusText}`, 'toastr');
+                        }
+                    });
+                });
+            });
+
+            // Hàm format thời gian
+            function timeAgo(date) {
+                const now = new Date();
+                const posted = new Date(date);
+                const diffInSeconds = Math.floor((now - posted) / 1000);
+                if (diffInSeconds < 60) return "just now";
+                if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+                if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+                return `${Math.floor(diffInSeconds / 86400)} days ago`;
+            }
         });
     </script>
 }

@@ -11,6 +11,7 @@ namespace Web_Video.ViewModels.Video
         public Guid ChannelId { get; set; }
         public string ChannelName { get; set; }
         public string ChannelAvatar { get; set; }
+        public string CategoryName { get; set; } // thêm trường CategoryName
         public bool IsSubscribed { get; set; }
         public bool IsLiked { get; set; }
         public bool IsDisiked { get; set; }

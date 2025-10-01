@@ -1,185 +1,285 @@
 ﻿<!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>@ViewData["Title"] - YouTube Clone</title>
-    <link rel="icon" type="image/x-icon" href="/icons/youtube.png">
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" integrity="sha512-vKMx8UnXk60zUwyUnUPM3HbQo8QfmNx7+ltw8Pm5zLusl1XIfwcxo8DbWCqMGKaWeNxWA8yrx5v3SaVpMvR3CA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="~/css/newStyle.css" asp-append-version="true" />
-    @* <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" /> *@
-    <link rel="stylesheet" href="~/Web_Video.styles.css" asp-append-version="true" />
-    @await RenderSectionAsync("Css", required: false)
+    <!-- Favicon Icon -->
+    <link rel="icon" type="image/png" href="~/img/favicon.png">
+    <!-- Bootstrap core CSS-->
+    <link href="~/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom fonts for this template-->
+    <link href="~/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <!-- Custom styles for this template-->
+    <link href="~/css_new/osahan.css" rel="stylesheet" asp-append-version="true">
+    <!-- Owl Carousel -->
+    <link rel="stylesheet" href="~/vendor/owl-carousel/owl.carousel.css">
+    <link rel="stylesheet" href="~/vendor/owl-carousel/owl.theme.css">
+    @await RenderSectionAsync("Css", false)
+    <style>
+        #sidebarOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
 
+            #sidebarOverlay.active {
+                display: block;
+            }
+
+        .sidebar.hidden {
+            display: none;
+        }
+
+        .youtube-content.full-width {
+            width: 100%;
+            padding-left: 0 !important;
+        }
+
+        #searchSuggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+        }
+
+        .suggestion-item {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+            .suggestion-item:hover {
+                background-color: #f5f5f5;
+            }
+
+        #voiceSearchBtn.recording {
+            background-color: #ff4444;
+            color: #fff;
+        }
+    </style>
 </head>
-<body>
-    <!-- Header -->
-    <header class="youtube-header d-flex align-items-center justify-content-between p-2 bg-light border-bottom">
-        <div class="d-flex align-items-center">
-            <button class="btn youtube-menu-btn me-2" type="button" id="toggleSidebarBtn">
-                <i class="bi bi-list"></i>
-            </button>
-            <a href="/" class="youtube-logo d-flex align-items-center text-decoration-none">
-                <i class="bi bi-youtube text-danger me-1" style="font-size: 24px;"></i>
-                <span class="fw-bold text-dark">YouTube Clone</span>
-            </a>
-        </div>
-
-        <!-- Thanh tìm kiếm -->
-        <div class="youtube-search-container position-relative flex-grow-1 mx-3 d-none d-md-block">
+<body id="page-top" data-page="@ViewData["CurrentPage"]">
+    <div id="sidebarOverlay"></div>
+    <nav class="navbar navbar-expand navbar-light bg-white static-top osahan-nav sticky-top">
+        &nbsp;&nbsp;
+        <button class="btn btn-link btn-sm text-secondary order-1 order-sm-0" id="toggleSidebarBtn">
+            <i class="fas fa-bars"></i>
+        </button> &nbsp;&nbsp;
+        <a class="navbar-brand mr-1" asp-controller="Home" asp-action="Index"><img class="img-fluid" alt="" src="~/img/logo.png"></a>
+        <!-- Navbar Search -->
+        <form class="d-none d-md-inline-block form-inline ml-auto mr-0 mr-md-5 my-2 my-md-0 osahan-navbar-search" id="searchForm" asp-controller="Search" asp-action="Index" method="get">
             <div class="input-group">
-                <input id="searchInput"
-                       placeholder="Tìm kiếm"
-                       class="form-control youtube-search-input"
-                       autocomplete="off"
-                       aria-autocomplete="list"
-                       aria-controls="searchSuggestions"
-                       type="search" />
-                <button class="btn youtube-search-btn" type="button" id="searchBtn">
-                    <i class="bi bi-search"></i>
-                </button>
+                <input type="text" class="form-control" id="searchInput" name="query" placeholder="Search for...">
+                <div class="input-group-append">
+                    <button class="btn btn-light" type="button" id="searchBtn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button type="button" class="btn btn-light" id="voiceSearchBtn">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                </div>
+                <div id="searchSuggestions"></div>
             </div>
-            <div id="searchSuggestions"
-                 class="position-absolute w-100 bg-white border rounded shadow-sm youtube-suggestions"
-                 style="display: none; top: 100%; z-index: 1000;"></div>
-        </div>
-
-        <!-- Biểu tượng người dùng -->
-        <div class="d-flex align-items-center">
-            <button class="btn youtube-voice-btn me-2" type="button" id="voiceSearchBtn" title="Tìm kiếm bằng giọng nói">
-                <i class="bi bi-mic"></i>
-            </button>
+        </form>
+        <!-- Navbar -->
+        <ul class="navbar-nav ml-auto ml-md-0 osahan-right-navbar">
+            <li class="nav-item mx-1">
+                <a class="nav-link" asp-controller="Video" asp-action="CreateEditVideo">
+                    <i class="fas fa-plus-circle fa-fw"></i>
+                    Upload Video
+                </a>
+            </li>
+            <li class="nav-item dropdown no-arrow mx-1">
+                <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-bell fa-fw"></i>
+                    <span class="badge badge-danger">9+</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="alertsDropdown">
+                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-edit"></i> &nbsp; Action</a>
+                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-headphones-alt"></i> &nbsp; Another action</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> &nbsp; Something else here</a>
+                </div>
+            </li>
+            <li class="nav-item dropdown no-arrow mx-1">
+                <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-envelope fa-fw"></i>
+                    <span class="badge badge-success">7</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="messagesDropdown">
+                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-edit"></i> &nbsp; Action</a>
+                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-headphones-alt"></i> &nbsp; Another action</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> &nbsp; Something else here</a>
+                </div>
+            </li>
             @if (User.Identity.IsAuthenticated)
             {
-                <a asp-action="Index" asp-controller="Channel" class="btn btn-outline-secondary me-2">Kênh của tôi</a>
-                <a href="/Account/Logout" class="btn btn-outline-secondary">Đăng xuất</a>
+                <li class="nav-item dropdown no-arrow osahan-right-navbar-user">
+                    <a class="nav-link dropdown-toggle user-dropdown-link" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <img alt="Avatar" src="~/avatarUser/avt-default.jpg">
+                        @User.Identity.Name
+                    </a>
+                    @* <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+                        <a class="dropdown-item" asp-controller="Account" asp-action="Profile"><i class="fas fa-fw fa-user-circle"></i> &nbsp; My Account</a>
+                        <a class="dropdown-item" asp-controller="Subscriptions" asp-action="Index"><i class="fas fa-fw fa-video"></i> &nbsp; Subscriptions</a>
+                        <a class="dropdown-item" asp-controller="Settings" asp-action="Index"><i class="fas fa-fw fa-cog"></i> &nbsp; Settings</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" asp-controller="Account" asp-action="Logout"><i class="fas fa-fw fa-sign-out-alt"></i> &nbsp; Logout</a>
+                    </div> *@
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+                        <a class="dropdown-item" href="account.html"><i class="fas fa-fw fa-user-circle"></i> &nbsp; My Account</a>
+                        <a class="dropdown-item" href="subscriptions.html"><i class="fas fa-fw fa-video"></i> &nbsp; Subscriptions</a>
+                        <a class="dropdown-item" href="settings.html"><i class="fas fa-fw fa-cog"></i> &nbsp; Settings</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal"><i class="fas fa-fw fa-sign-out-alt"></i> &nbsp; Logout</a>
+                    </div>
+                </li>
             }
             else
             {
-                <a href="/Account/Login" class="btn btn-outline-secondary">Đăng nhập</a>
+                <li class="nav-item m-2">
+                    <a asp-controller="Account" asp-action="Login" class="btn btn-secondary border-none">Đăng nhập</a>
+                </li>
             }
-        </div>
-    </header>
-
-    <!-- Overlay cho sidebar -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <!-- Bố cục chính -->
-    <div class="d-flex">
+        </ul>
+    </nav>
+    <div id="wrapper" class="youtube-content">
         <!-- Sidebar -->
-        <nav id="sidebarMenu" class="p-2 youtube-sidebar collapse show">
-            <ul class="nav nav-pills flex-column mb-auto">
-                <li class="nav-item">
-                    <a asp-action="Index" asp-controller="Home" asp-route-page="Home" class="nav-link @Html.IsActivePage("Home")">
-                        <i class="bi bi-house-door me-2"></i><span class="nav-text">Trang chủ</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a asp-action="Index" asp-controller="Home" asp-route-page="Subscriptions" class="nav-link @Html.IsActivePage("Subscriptions")">
-                        <i class="bi bi-youtube me-2"></i><span class="nav-text">Kênh đăng ký</span>
-                    </a>
-                </li>
-                <li>
-                    <hr />
-                </li>
-                <li class="nav-item">
-                    <a asp-action="Index" asp-controller="Home" asp-route-page="History" class="nav-link @Html.IsActivePage("History")">
-                        <i class="bi bi-clock-history me-2"></i><span class="nav-text">Lịch sử</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a asp-action="Index" asp-controller="Home" asp-route-page="Likes" class="nav-link @Html.IsActivePage("Likes")">
-                        <i class="bi bi-hand-thumbs-up me-2"></i><span class="nav-text">Video đã thích</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a asp-action="Index" asp-controller="Home" asp-route-page="Dislikes" class="nav-link @Html.IsActivePage("Dislikes")">
-                        <i class="bi bi-hand-thumbs-down me-2"></i><span class="nav-text">Video không thích</span>
-                    </a>
-                </li>
-                @if (User.IsInRole(SD.AdminRole))
-                {
+        <ul class="sidebar navbar-nav" id="sidebarMenu">
+            <li class="nav-item @(ViewData["CurrentPage"] == "Home" ? "active" : "")">
+                <a class="nav-link" asp-controller="Home" asp-action="Index">
+                    <i class="fas fa-fw fa-home"></i>
+                    <span>Home</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Home" asp-action="Index">
+                    <i class="fas fa-fw fa-file-video"></i>
+                    <span>Shorts</span>
+                </a>
+            </li>
+            <li class="nav-item @(ViewData["CurrentPage"] == "Subscriptions" ? "active" : "")">
+                <a class="nav-link" asp-controller="Home" asp-action="Subscriptions">
+                    <i class="fas fa-fw fa-chalkboard-teacher"></i>
+                    <span>Subscriptions</span>
+                </a>
+            </li>
+            <li class="nav-item channel-sidebar-list">
+                <h6>YOU ></h6>
+            </li>
+            <li class="nav-item @(ViewData["CurrentPage"] == "History" ? "active" : "")">
+                <a class="nav-link" asp-controller="Home" asp-action="History">
+                    <i class="fas fa-fw fa-history"></i>
+                    <span>History</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Video" asp-action="CreateEditVideo">
+                    <i class="fas fa-fw fa-list"></i>
+                    <span>Playlists</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Video" asp-action="CreateEditVideo">
+                    <i class="fas fa-fw fa-clock"></i>
+                    <span>Watch Later</span>
+                </a>
+            </li>
+            <li class="nav-item @(ViewData["CurrentPage"] == "Liked" ? "active" : "")">
+                <a class="nav-link" asp-controller="Home" asp-action="Liked">
+                    <i class="fas fa-fw fa-thumbs-up"></i>
+                    <span>Like Videos</span>
+                </a>
+            </li>
+            <li class="nav-item channel-sidebar-list">
+                <h6>SUBSCRIPTIONS</h6>
+                <ul>
                     <li>
-                        <hr />
+                        <a asp-controller="Subscriptions" asp-action="Index">
+                            <img class="img-fluid" alt="" src="~/img/s1.png"> Your Life
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="nav-item channel-sidebar-list">
+                <h6>EXPLORE</h6>
+                <ul>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Subscriptions" asp-action="Index">
+                            <i class="fas fa-fw fa-music"></i> <span>Music</span>
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-gear me-2"></i><span class="nav-text">Quản trị</span>
+                        <a class="nav-link" asp-controller="Subscriptions" asp-action="Index">
+                            <i class="fas fa-fw fa-gamepad"></i> <span>Gaming</span>
                         </a>
-                        <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-                            <li><a class="dropdown-item" asp-controller="Admin" asp-action="Category">Danh mục</a></li>
-                            <li><a class="dropdown-item" asp-controller="Admin" asp-action="AllUsers">Tất cả người dùng</a></li>
-                        </ul>
-                    </li>
-                }
-                @if (User.IsInRole(SD.ModeratorRole))
-                {
-                    <li>
-                        <hr />
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link dropdown-toggle" href="#" id="moderatorDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-shield-check me-2"></i><span class="nav-text">Kiểm duyệt</span>
+                        <a class="nav-link" asp-controller="Subscriptions" asp-action="Index">
+                            <i class="fas fa-fw fa-newspaper"></i> <span>News</span>
                         </a>
-                        <ul class="dropdown-menu" aria-labelledby="moderatorDropdown">
-                            <li><a class="dropdown-item" asp-controller="Moderator" asp-action="AllVideos">Tất cả video</a></li>
-                        </ul>
                     </li>
-                }
-            </ul>
-        </nav>
-
-        <!-- Navbar cho màn hình nhỏ -->
-        <nav class="youtube-mobile-nav d-lg-none mb-2 collapse" id="sidebarMenu">
-            <div class="p-2 bg-light rounded d-flex justify-content-between" style="width: 100%;">
-                <a asp-action="Index" asp-controller="Home" asp-route-page="Home" class="btn btn-light @Html.IsActivePage("Home")">
-                    <i class="bi bi-house-door"></i>
-                </a>
-                <a asp-action="Index" asp-controller="Home" asp-route-page="Subscriptions" class="btn btn-light @Html.IsActivePage("Subscriptions")">
-                    <i class="bi bi-youtube"></i>
-                </a>
-                <a asp-action="Index" asp-controller="Home" asp-route-page="History" class="btn btn-light @Html.IsActivePage("History")">
-                    <i class="bi bi-clock-history"></i>
-                </a>
-                <a asp-action="Index" asp-controller="Home" asp-route-page="Likes" class="btn btn-light @Html.IsActivePage("Likes")">
-                    <i class="bi bi-hand-thumbs-up"></i>
-                </a>
-                <a asp-action="Index" asp-controller="Home" asp-route-page="Dislikes" class="btn btn-light @Html.IsActivePage("Dislikes")">
-                    <i class="bi bi-hand-thumbs-down"></i>
-                </a>
-            </div>
-        </nav>
-
-        <!-- Nội dung chính -->
-        <div class="youtube-content px-2">
-            <main role="main" class="main pb-3">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Subscriptions" asp-action="Index">
+                            <i class="fas fa-fw fa-dumbbell"></i> <span>Sports</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+        <div id="content-wrapper">
+            <div class="container-fluid pb-0">
                 @RenderBody()
-            </main>
+            </div>
         </div>
     </div>
-
-    <!-- Footer -->
-    <footer class="footer text-muted">
-        <div class="container">
-            © @DateTime.Now.Year - YouTube Clone - <a asp-area="" asp-controller="Home" asp-action="Index">YouTube Clone</a>
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top">
+        <i class="fas fa-angle-up"></i>
+    </a>
+    <!-- Logout Modal-->
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+                    <button class="close" type="button" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+                    <a class="btn btn-primary" asp-controller="Account" asp-action="Logout">Logout</a>
+                </div>
+            </div>
         </div>
-    </footer>
-
-    <partial name="_Notification" />
-    <partial name="_Confirmation" />
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js" integrity="sha512-VEd+nq25CkR676O+pLBnDW09R7VQX9Mdiij052gVCp5yVH3jGtH70Ho/UUv4mJDsEdTvqRCFZg0NKGiojGnUCw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/js/home_home.js" asp-append-version="true"></script>
-
-    <!-- JavaScript cho sidebar và tìm kiếm -->
+    </div>
+    <!-- Bootstrap core JavaScript-->
+    <script src="~/vendor/jquery/jquery.min.js"></script>
+    <script src="~/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- Core plugin JavaScript-->
+    <script src="~/vendor/jquery-easing/jquery.easing.min.js"></script>
+    <!-- Owl Carousel -->
+    <script src="~/vendor/owl-carousel/owl.carousel.js"></script>
+    <!-- Custom scripts for all pages-->
+    <script src="~/js_new/custom.js" asp-append-version="true"></script>
+    <script src="~/js/site.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
     <script>
         $(document).ready(function () {
             const sidebar = $('#sidebarMenu');
@@ -187,11 +287,11 @@
             const toggleBtn = $('#toggleSidebarBtn');
             const overlay = $('#sidebarOverlay');
 
-            // Kiểm tra trang hiện tại
+            // Kiểm tra trang hiện tại từ ViewData
             const currentPage = '@ViewData["CurrentPage"]';
 
-            // Ẩn sidebar trên Watch và Channel ở màn hình lớn
-            if (currentPage === 'Watch' /* || currentPage === 'Login' || currentPage === 'Register' */) {
+            // Ẩn sidebar trên Watch, Login, Register ở màn hình lớn
+            if (currentPage === 'Watch' || currentPage === 'Login' || currentPage === 'Register') {
                 sidebar.addClass('hidden');
                 content.addClass('full-width');
             } else {
@@ -202,7 +302,7 @@
             // Toggle sidebar
             toggleBtn.on('click', function () {
                 if ($(window).width() >= 992) {
-                    // Màn hình lớn: toggle ẩn/hiển thị sidebar
+                    // Màn hình lớn: toggle ẩn/hiển sidebar
                     sidebar.toggleClass('hidden');
                     content.toggleClass('full-width');
                 } else {
@@ -231,7 +331,7 @@
                 if ($(window).width() >= 992) {
                     sidebar.removeClass('active');
                     overlay.removeClass('active');
-                    if (currentPage === 'Watch' /* || currentPage === 'Login' || currentPage === 'Register' */) {
+                    if (currentPage === 'Watch' || currentPage === 'Login' || currentPage === 'Register') {
                         sidebar.addClass('hidden');
                         content.addClass('full-width');
                     } else {
@@ -326,22 +426,26 @@
             });
 
             // Xử lý tìm kiếm khi nhấn nút hoặc Enter
-            searchBtn.addEventListener('click', function () {
+            let searchBy = '';
+            window.getMyVideos = function () {
                 const query = searchInput.value.trim();
-                searchBy = query;
+                if (query) {
+                    searchBy = query;
+                    window.location.href = `/Search?query=${encodeURIComponent(query)}`;
+                }
+            };
+
+            searchBtn.addEventListener('click', function () {
                 getMyVideos();
             });
 
             searchInput.addEventListener('keypress', function (event) {
                 if (event.key === 'Enter' || event.keyCode === 13) {
-                    const query = searchInput.value.trim();
-                    searchBy = query;
                     getMyVideos();
                 }
             });
         });
     </script>
-
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

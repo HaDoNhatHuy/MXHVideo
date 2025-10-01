@@ -688,6 +688,7 @@ namespace Web_Video.Controllers
                     CreatedAt = x.UploadDate,
                     ChannelId = x.ChannelId ?? Guid.Empty,
                     ChannelName = x.Channel.ChannelName,
+                    CategoryName = x.Category.CategoryName,
                     ChannelAvatar = x.Channel.ChannelPicture ?? "/avatarUser/avt-default.jpg",
                     IsSubscribed = x.Channel.Subscribers.Any(s => s.AppUserId == userId),
                     IsLiked = x.LikeDislikes.Any(l => l.AppUserId == userId && l.Liked == true),

@@ -16,6 +16,7 @@ namespace DataAccess.Repo
     public class VideoRepo : BaseRepo<Video>, IVideoRepo
     {
         private readonly DataContext _context;
+
         public VideoRepo(DataContext context) : base(context)
         {
             _context = context;
@@ -45,7 +46,6 @@ namespace DataAccess.Repo
                     Comments = x.Comments.Count(),
                     Likes = x.LikeDislikes.Where(l => l.Liked == true).Count(),
                     Dislikes = x.LikeDislikes.Where(l => l.Liked == false).Count(),
-
                 })
                 .AsQueryable();
             query = parameters.SortBy switch
@@ -72,6 +72,8 @@ namespace DataAccess.Repo
         public async Task<PaginatedList<VideoForHomeGridDto>> GetVideosForHomeGridAsync(HomeParameters parameters)
         {
             var query = _context.Videos
+                .Include(x => x.Channel)
+                .Include(x => x.Category)
                 .Select(x => new VideoForHomeGridDto
                 {
                     Id = x.Id,
@@ -82,7 +84,8 @@ namespace DataAccess.Repo
                     ChannelName = x.Channel.ChannelName,
                     ChannelId = x.Channel.Id,
                     CategoryId = x.Category.Id,
-                    Views = x.Viewers.Count()
+                    Views = x.Viewers.Count(),
+                    CreatedAtTimeAgo = SD.TimeAgo(x.UploadDate) // Thêm tính toán thời gian tương đối
                 })
                 .AsQueryable();
 
@@ -98,6 +101,7 @@ namespace DataAccess.Repo
 
             return await PaginatedList<VideoForHomeGridDto>.CreateAsync(query.AsNoTracking(), parameters.PageNumber, parameters.PageSize);
         }
+
         public async Task RemoveVideoAsync(Guid videoId)
         {
             var video = await GetFirstOrDefaultAsync(x => x.Id == videoId, "Comments,LikeDislikes,Viewers");

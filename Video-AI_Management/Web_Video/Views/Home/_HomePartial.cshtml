@@ -1,298 +1,193 @@
 ﻿@model Web_Video.ViewModels.Home.HomeViewModel
 
-<!-- Thanh lọc danh mục và nút lọc -->
-<div class="youtube-filter-bar p-3 bg-light border-bottom">
-    <div class="d-flex align-items-center flex-wrap gap-3">
-        <!-- Danh mục -->
-        <select id="categoryDropdown" asp-items="Model.CategoryDropdown" class="form-select youtube-category-dropdown"></select>
-        <!-- Các nút lọc -->
-        <div class="d-flex gap-2">
-            <button class="btn youtube-filter-btn active" data-filter="all">Tất cả</button>
-            <button class="btn youtube-filter-btn" data-filter="myChannel">Kênh của tôi</button>
-            <button class="btn youtube-filter-btn" data-filter="published">Đã xuất bản</button>
+<div class="top-category section-padding mb-1">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="category-nav-wrapper">
+                <button type="button" class="category-nav-btn prev-btn" aria-label="Previous">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="category-tabs-container">
+                    <div class="category-tabs">
+                        @foreach (var category in Model.CategoryDropdown)
+                        {
+                            <button type="button" class="btn category-tab @(category.Value == "0" ? "active" : "")" data-category-id="@category.Value">
+                                @category.Text
+                            </button>
+                        }
+                    </div>
+                </div>
+                <button type="button" class="category-nav-btn next-btn" aria-label="Next">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            @*  <div class="btn-group d-flex flex-wrap gap-2 p-3" role="group">
+                <button type="button" class="btn btn-outline-secondary youtube-filter-btn active" data-filter="all">Tất cả</button>
+                <button type="button" class="btn btn-outline-secondary youtube-filter-btn" data-filter="myChannel">Kênh của tôi</button>
+                <button type="button" class="btn btn-outline-secondary youtube-filter-btn" data-filter="published">Đã xuất bản</button>
+            </div> *@
         </div>
     </div>
 </div>
 
-<!-- Lưới video -->
-<div class="p-3 youtube-video-grid" id="videosTableBody">
-    <!-- Nội dung sẽ được tải động bằng JavaScript -->
+<div class="video-block section-padding">
+    <div class="row" id="videosTableBody">
+        <!-- Nội dung sẽ được tải động bằng JavaScript -->
+    </div>
 </div>
 
-<!-- Phân trang -->
-@* <div class="d-flex justify-content-end me-3 mb-2 youtube-pagination">
-    <ul class="navbar-nav me-3">
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle text-dark youtube-items-per-page" data-bs-toggle="dropdown" id="itemsPerPageDropdown" role="button" aria-expanded="false">
-                <span id="itemsPerPageDisplay">Số mục mỗi trang: 10</span>
-            </a>
-            <div class="dropdown-menu">
-                <div class="dropdown-header text-muted">Số mục mỗi trang</div>
-                <button type="button" class="dropdown-item pageSizeBtn" data-value="10">10</button>
-                <button type="button" class="dropdown-item pageSizeBtn" data-value="20">20</button>
-                <button type="button" class="dropdown-item pageSizeBtn" data-value="50">50</button>
-                <button type="button" class="dropdown-item pageSizeBtn" data-value="100">100</button>
-            </div>
-        </li>
-    </ul>
-    <ul class="navbar-nav me-3">
-        <li class="nav-item">
-            <span class="nav-link text-dark" id="paginationSummery"></span>
-        </li>
-    </ul>
-    <div id="paginationBtnGroup" class="btn-group">
-        <!-- Các nút sẽ được tạo động bằng JavaScript -->
-    </div>
-</div> *@
-
 <style>
-    /* Thanh lọc danh mục */
-    .youtube-filter-bar {
-        background-color: #fff;
-        border-bottom: 1px solid #e0e0e0;
-        position: sticky;
-        top: 56px; /* Chiều cao của header */
-        z-index: 900;
-    }
-
-    /* Danh mục */
-    .youtube-category-dropdown {
-        border-radius: 20px;
-        border: 1px solid #ccc;
-        padding: 5px 10px;
-        font-size: 14px;
-        background-color: #fff;
-        min-width: 150px;
-    }
-
-    /* Nút lọc */
     .youtube-filter-btn {
         border-radius: 20px;
-        border: 1px solid #ccc;
-        background-color: #f8f8f8;
         font-size: 14px;
         padding: 5px 12px;
-        transition: all 0.2s ease;
     }
+
+        .youtube-filter-btn.active {
+            background-color: #ff516b;
+            color: #fff;
+            border-color: #ff516b;
+        }
 
         .youtube-filter-btn:hover {
             background-color: #e0e0e0;
         }
 
-        .youtube-filter-btn.active {
-            background-color: #030303;
-            color: #fff;
-            border-color: #030303;
-        }
-
-    /* Lưới video */
-    .youtube-video-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-        gap: 16px;
-        padding: 16px;
+    .form-control {
+        border-radius: 20px;
+        padding: 5px 12px;
     }
 
-    .youtube-video-card {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .thumbnail-link {
-        display: block;
-        position: relative;
-        width: 100%;
-        padding-top: 56.25%; /* Tỷ lệ 16:9 */
-    }
-
-    .thumbnail-img {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 12px;
-        transition: transform 0.2s ease;
-    }
-
-        .thumbnail-img:hover {
-            transform: scale(1.02);
-        }
-
-    .video-details {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .video-title {
-        font-size: 14px;
-        font-weight: 500;
-        color: #030303;
-        text-decoration: none;
-        line-height: 1.4;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-        .video-title:hover {
-            color: #065fd4; /* Màu hover của YouTube */
-        }
-
-    .channel-name {
-        font-size: 12px;
-        color: #606060;
-        text-decoration: none;
-    }
-
-        .channel-name:hover {
-            color: #030303;
-        }
-
-    .video-stats {
-        font-size: 12px;
-        color: #606060;
-    }
-
-    /* Phân trang */
-    .youtube-pagination {
-        font-size: 14px;
+    /* Thiết kế category tabs với nút điều hướng */
+    .category-nav-wrapper {
         display: flex;
         align-items: center;
-        justify-content: flex-end;
-        padding: 16px;
-        gap: 12px; /* Khoảng cách giữa các phần tử */
+        position: relative;
+        padding: 10px 0;
     }
 
-        /* Dropdown và thông tin phân trang */
-        .youtube-pagination .navbar-nav {
-            display: flex;
-            align-items: center;
-        }
-
-        .youtube-pagination .nav-link {
-            color: #606060;
-            font-size: 14px;
-            padding: 6px 12px;
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-            .youtube-pagination .nav-link:hover {
-                color: #030303;
-            }
-
-        /* Dropdown cho số mục mỗi trang */
-        .youtube-pagination .dropdown-toggle {
-            border: 1px solid #e0e0e0;
-            border-radius: 20px;
-            background-color: #f8f8f8;
-            padding: 6px 12px;
-            font-size: 14px;
-            color: #606060;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: background-color 0.2s ease;
-        }
-
-            .youtube-pagination .dropdown-toggle:hover {
-                background-color: #e0e0e0;
-            }
-
-            .youtube-pagination .dropdown-toggle::after {
-                margin-left: 8px;
-                border-top-color: #606060;
-            }
-
-    .youtube-items-per-page {
-        min-width: 180px; /* Đảm bảo đủ chỗ cho nội dung */
-    }
-
-    .youtube-pagination .dropdown-menu {
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        border: none;
-        padding: 8px 0;
-    }
-
-    .youtube-pagination .dropdown-header {
-        font-size: 13px;
-        color: #606060;
-        padding: 8px 16px;
-        font-weight: 500;
-    }
-
-    .youtube-pagination .dropdown-item {
-        font-size: 14px;
-        padding: 8px 16px;
-        color: #030303;
-        transition: background-color 0.2s ease;
-    }
-
-        .youtube-pagination .dropdown-item:hover {
-            background-color: #f1f1f1;
-        }
-
-        .youtube-pagination .dropdown-item.active {
-            background-color: #e0e0e0;
-            color: #030303;
-            font-weight: 500;
-        }
-
-    /* Nút chuyển trang */
-    .youtube-pagination .btn-group {
+    .category-nav-btn {
+        background-color: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
         display: flex;
-        gap: 8px; /* Khoảng cách giữa các nút */
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        opacity: 0.7;
+        margin: 0 5px;
     }
 
-        .youtube-pagination .btn-group .btn {
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f8f8f8;
-            border: 1px solid #e0e0e0;
-            color: #606060;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        .category-nav-btn:hover {
+            background-color: #e0e0e0;
+            opacity: 1;
         }
 
-            .youtube-pagination .btn-group .btn:hover {
-                background-color: #e0e0e0;
-                border-color: #d0d0d0;
-                color: #030303;
-                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            }
+        .category-nav-btn.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
 
-            .youtube-pagination .btn-group .btn.active {
-                background-color: #606060;
-                border-color: #606060;
-                color: #fff;
-                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-            }
+    .category-tabs-container {
+        flex-grow: 1;
+        overflow-x: auto; /* cho phép cuộn ngang */
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* ẩn scrollbar trên Firefox */
+        -ms-overflow-style: none; /* ẩn scrollbar trên IE/Edge */
+    }
 
-            /* Biểu tượng trong nút */
-            .youtube-pagination .btn-group .btn i {
-                font-size: 16px;
-                line-height: 1;
-            }
+        .category-tabs-container::-webkit-scrollbar {
+            display: none; /* ẩn scrollbar trên Chrome/Safari */
+        }
 
-            /* Vô hiệu hóa nút khi không thể nhấn */
-            .youtube-pagination .btn-group .btn.disabled {
-                background-color: #f1f1f1;
-                border-color: #e0e0e0;
-                color: #a0a0a0;
-                cursor: not-allowed;
-                box-shadow: none;
-            }
+    .category-tabs {
+        display: flex;
+        gap: 8px;
+        padding: 0 5px;
+    }
+
+
+    .category-tab {
+        background-color: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        padding: 6px 15px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+
+        .category-tab.active {
+            background-color: #ff516b;
+            color: #fff;
+            border-color: #ff516b;
+        }
+
+        .category-tab:hover {
+            background-color: #e0e0e0;
+            border-color: #ccc;
+        }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .category-nav-btn
+
+    {
+        display: none; /* Ẩn nút trên màn hình nhỏ */
+    }
+
+    .category-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+        .category-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+    }
 </style>
 
-@* <script src="~/js/home_home.js" asp-append-version="true"></script> *@
+<script src="./vendor/jquery/jquery.min.js"></script>
+
+<script>
+        $(document).ready(function () {
+        const $tabsContainer = $('.category-tabs-container');
+        const $prevBtn = $('.prev-btn');
+        const $nextBtn = $('.next-btn');
+        const scrollAmount = 200; // Khoảng cách cuộn mỗi lần
+
+        function updateButtons() {
+            if (!$tabsContainer.length) return;
+            const maxScrollLeft = $tabsContainer[0].scrollWidth - $tabsContainer.outerWidth();
+            $prevBtn.toggleClass('disabled', $tabsContainer.scrollLeft() <= 0);
+            $nextBtn.toggleClass('disabled', $tabsContainer.scrollLeft() >= maxScrollLeft - 1);
+        }
+
+        $prevBtn.on('click', function () {
+            if (!$tabsContainer.is(':animated') && !$prevBtn.hasClass('disabled')) {
+                $tabsContainer.animate({ scrollLeft: $tabsContainer.scrollLeft() - scrollAmount }, 300, updateButtons);
+            }
+        });
+
+        $nextBtn.on('click', function () {
+            if (!$tabsContainer.is(':animated') && !$nextBtn.hasClass('disabled')) {
+                const maxScrollLeft = $tabsContainer[0].scrollWidth - $tabsContainer.outerWidth();
+                if ($tabsContainer.scrollLeft() < maxScrollLeft) {
+                    $tabsContainer.animate({ scrollLeft: $tabsContainer.scrollLeft() + scrollAmount }, 300, updateButtons);
+                }
+            }
+        });
+
+        $(window).on('load resize', updateButtons);
+        $tabsContainer.on('scroll', updateButtons);
+        updateButtons();
+    });
+</script>
