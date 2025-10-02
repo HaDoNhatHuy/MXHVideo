@@ -1,215 +1,20 @@
 ﻿@model Web_Video.ViewModels.Video.CommentViewModel
-
-<style>
-    /* Tiêu đề số lượng bình luận */
-    .comments-header {
-        font-size: 1rem;
-        font-weight: 500;
-        color: #000;
-        margin-bottom: 15px;
-    }
-
-    /* Ô nhập bình luận */
-    .comment-input {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 20px;
-    }
-
-        .comment-input img {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-        }
-
-        .comment-input input {
-            flex: 1;
-            border: none;
-            border-bottom: 1px solid #ccc;
-            padding: 5px 0;
-            font-size: 0.9rem;
-            outline: none;
-        }
-
-    /* Nút Comment và Cancel */
-    .comment-actions {
-        display: none;
-        margin-top: 10px;
-        justify-content: flex-end;
-        gap: 10px;
-    }
-
-        .comment-actions button {
-            font-size: 0.85rem;
-            padding: 5px 15px;
-            border-radius: 2px;
-        }
-
-        .comment-actions .btn-cancel {
-            background-color: #f1f1f1;
-            color: #000;
-        }
-
-        .comment-actions .btn-comment {
-            background-color: #065fd4;
-            color: #fff;
-        }
-
-    /* Danh sách bình luận */
-    .comment-item {
-        display: flex;
-        margin-bottom: 20px;
-        position: relative;
-    }
-
-        .comment-item img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 12px;
-        }
-
-    .comment-content {
-        flex: 1;
-    }
-
-        .comment-content .comment-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 2px;
-        }
-
-            .comment-content .comment-header .comment-author {
-                font-size: 0.9rem;
-                font-weight: 500;
-                color: #000;
-                text-decoration: none;
-            }
-
-            .comment-content .comment-header .comment-time {
-                font-size: 0.85rem;
-                color: #606060;
-            }
-
-        .comment-content .comment-text {
-            font-size: 0.9rem;
-            color: #000;
-            margin: 0;
-        }
-
-    /* Biểu tượng ba chấm và menu */
-    .comment-actions-wrapper {
-        position: absolute;
-        right: 0;
-        top: 0;
-    }
-
-    .btn-more-actions {
-        background: none;
-        border: none;
-        color: #606060;
-        padding: 5px;
-        display: none;
-    }
-
-    .comment-item:hover .btn-more-actions {
-        display: block;
-    }
-
-    .comment-actions-menu {
-        position: absolute;
-        right: 0;
-        top: 25px;
-        background-color: #fff;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        z-index: 1000;
-        display: none;
-    }
-
-        .comment-actions-menu button {
-            display: block;
-            width: 100%;
-            text-align: left;
-            font-size: 0.85rem;
-            color: #606060;
-            background: none;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 2px;
-        }
-
-            .comment-actions-menu button:hover {
-                background-color: #f1f1f1;
-            }
-
-    .comment-actions-owner {
-        display: none !important;
-    }
-
-    /* Form chỉnh sửa bình luận */
-    .edit-comment-form {
-        display: none;
-        width: 100%;
-    }
-
-        .edit-comment-form textarea {
-            width: 100%;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 8px;
-            font-size: 0.9rem;
-            resize: none;
-            box-sizing: border-box;
-        }
-
-        .edit-comment-form .edit-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-            .edit-comment-form .edit-actions button {
-                font-size: 0.85rem;
-                padding: 5px 15px;
-                border-radius: 2px;
-            }
-
-        .edit-comment-form .btn-cancel {
-            background-color: #f1f1f1;
-            color: #000;
-        }
-
-        .edit-comment-form .btn-save {
-            background-color: #065fd4;
-            color: #fff;
-        }
-
-    .edited-label {
-        font-size: 0.85rem;
-        color: #606060;
-        margin-left: 5px;
-    }
-</style>
+@using Web_Video.Extensions
 
 <div class="container my-4">
     <!-- Tiêu đề số lượng bình luận -->
-    <h2 class="comments-header">@SD.FormatView(Model.AvailableComments.Count()) @(Model.AvailableComments.Count() > 1 ? "Bình luận" : "Bình luận")</h2>
+    <h2 class="comments-header">@SD.FormatView(Model.AvailableComments.Count()) @(Model.AvailableComments.Count() > 1 ? "Comments" : "Comment")</h2>
 
     <!-- Ô nhập bình luận -->
     <div class="comment-input">
-        <img src="/avatarUser/avt-default.jpg" alt="User Avatar" /> <!-- Thay bằng ảnh đại diện người dùng -->
+        <img src="/avatarUser/avt-default.jpg" alt="User Avatar" />
         <form id="create-comment-form" style="flex: 1;">
             <input type="hidden" name="PostComment.VideoId" value="@Model.PostComment.VideoId" />
             <input type="hidden" name="__RequestVerificationToken" value="@Html.AntiForgeryToken().ToString()" />
             <input type="text" id="textComment" name="PostComment.Content" class="form-control" placeholder="Add a comment..." />
             <div class="comment-actions" id="sectionCommentBtns">
-                <button id="btnCancel" type="button" class="btn btn-cancel">Hủy</button>
-                <button id="btnComment" type="submit" class="btn btn-comment">Bình luận</button>
+                <button id="btnCancel" type="button" class="btn btn-cancel">Cancel</button>
+                <button id="btnComment" type="submit" class="btn btn-comment">Comment</button>
             </div>
         </form>
     </div>
@@ -235,37 +40,26 @@
                             @SD.TimeAgo(comment.PostedAt)
                             @if (comment.IsEdited)
                             {
-                                <span class="edited-label">(đã chỉnh sửa)</span>
+                                <span class="edited-label">(edited)</span>
                             }
                         </span>
                     </div>
                     <p class="comment-text">@comment.Content</p>
-
                     @if (isOwner)
                     {
                         <div class="comment-actions-wrapper">
                             <button class="btn btn-more-actions" data-comment-id="@comment.Id">
-                                <i class="bi bi-three-dots-vertical"></i>
+                                <i class="fa fa-ellipsis-v"></i>
                             </button>
                             <div class="comment-actions-menu" id="actions-menu-@comment.Id" style="display: none;">
-                                <button class="btn btn-edit-comment" data-comment-id="@comment.Id">Sửa</button>
-                                <button class="btn btn-delete-comment" data-comment-id="@comment.Id" data-video-id="@Model.PostComment.VideoId">Xóa</button>
+                                <button class="btn btn-edit-comment" data-comment-id="@comment.Id">Edit</button>
+                                <button class="btn btn-delete-comment" data-comment-id="@comment.Id" data-video-id="@Model.PostComment.VideoId">Delete</button>
                             </div>
                         </div>
-
-                        <form class="edit-comment-form" id="edit-form-@comment.Id">
-                            <input type="hidden" name="commentId" value="@comment.Id" />
-                            <input type="hidden" name="videoId" value="@Model.PostComment.VideoId" />
-                            @Html.AntiForgeryToken()
-                            <textarea name="content" class="form-control" rows="2">@comment.Content</textarea>
-                            <div class="edit-actions">
-                                <button type="button" class="btn btn-cancel btn-cancel-edit" data-comment-id="@comment.Id">Hủy</button>
-                                <button type="submit" class="btn btn-save">Lưu</button>
-                            </div>
-                        </form>
                     }
                 </div>
             </div>
         }
     </div>
+    <button class="load-more-btn btn btn-link" id="loadMoreComments" style="display: none;">Load More</button>
 </div>

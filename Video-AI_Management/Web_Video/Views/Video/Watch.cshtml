@@ -27,14 +27,33 @@
                     <div class="float-right">
                         @if (User.GetUserChannelId() != Model.ChannelId.ToString())
                         {
-                            <button id="subscribeBtn" class="btn btn-danger @(Model.IsSubscribed ? "subscribed" : "")">
+                            <button id="subscribeBtn" class="btn @(Model.IsSubscribed ? "btn-secondary subscribed" : "btn-danger")">
                                 @(Model.IsSubscribed ? "Subscribed" : "Subscribe") <strong>@SD.FormatView(Model.SubscribersCount)</strong>
-                                @if (Model.IsSubscribed)
-                                {
-                                    <i class="fas fa-bell"></i>
-                                }
                             </button>
                         }
+                        <button class="btn @(Model.IsLiked ? "btn-primary" : "btn-outline-primary")" id="likeBtn" onclick="likeDislike('likeBtn', 'like')">
+                            <i class="fas fa-thumbs-up"></i> <span>@SD.FormatView(Model.LikesCount)</span>
+                        </button>
+                        <button class="btn @(Model.IsDisiked ? "btn-primary" : "btn-outline-primary")" id="dislikeBtn" onclick="likeDislike('dislikeBtn', 'dislike')">
+                            <i class="fas fa-thumbs-down"></i> <span>@(Model.DislikesCount > 0 ? SD.FormatView(Model.DislikesCount) : "")</span>
+                        </button>
+                        <button class="btn btn-outline-primary" id="shareBtn" onclick="shareVideo()">
+                            <i class="fas fa-share"></i> Share
+                        </button>
+                        <form method="post" style="display: inline;">
+                            <button asp-action="DownloadVideoFile" asp-route-videoId="@Model.Id" type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                        </form>
+                        <div class="btn-group">
+                            <button class="btn btn-outline-primary" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right">
+                                <a class="dropdown-item" href="#"><i class="fas fa-fw fa-plus"></i> Add to Playlist</a>
+                                <a class="dropdown-item" href="#"><i class="fas fa-fw fa-flag"></i> Report</a>
+                            </div>
+                        </div>
                     </div>
                     <img class="img-fluid" src="@Model.ChannelAvatar" alt="@Model.ChannelName Avatar">
                     <p>
@@ -68,7 +87,7 @@
                                     foreach (var frame in celebEntry.Value)
                                     {
                                         <div class="frame-card">
-                                            <img src="data:image/jpeg;base64,@frame.FrameImage" alt="@celebName tại @frame.Time giây" class="frame-image" />
+                                            <img src="data:image/jpeg;base64,@frame.FrameImage" alt="@celebName at @frame.Time seconds" class="frame-image" />
                                             @{
                                                 var ts = TimeSpan.FromSeconds(frame.Time);
                                             }
@@ -101,11 +120,11 @@
                             <span><a href="#">General</a></span>
                         }
                     </p>
+                    <button class="btn btn-link show-more-btn" id="showMoreBtn">Show more</button>
                 </div>
                 <!-- Bình luận -->
-                <div class="comments-section">
+                <div class="comments-section box mb-3">
                     <partial name="_CommentPartial" model="Model.CommentVM" />
-                    <button class="load-more-btn" id="loadMoreComments" style="display: none;">Load More</button>
                 </div>
             </div>
         </div>
@@ -126,9 +145,9 @@
                                     Sort by <i class="fa fa-caret-down" aria-hidden="true"></i>
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-right">
-                                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> &nbsp; Top Rated</a>
-                                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-signal"></i> &nbsp; Viewed</a>
-                                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-times-circle"></i> &nbsp; Close</a>
+                                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> Top Rated</a>
+                                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-signal"></i> Viewed</a>
+                                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-times-circle"></i> Close</a>
                                 </div>
                             </div>
                             <h6>Up Next</h6>
@@ -141,7 +160,6 @@
                                 <div class="video-card-image">
                                     <a class="play-icon" href="@Url.Action("Watch", "Video", new { id = video.Id })"><i class="fas fa-play-circle"></i></a>
                                     <a href="@Url.Action("Watch", "Video", new { id = video.Id })"><img class="img-fluid" src="@video.Thumbnail" alt="@video.Title"></a>
-                                    @* <div class="time">@(video.Duration != null ? TimeSpan.FromSeconds(video.Duration.TotalSeconds).ToString(@"mm\:ss") : "3:50")</div> *@
                                 </div>
                                 <div class="video-card-body">
                                     <div class="btn-group float-right right-action">
@@ -149,9 +167,9 @@
                                             <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
                                         </a>
                                         <div class="dropdown-menu dropdown-menu-right">
-                                            <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> &nbsp; Top Rated</a>
-                                            <a class="dropdown-item" href="#"><i class="fas fa-fw fa-signal"></i> &nbsp; Viewed</a>
-                                            <a class="dropdown-item" href="#"><i class="fas fa-fw fa-times-circle"></i> &nbsp; Close</a>
+                                            <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> Top Rated</a>
+                                            <a class="dropdown-item" href="#"><i class="fas fa-fw fa-signal"></i> Viewed</a>
+                                            <a class="dropdown-item" href="#"><i class="fas fa-fw fa-times-circle"></i> Close</a>
                                         </div>
                                     </div>
                                     <div class="video-title">
@@ -182,9 +200,6 @@
 @section Css {
     <link rel="stylesheet" href="~/css_new/osahan.css" asp-append-version="true" />
     <style>
-        .video-block {
-            margin-left:-150px;
-        }
         .single-video-left .single-video {
             position: relative;
             padding-bottom: 56.25%; /* 16:9 aspect ratio */
@@ -293,14 +308,260 @@
             .description-content.expanded {
                 max-height: none;
             }
+        /* Style cho bình luận */
+        .comments-section {
+            padding: 20px;
+        }
+
+        .comments-header {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .comment-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+            .comment-input img {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+            }
+
+            .comment-input input {
+                flex: 1;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                padding: 8px;
+                font-size: 0.9rem;
+            }
+
+        .comment-actions {
+            display: none;
+            margin-top: 10px;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+            .comment-actions button {
+                font-size: 0.85rem;
+                padding: 5px 15px;
+                border-radius: 4px;
+            }
+
+            .comment-actions .btn-cancel {
+                background-color: #f1f1f1;
+                color: #333;
+            }
+
+            .comment-actions .btn-comment {
+                background-color: #dc3545;
+                color: #fff;
+            }
+
+        .comment-item {
+            display: flex;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+            .comment-item img {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                margin-right: 12px;
+            }
+
+        .comment-content .comment-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 2px;
+        }
+
+            .comment-content .comment-header .comment-author {
+                font-size: 0.9rem;
+                font-weight: 500;
+                color: #333;
+            }
+
+            .comment-content .comment-header .comment-time {
+                font-size: 0.85rem;
+                color: #606060;
+            }
+
+        .comment-content .comment-text {
+            font-size: 0.9rem;
+            color: #333;
+            margin: 0;
+        }
+
+        .comment-actions-wrapper {
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+
+        .btn-more-actions {
+            background: none;
+            border: none;
+            color: #606060;
+            padding: 5px;
+            display: none;
+        }
+
+        .comment-item:hover .btn-more-actions {
+            display: block;
+        }
+
+        .comment-actions-menu {
+            position: absolute;
+            right: 0;
+            top: 25px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none;
+        }
+
+            .comment-actions-menu button {
+                display: block;
+                width: 100%;
+                text-align: left;
+                font-size: 0.85rem;
+                color: #606060;
+                background: none;
+                border: none;
+                padding: 5px 10px;
+                border-radius: 2px;
+            }
+
+                .comment-actions-menu button:hover {
+                    background-color: #f1f1f1;
+                }
     </style>
 }
 
 @section Scripts {
     <script src="~/js/site.js"></script>
     <script>
-        // Gọi API AddOrUpdateView khi tải trang
+        // Hàm displayNotification (chỉ dùng cho Subscribe)
+        function displayNotification(isSuccess, title, message, type) {
+            if (typeof toastr !== "undefined") {
+                if (isSuccess) toastr.success(message, title);
+                else toastr.error(message, title);
+            } else {
+                alert(`${title}: ${message}`);
+            }
+        }
+
+        // Hàm timeAgo
+        function timeAgo(date) {
+            const now = new Date();
+            const posted = new Date(date);
+            const diffInSeconds = Math.floor((now - posted) / 1000);
+            if (diffInSeconds < 60) return "just now";
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+            return `${Math.floor(diffInSeconds / 86400)} days ago`;
+        }
+
+        // Hàm shareVideo 
+        function shareVideo() {
+            const url = window.location.href;
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(url).then(() => {
+                    displayNotification(true, 'Copied', 'Video URL copied to clipboard', 'toastr');
+                }).catch(err => {
+                    console.error('Clipboard error:', err);
+                    prompt('Copy the URL below:', url);
+                    displayNotification(true, 'Prompt', 'Please copy the URL manually', 'toastr');
+                });
+            } else {
+                prompt('Copy the URL below:', url);
+                displayNotification(true, 'Prompt', 'Please copy the URL manually', 'toastr');
+            }
+        }
+
+        // Hàm likeDislike
+        function likeDislike(id, action) {
+            let model = {
+                videoId: '@Model.Id',
+                action
+            };
+            if ($('#' + id).hasClass('btn-primary')) {
+                model.like = false;
+            } else {
+                model.like = true;
+            }
+            $.ajax({
+                url: "/Video/LikeDislikeVideo",
+                type: "PUT",
+                data: model,
+                success: function (data) {
+                    const commands = data.title.split('-');
+                    commands.forEach(c => {
+                        if (c == 'addLike') {
+                            $('#likeBtn').addClass('btn-primary').removeClass('btn-outline-primary');
+                            var $span = $('#likeBtn').find('span');
+                            var currentNumber = parseInt($span.text());
+                            $span.text(currentNumber + 1);
+                            $('#dislikeBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+                        } else if (c == 'addDislike') {
+                            $('#dislikeBtn').addClass('btn-primary').removeClass('btn-outline-primary');
+                            var $span = $('#dislikeBtn').find('span');
+                            var currentNumber = $span.text() ? parseInt($span.text()) : 0;
+                            $span.text(currentNumber + 1);
+                            $('#likeBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+                        } else if (c == 'removeLike') {
+                            $('#likeBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+                            var $span = $('#likeBtn').find('span');
+                            var currentNumber = parseInt($span.text());
+                            $span.text(currentNumber - 1);
+                        } else if (c == 'removeDislike') {
+                            $('#dislikeBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+                            var $span = $('#dislikeBtn').find('span');
+                            var currentNumber = $span.text() ? parseInt($span.text()) : 0;
+                            $span.text(currentNumber - 1);
+                        }
+                    });
+                },
+                error: function (xhr) {
+                    console.error('Like/Dislike error:', xhr.statusText);
+                }
+            });
+        }
+
+        // Hàm để chuyển form comment sang chế độ Edit
+        function enterEditMode(commentId, content) {
+            const $form = $('#create-comment-form');
+            const $input = $('#textComment');
+            const $btnComment = $('#btnComment');
+            $input.val(content);
+            $form.data('edit-comment-id', commentId);
+            $btnComment.text('Save');
+            $('#sectionCommentBtns').fadeIn();
+        }
+
+        // Hàm để thoát chế độ Edit
+        function exitEditMode() {
+            const $form = $('#create-comment-form');
+            const $input = $('#textComment');
+            const $btnComment = $('#btnComment');
+            $input.val('');
+            $form.removeData('edit-comment-id');
+            $btnComment.text('Comment');
+            $('#sectionCommentBtns').fadeOut();
+        }
+
         $(document).ready(function () {
+            // Gọi API AddOrUpdateView khi tải trang
             $.ajax({
                 url: `/Home/AddOrUpdateView?videoId=@Model.Id`,
                 type: 'POST',
@@ -334,7 +595,7 @@
                 const carousel = document.getElementById('carouselContent');
                 const cards = carousel.getElementsByClassName('frame-card');
                 if (cards.length === 0) return;
-                const cardWidth = cards[0].offsetWidth + 10; // Cộng margin
+                const cardWidth = cards[0].offsetWidth + 10;
                 const currentScroll = carousel.scrollLeft;
                 const maxScroll = (cards.length - Math.floor(carousel.offsetWidth / cardWidth)) * cardWidth;
                 let newScroll = currentScroll + (direction * cardWidth);
@@ -351,64 +612,24 @@
                     data: { channelId: '@Model.ChannelId' },
                     success: function (data) {
                         if (data.title == "Unsubscribed") {
-                            $('#subscribeBtn').removeClass('subscribed');
+                            $('#subscribeBtn').removeClass('subscribed btn-secondary').addClass('btn-danger');
                             $('#subscribeBtn').html('Subscribe <strong>@SD.FormatView(Model.SubscribersCount)</strong>');
                             displayNotification(false, data.title, data.message, 'toastr');
                         } else if (data.title == "Subscribed") {
-                            $('#subscribeBtn').addClass('subscribed');
-                            $('#subscribeBtn').html('Subscribed <strong>@SD.FormatView(Model.SubscribersCount)</strong> <i class="fas fa-bell"></i>');
+                            $('#subscribeBtn').removeClass('btn-danger').addClass('subscribed btn-secondary');
+                            $('#subscribeBtn').html('Subscribed <strong>@SD.FormatView(Model.SubscribersCount)</strong>');
                             displayNotification(true, data.title, data.message, 'toastr');
                         } else {
                             displayNotification(data.isSuccess, data.title, data.message, 'modal');
                         }
+                    },
+                    error: function (xhr) {
+                        displayNotification(false, 'Error', `Failed to subscribe: ${xhr.statusText}`, 'toastr');
                     }
                 });
             });
 
-            // Xử lý Like/Dislike
-            function likeDislike(id, action) {
-                let model = {
-                    videoId: '@Model.Id',
-                    action
-                };
-                if ($('#' + id).hasClass('active')) {
-                    model.like = false;
-                } else {
-                    model.like = true;
-                }
-                $.ajax({
-                    url: "/Video/LikeDislikeVideo",
-                    type: "PUT",
-                    data: model,
-                    success: function (data) {
-                        const commands = data.title.split('-');
-                        commands.forEach(c => {
-                            if (c == 'addLike') {
-                                $('#likeBtn').addClass('active');
-                                var $span = $('#likeBtn').find('span');
-                                var currentNumber = parseInt($span.text());
-                                $span.text(currentNumber + 1);
-                            } else if (c == 'addDislike') {
-                                $('#dislikeBtn').addClass('active');
-                                var $span = $('#dislikeBtn').find('span');
-                                $span.text(currentNumber + 1);
-                            } else if (c == 'removeLike') {
-                                $('#likeBtn').removeClass('active');
-                                var $span = $('#likeBtn').find('span');
-                                var currentNumber = parseInt($span.text());
-                                $span.text(currentNumber - 1);
-                            } else if (c == 'removeDislike') {
-                                $('#dislikeBtn').removeClass('active');
-                                var $span = $('#dislikeBtn').find('span');
-                                var currentNumber = parseInt($span.text());
-                                $span.text(currentNumber - 1);
-                            }
-                        });
-                    }
-                });
-            }
-
-            // Giữ nguyên logic bình luận từ code gốc
+            // Xử lý bình luận
             $('#textComment').on('input', function () {
                 var text = $(this).val().trim();
                 if (text.length > 0) {
@@ -419,85 +640,104 @@
             });
 
             $('#btnCancel').on('click', function () {
-                $('#textComment').val('');
-                $('#sectionCommentBtns').fadeOut();
+                exitEditMode();
             });
 
-            document.getElementById('create-comment-form').addEventListener('submit', function (event) {
+            $('#create-comment-form').on('submit', function (event) {
                 event.preventDefault();
-                const content = document.getElementById('textComment').value.trim();
-                const videoId = document.querySelector('input[name="PostComment.VideoId"]').value;
-                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-                const data = {
-                    PostComment: {
-                        VideoId: videoId,
-                        Content: content
-                    },
-                    __RequestVerificationToken: token
-                };
-                $.ajax({
-                    url: '/Video/CreateComment',
-                    type: 'POST',
-                    data: data,
-                    success: function (data) {
-                        if (data.isSuccess) {
-                            const newComment = data.comment;
-                            const isOwner = newComment.appUserId === '@User.GetUserId()';
-                            const commentHtml = `
-                                <div class="comment-item" id="comment-${newComment.id}">
-                                    <img src="/avatarUser/avt-default.jpg" alt="User Avatar" />
-                                    <div class="comment-content">
-                                        <div class="comment-header">
-                                            <span class="comment-author">${newComment.fromName}</span>
-                                            <span class="comment-time">${timeAgo(newComment.postedAt)}</span>
-                                        </div>
-                                        <p class="comment-text">${newComment.content}</p>
-                                        ${isOwner ? `
-                                            <div class="comment-actions-wrapper">
-                                                <button class="btn btn-more-actions" data-comment-id="${newComment.id}">
-                                                    <i class="fa fa-ellipsis-v"></i>
-                                                </button>
-                                                <div class="comment-actions-menu" id="actions-menu-${newComment.id}" style="display: none;">
-                                                    <button class="btn btn-edit-comment" data-comment-id="${newComment.id}">Edit</button>
-                                                    <button class="btn btn-delete-comment" data-comment-id="${newComment.id}" data-video-id="${videoId}">Delete</button>
-                                                </div>
-                                            </div>
-                                            <form class="edit-comment-form" id="edit-form-${newComment.id}">
-                                                <input type="hidden" name="commentId" value="${newComment.id}" />
-                                                <input type="hidden" name="videoId" value="${videoId}" />
-                                                <input type="hidden" name="__RequestVerificationToken" value="${token}" />
-                                                <textarea name="content" class="form-control" rows="2">${newComment.content}</textarea>
-                                                <div class="edit-actions">
-                                                    <button type="button" class="btn btn-cancel btn-cancel-edit" data-comment-id="${newComment.id}">Cancel</button>
-                                                    <button type="submit" class="btn btn-save">Save</button>
-                                                </div>
-                                            </form>
-                                        ` : ''}
-                                    </div>
-                                </div>
-                            `;
-                            const commentsList = document.getElementById('comments-list');
-                            commentsList.insertAdjacentHTML('afterbegin', commentHtml);
-                            const commentItems = document.querySelectorAll('.comment-item');
-                            if (commentItems.length > 5) {
-                                for (let i = 5; i < commentItems.length; i++) {
-                                    commentItems[i].remove();
+                const content = $('#textComment').val().trim();
+                const videoId = $('input[name="PostComment.VideoId"]').val();
+                const token = $('input[name="__RequestVerificationToken"]').val();
+                const commentId = $(this).data('edit-comment-id');
+
+                if (commentId) {
+                    // Chế độ Edit
+                    const data = {
+                        commentId: commentId,
+                        videoId: videoId,
+                        content: content,
+                        __RequestVerificationToken: token
+                    };
+                    $.ajax({
+                        url: '/Video/EditComment',
+                        type: 'POST',
+                        data: data,
+                        success: function (data) {
+                            if (data.isSuccess) {
+                                const commentText = $(`#comment-${commentId} .comment-text`);
+                                commentText.text(content);
+                                const commentTime = $(`#comment-${commentId} .comment-time`);
+                                if (!commentTime.find('.edited-label').length) {
+                                    commentTime.append('<span class="edited-label">(edited)</span>');
                                 }
+                                exitEditMode();
+                            } else {
+                                console.error('Edit comment failed:', data.message);
                             }
-                            const commentCount = document.querySelectorAll('.comment-item').length;
-                            document.querySelector('.comments-header').textContent = `${commentCount} ${commentCount > 1 ? 'Comments' : 'Comment'}`;
-                            $('#loadMoreComments').show();
-                            $('#textComment').val('');
-                            $('#sectionCommentBtns').fadeOut();
-                            displayNotification(true, data.title, data.message, 'toastr');
-                        } else {
-                            displayNotification(false, data.title, data.message, 'toastr');
+                        },
+                        error: function (xhr) {
+                            console.error('Edit comment error:', xhr.statusText);
                         }
-                    },
-                    error: function (xhr) {
-                        displayNotification(false, 'Error', `Failed to add comment: ${xhr.statusText}`, 'toastr');
-                    }
-                });
+                    });
+                } else {
+                    // Chế độ Create
+                    const data = {
+                        PostComment: {
+                            VideoId: videoId,
+                            Content: content
+                        },
+                        __RequestVerificationToken: token
+                    };
+                    $.ajax({
+                        url: '/Video/CreateComment',
+                        type: 'POST',
+                        data: data,
+                        success: function (data) {
+                            if (data.isSuccess) {
+                                const newComment = data.comment;
+                                const isOwner = newComment.appUserId === '@User.GetUserId()';
+                                const commentHtml = `
+                                    <div class="comment-item" id="comment-${newComment.id}">
+                                        <img src="/avatarUser/avt-default.jpg" alt="User Avatar" />
+                                        <div class="comment-content">
+                                            <div class="comment-header">
+                                                <span class="comment-author">${newComment.fromName}</span>
+                                                <span class="comment-time">${timeAgo(newComment.postedAt)}</span>
+                                            </div>
+                                            <p class="comment-text">${newComment.content}</p>
+                                            ${isOwner ? `
+                                                <div class="comment-actions-wrapper">
+                                                    <button class="btn btn-more-actions" data-comment-id="${newComment.id}">
+                                                        <i class="fa fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <div class="comment-actions-menu" id="actions-menu-${newComment.id}" style="display: none;">
+                                                        <button class="btn btn-edit-comment" data-comment-id="${newComment.id}">Edit</button>
+                                                        <button class="btn btn-delete-comment" data-comment-id="${newComment.id}" data-video-id="${videoId}">Delete</button>
+                                                    </div>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                `;
+                                $('#comments-list').prepend(commentHtml);
+                                const commentItems = $('.comment-item');
+                                if (commentItems.length > 5) {
+                                    commentItems.slice(5).remove();
+                                }
+                                const commentCount = commentItems.length;
+                                $('.comments-header').text(`${commentCount} ${commentCount > 1 ? 'Comments' : 'Comment'}`);
+                                $('#loadMoreComments').show();
+                                $('#textComment').val('');
+                                $('#sectionCommentBtns').fadeOut();
+                            } else {
+                                console.error('Create comment failed:', data.message);
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error('Create comment error:', xhr.statusText);
+                        }
+                    });
+                }
             });
 
             let currentPage = 1;
@@ -514,7 +754,7 @@
                     success: function (data) {
                         if (data.isSuccess && data.comments && data.comments.length > 0) {
                             currentPage++;
-                            const commentsList = document.getElementById('comments-list');
+                            const commentsList = $('#comments-list');
                             data.comments.forEach(comment => {
                                 const isOwner = comment.appUserId === '@User.GetUserId()';
                                 const commentHtml = `
@@ -523,7 +763,7 @@
                                         <div class="comment-content">
                                             <div class="comment-header">
                                                 <span class="comment-author">${comment.fromName}</span>
-                                                <span class="comment-time">${timeAgo(comment.postedAt)}</span>
+                                                <span class="comment-time">${timeAgo(comment.postedAt)}${comment.isEdited ? '<span class="edited-label">(edited)</span>' : ''}</span>
                                             </div>
                                             <p class="comment-text">${comment.content}</p>
                                             ${isOwner ? `
@@ -536,21 +776,11 @@
                                                         <button class="btn btn-delete-comment" data-comment-id="${comment.id}" data-video-id="@Model.Id">Delete</button>
                                                     </div>
                                                 </div>
-                                                <form class="edit-comment-form" id="edit-form-${comment.id}">
-                                                    <input type="hidden" name="commentId" value="${comment.id}" />
-                                                    <input type="hidden" name="videoId" value="@Model.Id" />
-                                                    <input type="hidden" name="__RequestVerificationToken" value="${$('input[name="__RequestVerificationToken"]').val()}" />
-                                                    <textarea name="content" class="form-control" rows="2">${comment.content}</textarea>
-                                                    <div class="edit-actions">
-                                                        <button type="button" class="btn btn-cancel btn-cancel-edit" data-comment-id="${comment.id}">Cancel</button>
-                                                        <button type="submit" class="btn btn-save">Save</button>
-                                                    </div>
-                                                </form>
                                             ` : ''}
                                         </div>
                                     </div>
                                 `;
-                                commentsList.insertAdjacentHTML('beforeend', commentHtml);
+                                commentsList.append(commentHtml);
                             });
                             if (data.comments.length < commentsPerPage) {
                                 $('#loadMoreComments').hide();
@@ -560,7 +790,7 @@
                         }
                     },
                     error: function () {
-                        displayNotification(false, 'Error', 'Failed to load more comments', 'toastr');
+                        console.error('Load more comments error');
                     }
                 });
             }
@@ -568,126 +798,61 @@
             $('#loadMoreComments').on('click', loadMoreComments);
 
             // Xử lý click nút More và Edit/Delete bình luận
-            document.addEventListener('click', function (event) {
-                if (event.target.closest('.btn-more-actions')) {
-                    const button = event.target.closest('.btn-more-actions');
-                    const commentId = button.getAttribute('data-comment-id');
-                    const menu = document.getElementById(`actions-menu-${commentId}`);
-                    document.querySelectorAll('.comment-actions-menu').forEach(m => {
-                        if (m !== menu) {
-                            m.style.display = 'none';
-                        }
-                    });
-                    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-                }
-                if (!event.target.closest('.btn-more-actions') && !event.target.closest('.comment-actions-menu')) {
-                    document.querySelectorAll('.comment-actions-menu').forEach(menu => {
-                        menu.style.display = 'none';
-                    });
-                }
-                if (event.target.classList.contains('btn-edit-comment')) {
-                    event.preventDefault();
-                    const commentId = event.target.getAttribute('data-comment-id');
-                    const commentText = document.querySelector(`#comment-${commentId} .comment-text`);
-                    const editForm = document.querySelector(`#comment-${commentId} .edit-comment-form`);
-                    if (commentText && editForm) {
-                        commentText.style.display = 'none';
-                        editForm.style.display = 'block';
-                        document.getElementById(`actions-menu-${commentId}`).style.display = 'none';
-                    } else {
-                        console.error('Không tìm thấy phần tử cho commentId:', commentId);
-                    }
-                }
-                if (event.target.classList.contains('btn-cancel-edit')) {
-                    const commentId = event.target.getAttribute('data-comment-id');
-                    const commentText = document.querySelector(`#comment-${commentId} .comment-text`);
-                    const editForm = document.querySelector(`#comment-${commentId} .edit-comment-form`);
-                    if (commentText && editForm) {
-                        commentText.style.display = 'block';
-                        editForm.style.display = 'none';
-                    }
-                }
-                if (event.target.classList.contains('btn-delete-comment')) {
-                    if (!confirm('Bạn có chắc muốn xóa bình luận này không?')) {
-                        return;
-                    }
-                    const commentId = event.target.getAttribute('data-comment-id');
-                    const videoId = event.target.getAttribute('data-video-id');
-                    $.ajax({
-                        url: '/Video/DeleteComment',
-                        type: 'POST',
-                        data: { commentId: commentId, videoId: videoId, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
-                        success: function (data) {
-                            if (data.isSuccess) {
-                                document.getElementById(`comment-${commentId}`).remove();
-                                const commentCount = document.querySelectorAll('.comment-item').length;
-                                document.querySelector('.comments-header').textContent = `${commentCount} ${commentCount > 1 ? 'Comments' : 'Comment'}`;
-                                if (commentCount >= commentsPerPage) {
-                                    $('#loadMoreComments').show();
-                                }
-                                displayNotification(true, data.title, data.message, 'toastr');
-                            } else {
-                                displayNotification(false, data.title, data.message, 'toastr');
-                            }
-                        },
-                        error: function () {
-                            displayNotification(false, 'Error', 'Failed to delete comment', 'toastr');
-                        }
-                    });
+            $(document).on('click', '.btn-more-actions', function () {
+                const commentId = $(this).data('comment-id');
+                const $menu = $(`#actions-menu-${commentId}`);
+                $('.comment-actions-menu').not($menu).hide();
+                $menu.toggle();
+            });
+
+            $(document).on('click', function (event) {
+                if (!$(event.target).closest('.btn-more-actions, .comment-actions-menu').length) {
+                    $('.comment-actions-menu').hide();
                 }
             });
 
-            document.querySelectorAll('.edit-comment-form').forEach(form => {
-                form.addEventListener('submit', function (event) {
-                    event.preventDefault();
-                    const commentId = form.querySelector('input[name="commentId"]').value;
-                    const videoId = form.querySelector('input[name="videoId"]').value;
-                    const content = form.querySelector('textarea[name="content"]').value.trim();
-                    const token = form.querySelector('input[name="__RequestVerificationToken"]').value;
-                    const data = {
-                        commentId: commentId,
-                        videoId: videoId,
-                        content: content,
-                        __RequestVerificationToken: token
-                    };
-                    $.ajax({
-                        url: '/Video/EditComment',
-                        type: 'POST',
-                        data: data,
-                        success: function (data) {
-                            if (data.isSuccess) {
-                                const commentText = document.querySelector(`#comment-${commentId} .comment-text`);
-                                commentText.textContent = content;
-                                commentText.style.display = 'block';
-                                form.style.display = 'none';
-                                const commentTime = document.querySelector(`#comment-${commentId} .comment-time`);
-                                if (!commentTime.querySelector('.edited-label')) {
-                                    const editedLabel = document.createElement('span');
-                                    editedLabel.className = 'edited-label';
-                                    editedLabel.textContent = '(edited)';
-                                    commentTime.appendChild(editedLabel);
-                                }
-                                displayNotification(true, data.title, data.message, 'toastr');
-                            } else {
-                                displayNotification(false, data.title, data.message, 'toastr');
+            $(document).on('click', '.btn-edit-comment', function (event) {
+                event.preventDefault();
+                const commentId = $(this).data('comment-id');
+                const commentText = $(`#comment-${commentId} .comment-text`).text();
+                enterEditMode(commentId, commentText);
+                $(`#actions-menu-${commentId}`).hide();
+            });
+
+            $(document).on('click', '.btn-delete-comment', function () {
+                if (!confirm('Bạn có chắc muốn xóa bình luận này không?')) {
+                    return;
+                }
+                const commentId = $(this).data('comment-id');
+                const videoId = $(this).data('video-id');
+                $.ajax({
+                    url: '/Video/DeleteComment',
+                    type: 'POST',
+                    data: { commentId: commentId, videoId: videoId, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
+                    success: function (data) {
+                        if (data.isSuccess) {
+                            $(`#comment-${commentId}`).remove();
+                            const commentCount = $('.comment-item').length;
+                            $('.comments-header').text(`${commentCount} ${commentCount > 1 ? 'Comments' : 'Comment'}`);
+                            if (commentCount >= commentsPerPage) {
+                                $('#loadMoreComments').show();
                             }
-                        },
-                        error: function (xhr) {
-                            displayNotification(false, 'Error', `Failed to update comment: ${xhr.statusText}`, 'toastr');
+                        } else {
+                            console.error('Delete comment failed:', data.message);
                         }
-                    });
+                    },
+                    error: function () {
+                        console.error('Delete comment error');
+                    }
                 });
             });
 
-            // Hàm format thời gian
-            function timeAgo(date) {
-                const now = new Date();
-                const posted = new Date(date);
-                const diffInSeconds = Math.floor((now - posted) / 1000);
-                if (diffInSeconds < 60) return "just now";
-                if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-                if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-                return `${Math.floor(diffInSeconds / 86400)} days ago`;
+            // Kiểm tra video player lỗi
+            const videoPlayer = document.getElementById('videoPlayer');
+            if (videoPlayer) {
+                videoPlayer.addEventListener('error', function (e) {
+                    console.error('Video error:', e);
+                });
             }
         });
     </script>
