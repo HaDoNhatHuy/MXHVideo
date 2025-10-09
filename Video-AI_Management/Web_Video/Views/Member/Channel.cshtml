@@ -1,44 +1,184 @@
 ﻿@model Web_Video.ViewModels.Member.MemberChannelViewModel
-
-<div class="channel-page">
-    <!-- Phần tiêu đề kênh và thông tin -->
-    <div class="channel-header bg-light border-bottom px-4 py-3">
-        <div class="row align-items-center">
-            <!-- Tên kênh và ngày tạo -->
-            <div class="col-md-8">
-                <h1 class="channel-title fw-bold mb-1" style="font-size: 24px;">@Model.Name</h1>
-                <div class="channel-meta text-muted" style="font-size: 14px;">
-                    <span>Created on @Model.CreatedAt.ToShortDateString()</span> •
-                    <span>@Model.NumberOfSubscribers.ToString("N0") @(Model.NumberOfSubscribers > 1 ? "Subscribers" : "Subscriber")</span> •
-                    <span>@Model.NumberOfAvailableVideos.ToString("N0") @(Model.NumberOfAvailableVideos > 1 ? "Videos" : "Video")</span>
-                </div>
-                <p class="channel-about mt-2" style="font-size: 14px;">@Model.About</p>
-            </div>
-            <!-- Nút Subscribe -->
-            <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                @if (User.GetUserChannelId() != Model.ChannelId.ToString())
-                {
-                    <form method="post" class="d-inline">
-                        <button asp-action="SubscribeChannel" asp-route-channelId="@Model.ChannelId" type="submit"
-                                class="btn btn@(Model.UserIsSubscribed ? "" : "-outline")-dark rounded-pill px-4 py-2"
-                                style="font-size: 14px; font-weight: 500;">
-                            <i class="bi @(Model.UserIsSubscribed ? "bi-bell-fill" : "bi-bell") me-1"></i>
-                            @(Model.UserIsSubscribed ? "Subscribed" : "Subscribe")
-                        </button>
-                    </form>
-                }
-            </div>
-        </div>
-    </div>
-
-    <!-- Phần danh sách video -->
-    <div class="channel-videos px-4 py-3">
-        <h5 class="section-title fw-bold mb-3" style="font-size: 18px;">Available Videos</h5>
-        <div class="youtube-video-grid" id="videosContainer">
-            <!-- Video sẽ được tải động bằng JavaScript -->
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="single-channel-image">
+    <img class="img-fluid" alt="Channel Banner" src="/img/channel-banner.png">
+    <div class="channel-profile">
+        <img class="channel-profile-img" alt="Profile" src="/img/s2.png">
+        <div class="social hidden-xs">
+            Social &nbsp;
+            <a class="fb" href="#">Facebook</a>
+            <a class="tw" href="#">Twitter</a>
+            <a class="gp" href="#">Google</a>
         </div>
     </div>
 </div>
+<div class="single-channel-nav">
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <a class="channel-brand" href="#">@Model.Name <span title="" data-placement="top" data-toggle="tooltip" data-original-title="Verified"><i class="fas fa-check-circle text-success"></i></span></a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Videos <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Playlist</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Channels</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Discussion</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">About</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Donate
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <a class="dropdown-item" href="#">Action</a>
+                        <a class="dropdown-item" href="#">Another action</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#">Something else here</a>
+                    </div>
+                </li>
+            </ul>
+            <form class="form-inline my-2 my-lg-0">
+                <input class="form-control form-control-sm mr-sm-1" type="search" placeholder="Search" aria-label="Search">
+                <button class="btn btn-outline-success btn-sm my-2 my-sm-0" type="submit"><i class="fas fa-search"></i></button> &nbsp;&nbsp;&nbsp;
+                @if (User.GetUserChannelId() != Model.ChannelId.ToString())
+                {
+                    <form method="post" class="d-inline">
+                        <button asp-action="SubscribeChannel" asp-route-channelId="@Model.ChannelId" type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="fas @(Model.UserIsSubscribed ? "fa-bell" : "fa-bell-slash")"></i> @(Model.UserIsSubscribed ? "Subscribed" : "Subscribe") <strong>@Model.NumberOfSubscribers.ToString("N0")</strong>
+                        </button>
+                    </form>
+                }
+            </form>
+        </div>
+    </nav>
+</div>
+<div class="video-block section-padding">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="main-title">
+                <div class="btn-group float-right right-action">
+                    <a href="#" class="right-action-link text-gray" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Sort by <i class="fa fa-caret-down" aria-hidden="true"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right">
+                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> &nbsp; Top Rated</a>
+                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-signal"></i> &nbsp; Viewed</a>
+                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-times-circle"></i> &nbsp; Close</a>
+                    </div>
+                </div>
+                <h6>Available Videos</h6>
+            </div>
+        </div>
+        <div class="row" id="videosContainer">
+            <!-- Videos will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+
+@section Css {
+    <style>
+        .video-card {
+            width: 100%;
+            max-width: 300px; /* Đặt chiều rộng tối đa cố định */
+            margin: 0 auto; /* Căn giữa trong cột */
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .video-card-image {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* Tỷ lệ 16:9 (9/16 = 0.5625) */
+            overflow: hidden;
+        }
+
+            .video-card-image img {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: cover; /* Cắt hình để vừa khung, không méo */
+                object-position: center;
+            }
+
+            .video-card-image .play-icon {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 2.5rem;
+                color: white;
+                opacity: 0.8;
+                transition: opacity 0.3s;
+            }
+
+                .video-card-image .play-icon:hover {
+                    opacity: 1;
+                }
+
+            .video-card-image .time {
+                position: absolute;
+                bottom: 10px;
+                right: 10px;
+                background: rgba(0, 0, 0, 0.7);
+                color: white;
+                padding: 2px 6px;
+                border-radius: 3px;
+                font-size: 0.8rem;
+            }
+
+        .video-card-body {
+            padding: 10px;
+            height: fit-content;
+        }
+
+        .video-title a {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #333;
+            text-decoration: none;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .video-page, .video-view {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+            .video-page a {
+                text-decoration: none;
+            }
+
+            .video-view i {
+                margin-right: 5px;
+            }
+
+        @@media (max-width: 576px) {
+            .video-card {
+                max-width: 100%; /* Đảm bảo video card chiếm toàn bộ chiều rộng trên màn hình nhỏ */
+            }
+        }
+    </style>
+}
 
 @section Scripts {
     <script>
@@ -56,7 +196,7 @@
                 },
                 error: function (xhr, status, error) {
                     console.error('Error fetching videos:', error);
-                    $('#videosContainer').html('<div class="text-center p-3">Không có video nào để hiển thị.</div>');
+                    $('#videosContainer').html('<div class="col-12 text-center p-3">Không có video nào để hiển thị.</div>');
                 }
             });
         }
@@ -67,20 +207,29 @@
             if (videos && videos.length > 0) {
                 videos.forEach(v => {
                     html += `
-                        <div class="youtube-video-card">
-                            <a href="/Video/Watch/${v.id}" class="thumbnail-link">
-                                <img src="${v.thumbnail}" alt="Video Thumbnail" class="thumbnail-img" />
-                            </a>
-                            <div class="video-details">
-                                <a href="/Video/Watch/${v.id}" class="video-title">${v.title}</a>
-                                <div class="video-meta">
-                                    <span class="video-stats">${v.numberOfViews} lượt xem • ${v.createdAtTimeAgo}</span>
+                        <div class="col-xl-3 col-sm-6 mb-3">
+                            <div class="video-card">
+                                <div class="video-card-image">
+                                    <a class="play-icon" href="/Video/Watch/${v.id}"><i class="fas fa-play-circle"></i></a>
+                                    <a href="/Video/Watch/${v.id}"><img src="${v.thumbnail}" alt="Video Thumbnail"></a>
+                                    <div class="time">3:50</div>
+                                </div>
+                                <div class="video-card-body">
+                                    <div class="video-title">
+                                        <a href="/Video/Watch/${v.id}">${v.title}</a>
+                                    </div>
+                                    <div class="video-page text-success">
+        @Model.Name <a title="" data-placement="top" data-toggle="tooltip" href="#" data-original-title="Verified"><i class="fas fa-check-circle text-success"></i></a>
+                                    </div>
+                                    <div class="video-view">
+                                        ${v.numberOfViews} lượt xem &nbsp;<i class="fas fa-calendar-alt"></i> ${v.createdAtTimeAgo}
+                                    </div>
                                 </div>
                             </div>
                         </div>`;
                 });
             } else {
-                html = '<div class="text-center p-3">Không có video nào để hiển thị.</div>';
+                html = '<div class="col-12 text-center p-3">Không có video nào để hiển thị.</div>';
             }
 
             $('#videosContainer').html(html);

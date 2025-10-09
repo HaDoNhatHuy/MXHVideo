@@ -39,7 +39,9 @@ namespace DataAccess.Repo
                 {
                     Id = x.Id,
                     Title = x.Title,
-                    Thumbnail = x.Thumbnail,
+                    //Thumbnail = x.Thumbnail,
+                    Thumbnail = x.Thumbnail != null ? x.Thumbnail.Replace("\\", "/") : "/avatarUser/avt-default.jpg",
+                    Duration = x.Duration ?? "0:00", // Thêm Duration
                     CreatedAt = x.UploadDate,
                     CategoryName = x.Category.CategoryName,
                     Views = x.Viewers.Count(),
@@ -48,6 +50,7 @@ namespace DataAccess.Repo
                     Dislikes = x.LikeDislikes.Where(l => l.Liked == false).Count(),
                 })
                 .AsQueryable();
+
             query = parameters.SortBy switch
             {
                 "title-a" => query.OrderBy(x => x.Title),
@@ -66,6 +69,7 @@ namespace DataAccess.Repo
                 "category-d" => query.OrderByDescending(u => u.CategoryName),
                 _ => query.OrderByDescending(u => u.CreatedAt)
             };
+
             return await PaginatedList<VideoGridChannelDto>.CreateAsync(query.AsNoTracking(), parameters.PageNumber, parameters.PageSize);
         }
 

@@ -1,252 +1,706 @@
 ﻿@model Web_Video.ViewModels.Video.VideoAddEditViewModel
+@{
+    ViewData["CurrentPage"] = "Upload Video";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
 
-<style>
-    /* Style giống YouTube */
-    body {
-        font-family: 'Roboto', Arial, sans-serif;
-        background-color: #f9f9f9;
-    }
-
-    .upload-container {
-        /* max-width: 900px; */
-        max-width: 100%;
-        margin: 0 auto;
-        padding: 20px;
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    }
-
-        .upload-container h2 {
-            font-size: 20px;
-            font-weight: 500;
-            color: #030303;
-            margin-bottom: 20px;
-        }
-
-    .form-group {
-        margin-bottom: 20px;
-    }
-
-        .form-group label {
-            font-size: 14px;
-            font-weight: 500;
-            color: #606060;
-            margin-bottom: 5px;
-            display: block;
-        }
-
-        .form-group select,
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            font-size: 14px;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
+@section Css {
+    <!-- Summernote CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
             background-color: #f9f9f9;
         }
 
-        .form-group textarea {
-            resize: vertical;
-            min-height: 100px;
+        .upload-container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
-        .form-group input[type="file"] {
-            padding: 3px;
+            .upload-container h2 {
+                font-size: 20px;
+                font-weight: 500;
+                color: #030303;
+                margin-bottom: 20px;
+            }
+
+        .form-group {
+            margin-bottom: 20px;
         }
 
-    .preview-image {
-        max-height: 200px;
-        overflow: hidden;
-        border-radius: 8px;
-        margin-bottom: 10px;
-    }
+            .form-group label {
+                font-size: 14px;
+                font-weight: 500;
+                color: #606060;
+                margin-bottom: 5px;
+                display: block;
+            }
 
-        .preview-image img {
-           /*  width: 100%;
-            height: 100%; */
-            object-fit: cover;
+            .form-group select,
+            .form-group input,
+            .form-group textarea {
+                width: 100%;
+                padding: 10px;
+                font-size: 14px;
+                border: 1px solid #e0e0e0;
+                border-radius: 4px;
+                background-color: #f9f9f9;
+            }
+
+            .form-group textarea {
+                resize: vertical;
+                min-height: 100px;
+            }
+
+            .form-group input[type="file"] {
+                padding: 3px;
+            }
+
+        .preview-image {
+            max-height: 200px;
+            overflow: hidden;
+            border-radius: 8px;
+            margin-bottom: 10px;
         }
 
-    #progressContainer {
-        margin-top: 15px;
-    }
+            .preview-image img {
+                object-fit: cover;
+            }
 
-    .progress {
-        height: 25px;
-        background-color: #f5f5f5;
-        border-radius: 4px;
-    }
+        #progressContainer {
+            margin-top: 15px;
+            display: none;
+        }
 
-    .progress-bar {
-        transition: width 0.3s ease-in-out;
-        background-color: #cc0000;
-    }
+        .osahan-progress .progress {
+            border-radius: 2px;
+            height: 8px;
+            margin: 14px 0;
+            background-color: #f5f5f5;
+            overflow: hidden;
+        }
 
-    #progressText {
-        display: block;
-        margin-top: 5px;
-        font-size: 14px;
-        color: #606060;
-    }
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+            background-color: #ff516b;
+        }
 
-    #resultContainer {
-        color: #dc3545;
-    }
+        #progressText {
+            display: block;
+            margin-top: 5px;
+            font-size: 14px;
+            color: #606060;
+        }
 
-    #recognitionLoading {
-        margin-top: 15px;
-        text-align: center;
-    }
+        #uploadMessage {
+            font-size: 0.9rem;
+            color: #606060;
+            margin-top: 10px;
+            display: none;
+        }
 
-        #recognitionLoading p {
+        #resultContainer {
+            color: #dc3545;
+            margin-top: 15px;
+        }
+
+        #recognitionLoading {
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+
+            #recognitionLoading .spinner-border {
+                width: 3rem;
+                height: 3rem;
+                border-width: 0.4em;
+                color: #ff516b;
+            }
+
+            #recognitionLoading p {
+                font-size: 14px;
+                color: #606060;
+                margin-top: 10px;
+            }
+
+        .footer-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-save {
+            background-color: #cc0000;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 2px;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+            .btn-save:hover {
+                background-color: #e60000;
+            }
+
+        .btn-back {
+            background-color: #f1f1f1;
+            color: #030303;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 2px;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+            .btn-back:hover {
+                background-color: #e0e0e0;
+            }
+
+        .osahan-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #030303;
+        }
+
+        .osahan-progress {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .osahan-close {
+            margin-left: 10px;
+        }
+
+        .osahan-desc {
+            font-size: 0.9rem;
+            color: #606060;
+        }
+
+        .osahan-form {
+            margin-top: 20px;
+        }
+
+        .category-checkbox {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .terms {
+            font-size: 0.9rem;
+            color: #606060;
+        }
+
+            .terms a {
+                color: #007bff;
+                text-decoration: none;
+            }
+
+                .terms a:hover {
+                    text-decoration: underline;
+                }
+        /* Custom Loading Spinner */
+        .custom-spinner {
+            margin: 0 auto;
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ff516b;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0%
+
+        {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+
+        }
+
+        #recognitionLoading {
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+            padding: 5px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        #progressContainer {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .custom-progress-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .custom-progress {
+            flex: 1;
+            height: 8px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid #e0e0e0;
+        }
+
+        .custom-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff516b 0%, #ff7a8a 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+            /* Animation khi đang upload */
+            .custom-progress-bar.animating::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                right: 0;
+                background: linear-gradient( 90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0) 100% );
+                animation: shimmer 1.5s infinite;
+            }
+
+        @@keyframes shimmer {
+            0%
+
+        {
+            transform: translateX(-100%);
+        }
+
+        100% {
+            transform: translateX(100%);
+        }
+
+        }
+
+        .custom-close-btn {
+            color: #dc3545;
+            font-size: 20px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.2s;
+        }
+
+            .custom-close-btn:hover {
+                transform: scale(1.2);
+                color: #c82333;
+            }
+
+        #progressText {
+            display: block;
+            margin-top: 8px;
+            font-size: 14px;
+            color: #606060;
+            font-weight: 500;
+        }
+
+        #uploadMessage {
             font-size: 14px;
             color: #606060;
             margin-top: 10px;
+            display: none;
+            padding: 10px;
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
         }
 
-    .footer-buttons {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        margin-top: 20px;
-    }
-
-    .btn-save {
-        background-color: #cc0000;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        font-size: 14px;
-        border-radius: 2px;
-        text-transform: uppercase;
-        font-weight: 500;
-    }
-
-        .btn-save:hover {
-            background-color: #e60000;
+        /* ===== CUSTOM LOADING SPINNER ===== */
+        #recognitionLoading {
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+            padding: 5px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
         }
 
-    .btn-back {
-        background-color: #f1f1f1;
-        color: #030303;
-        border: none;
-        padding: 10px 20px;
-        font-size: 14px;
-        border-radius: 2px;
-        text-transform: uppercase;
-        font-weight: 500;
-    }
-
-        .btn-back:hover {
-            background-color: #e0e0e0;
+        .custom-spinner {
+            margin: 0 auto;
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ff516b;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
-</style>
 
-<div class="upload-container">
-    <h2>@(Model.Id != Guid.Empty ? "Edit Video" : "Upload Video")</h2>
-    <form id="videoAddEditForm" asp-action="CreateEditVideo" enctype="multipart/form-data">
-        <input id="videoId" hidden asp-for="Id" />
-        <input id="imageUrl" asp-for="ImageUrl" hidden />
+        @@keyframes spin {
+            0%
 
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label asp-for="CategoryId">Category</label>
-                    <select asp-for="CategoryId" asp-items="Model.CategoryDropdown" class="form-select">
-                        <option disabled selected>Select here</option>
-                    </select>
-                    <span asp-validation-for="CategoryId" class="text-danger"></span>
-                </div>
-                <div class="form-group">
-                    <label asp-for="Title">Title</label>
-                    <input asp-for="Title" class="form-control" />
-                    <span asp-validation-for="Title" class="text-danger"></span>
-                </div>
-                <div class="form-group">
-                    <label asp-for="Description">Description</label>
-                    <textarea asp-for="Description" class="form-control" id="Description" rows="6"></textarea>
-                    <span asp-validation-for="Description" class="text-danger"></span>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label asp-for="ImageUpload">Thumbnail</label>
-                    <div class="preview-image rounded bg-secondary" id="previewImage"></div>
-                    <input id="imageUpload" asp-for="ImageUpload" type="file" class="form-control" accept="@Model.ImageContentTypes" />
-                    <span asp-validation-for="ImageUpload" class="text-danger"></span>
-                </div>
-                <div class="form-group">
-                    <label asp-for="VideoUpload">Video</label>
-                    <input id="videoUpload" asp-for="VideoUpload" type="file" class="form-control" accept="@Model.VideoContentTypes" />
-                    <span asp-validation-for="VideoUpload" class="text-danger"></span>
-                </div>
-            </div>
+        {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+
+        }
+
+        #recognitionLoading p {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #606060;
+            font-weight: 500;
+        }
+
+        #resultContainer {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+            #resultContainer .text-danger {
+                color: #dc3545;
+            }
+
+            #resultContainer .text-warning {
+                color: #ffc107;
+            }
+
+            #resultContainer .text-success {
+                color: #28a745;
+            }
+
+        /* Icon styles */
+        .fas {
+            margin-right: 5px;
+        }
+
+        /* Demo container */
+        .demo-container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .demo-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #030303;
+        }
+
+        .demo-btn {
+            background-color: #cc0000;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 500;
+            margin-right: 10px;
+        }
+
+            .demo-btn:hover {
+                background-color: #e60000;
+            }
+
+            .demo-btn:disabled {
+                background-color: #cccccc;
+                cursor: not-allowed;
+            }
+    </style>
+}
+<div class="row">
+    <div class="col-lg-12">
+        <div class="main-title">
+            <h6>Upload Details</h6>
         </div>
+    </div>
+    <div class="col-lg-2">
+        <div class="imgplace preview-image" id="previewImage"></div>
+    </div>
+    <div class="col-lg-10">
+        <div class="osahan-title">@(Model.Id != Guid.Empty ? "Edit Video" : "Upload Video")</div>
 
-        <!-- Progress bar cho upload file -->
-        <div id="progressContainer" style="display:none;">
-            <div class="progress">
-                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+        <!-- Progress Bar -->
+        <div id="progressContainer">
+            <div class="custom-progress-wrapper">
+                <div class="custom-progress">
+                    <div id="progressBar" class="custom-progress-bar"></div>
+                </div>
+                <a href="#" id="cancelUpload" class="custom-close-btn">✕</a>
             </div>
             <span id="progressText">0% (0 KB / 0 KB)</span>
         </div>
 
-        <!-- Spinner loading cho nhận diện khuôn mặt -->
-        <div id="recognitionLoading" style="display:none;" class="text-center mt-3">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Đang xử lý...</span>
-            </div>
-            <p class="mt-2">Đang nhận diện khuôn mặt, vui lòng chờ...</p>
+        <!-- Upload Message -->
+        <div id="uploadMessage">
+            ⚠️ Your video is still uploading, please keep this page open until it's done.
         </div>
 
-        <!-- Container để hiển thị thông báo -->
-        <div id="resultContainer" class="mt-3"></div>
-
-        <div class="footer-buttons">
-            <button class="btn btn-save" type="submit">Save</button>
-            <a class="btn btn-back" asp-controller="Channel" asp-action="Index">Back</a>
+        <!-- Recognition Loading -->
+        <div id="recognitionLoading">
+            <div class="custom-spinner"></div>
+            <p><i class="fas fa-user-check"></i> Đang nhận diện khuôn mặt, vui lòng chờ...</p>
         </div>
-    </form>
+
+        <!-- Result Container -->
+        <div id="resultContainer"></div>
+    </div>
 </div>
-
-@section Css{
-    <!-- include summernote css/js -->
-    <link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.css" rel="stylesheet">
-}
+<hr>
+<div class="row">
+    <div class="col-lg-12">
+        <div class="osahan-form">
+            <form id="videoAddEditForm" asp-action="CreateEditVideo" enctype="multipart/form-data">
+                <input id="videoId" hidden asp-for="Id" />
+                <input id="imageUrl" asp-for="ImageUrl" hidden />
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label asp-for="ImageUpload">Thumbnail</label>
+                            <input id="imageUpload" asp-for="ImageUpload" type="file" class="form-control" accept="@Model.ImageContentTypes" />
+                            <span asp-validation-for="ImageUpload" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label asp-for="VideoUpload">Video</label>
+                            <input id="videoUpload" asp-for="VideoUpload" type="file" class="form-control" accept="@Model.VideoContentTypes" />
+                            <span asp-validation-for="VideoUpload" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label asp-for="Title">Video Title</label>
+                            <input asp-for="Title" class="form-control" id="e1" placeholder="Enter video title" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label asp-for="Description">About</label>
+                            <textarea asp-for="Description" class="form-control" id="Description" rows="3"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-3">
+                        <div class="form-group">
+                            <label asp-for="CategoryId">Category</label>
+                            <select asp-for="CategoryId" asp-items="Model.CategoryDropdown" class="custom-select" id="e3">
+                                <option disabled selected>Select here</option>
+                            </select>
+                            <span asp-validation-for="CategoryId" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <div class="form-group">
+                            <label for="e4">Privacy Settings</label>
+                            <select id="e4" class="custom-select">
+                                <option>Public</option>
+                                <option>Private</option>
+                                <option>Unlisted</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <div class="form-group">
+                            <label for="e5">Monetize</label>
+                            <select id="e5" class="custom-select">
+                                <option>Yes</option>
+                                <option>No</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <div class="form-group">
+                            <label for="e6">License</label>
+                            <select id="e6" class="custom-select">
+                                <option>Standard</option>
+                                <option>Creative Commons</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-5">
+                        <div class="form-group">
+                            <label for="e7">Tags (13 Tags Remaining)</label>
+                            <input type="text" placeholder="Gaming, PS4" id="e7" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="form-group">
+                            <label for="e8">Cast (Optional)</label>
+                            <input type="text" placeholder="Nathan Drake" id="e8" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <div class="form-group">
+                            <label for="e9">Language in Video (Optional)</label>
+                            <select id="e9" class="custom-select">
+                                <option>English</option>
+                                <option>Vietnamese</option>
+                                <option>Spanish</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="main-title">
+                            <h6>Category (you can select up to 6 categories)</h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="row category-checkbox">
+                    <div class="col-lg-2 col-xs-6 col-4">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="customCheck1">
+                            <label class="custom-control-label" for="customCheck1">Abaft</label>
+                        </div>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="customCheck2">
+                            <label class="custom-control-label" for="customCheck2">Brick</label>
+                        </div>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="customCheck3">
+                            <label class="custom-control-label" for="customCheck3">Purpose</label>
+                        </div>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="customCheck4">
+                            <label class="custom-control-label" for="customCheck4">Shallow</label>
+                        </div>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="customCheck5">
+                            <label class="custom-control-label" for="customCheck5">Spray</label>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-xs-6 col-4">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="zcustomCheck1">
+                            <label class="custom-control-label" for="zcustomCheck1">Cemetery</label>
+                        </div>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="zcustomCheck2">
+                            <label class="custom-control-label" for="zcustomCheck2">Trouble</label>
+                        </div>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="zcustomCheck3">
+                            <label class="custom-control-label" for="zcustomCheck3">Pin</label>
+                        </div>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="zcustomCheck4">
+                            <label class="custom-control-label" for="zcustomCheck4">Fall</label>
+                        </div>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="zcustomCheck5">
+                            <label class="custom-control-label" for="zcustomCheck5">Leg</label>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-xs-6 col-4">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="czcustomCheck1">
+                            <label class="custom-control-label" for="czcustomCheck1">Scissors</label>
+                        </div>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="czcustomCheck2">
+                            <label class="custom-control-label" for="czcustomCheck2">Stitch</label>
+                        </div>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="czcustomCheck3">
+                            <label class="custom-control-label" for="czcustomCheck3">Agonizing</label>
+                        </div>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="czcustomCheck4">
+                            <label class="custom-control-label" for="czcustomCheck4">Rescue</label>
+                        </div>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="czcustomCheck5">
+                            <label class="custom-control-label" for="czcustomCheck5">Quiet</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-buttons">
+                    <button class="btn btn-save" type="submit">Save</button>
+                    <a class="btn btn-back" asp-controller="Channel" asp-action="Index">Back</a>
+                </div>
+            </form>
+        </div>
+        <div class="terms text-center mt-3">
+            <p class="mb-0">There are many variations of passages of Lorem Ipsum available, but the majority <a href="#">Terms of Service</a> and <a href="#">Community Guidelines</a>.</p>
+            <p class="hidden-xs mb-0">Ipsum is therefore always free from repetition, injected humour, or non</p>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.js"></script>
     <script>
-        $(document).ready(function() {
-          $('#Description').summernote();
+                $(document).ready(function () {
+            $('#Description').summernote();
+            console.log('Summernote initialized');
+
+            // Test hiển thị progress bar ngay khi load trang (để debug)
+            console.log('Progress container exists:', $('#progressContainer').length);
+            console.log('Progress container display:', $('#progressContainer').css('display'));
         });
-    </script>
-    <script>
+
         $(function () {
             const videoId = $('#videoId').val();
             if (videoId && videoId !== "00000000-0000-0000-0000-000000000000") {
                 $('#videoUpload').prop("disabled", true);
                 const url = $('#imageUrl').val();
                 $('#previewImage').append(`<img src="${url}" class="card-img-top rounded preview-image" />`);
+                console.log('Edit mode: Video upload disabled, image preview loaded');
             }
         });
 
         $('#imageUpload').on('change', function () {
-            if (this.files) {
+            if (this.files && this.files[0]) {
                 $('#previewImage').empty();
                 var reader = new FileReader();
                 reader.onload = function (event) {
                     $('#previewImage').append(`<img src="${event.target.result}" class="card-img-top rounded preview-image" />`);
+                    console.log('Image preview updated');
                 }
                 reader.readAsDataURL(this.files[0]);
             }
         });
 
+        let xhr;
+
         $('#videoAddEditForm').on('submit', function (e) {
             e.preventDefault();
+            console.log('=== FORM SUBMITTED ===');
 
             const formData = new FormData(this);
             const progressContainer = $('#progressContainer');
@@ -254,56 +708,152 @@
             const progressText = $('#progressText');
             const recognitionLoading = $('#recognitionLoading');
             const resultContainer = $('#resultContainer');
+            const uploadMessage = $('#uploadMessage');
 
-            // Reset và hiển thị progress bar cho upload
-            progressContainer.show();
-            progressBar.css('width', '0%').text('0%');
-            progressText.text('0% (0 KB / 0 KB)');
+            console.log('Elements found:');
+            console.log('- progressContainer:', progressContainer.length);
+            console.log('- progressBar:', progressBar.length);
+            console.log('- progressText:', progressText.length);
+            console.log('- recognitionLoading:', recognitionLoading.length);
+            console.log('- uploadMessage:', uploadMessage.length);
+
+            // Reset tất cả về trạng thái ban đầu
             resultContainer.empty();
 
-            // Gửi request AJAX để upload file
-            const xhr = new XMLHttpRequest();
+            // ẨN tất cả trước
+            recognitionLoading.hide();
+            progressContainer.hide();
+            uploadMessage.hide();
+
+            // Set lại progress về 0
+            progressBar.css('width', '0%').attr('aria-valuenow', 0);
+            progressBar.removeClass('progress-bar-striped progress-bar-animated');
+            progressText.text('0% (0 KB / 0 KB)');
+
+            console.log('Reset complete');
+
+            // HIỂN THỊ progress container - thử nhiều cách
+            console.log('Attempting to show progress...');
+
+            // Cách 1: show()
+            progressContainer.show();
+            uploadMessage.show();
+
+            // Cách 2: css display
+            progressContainer.css('display', 'block');
+            uploadMessage.css('display', 'block');
+
+            // Cách 3: removeClass nếu có class ẩn
+            progressContainer.removeClass('d-none');
+            uploadMessage.removeClass('d-none');
+
+            // Cách 4: attr style
+            progressContainer.attr('style', 'display: block !important;');
+            uploadMessage.attr('style', 'display: block !important;');
+
+            console.log('After show attempts:');
+            console.log('- progressContainer display:', progressContainer.css('display'));
+            console.log('- progressContainer visible:', progressContainer.is(':visible'));
+            console.log('- uploadMessage display:', uploadMessage.css('display'));
+            console.log('- uploadMessage visible:', uploadMessage.is(':visible'));
+
+            // Vô hiệu hóa nút Save
+            $('.btn-save').prop('disabled', true).text('Uploading...');
+
+            xhr = new XMLHttpRequest();
             xhr.open('POST', '/Video/CreateEditVideo', true);
+            console.log('XHR initialized');
 
-            // Theo dõi tiến trình upload
-            xhr.upload.onprogress = function (event) {
-                if (event.lengthComputable) {
-                    const percentComplete = Math.round((event.loaded / event.total) * 100);
-                    progressBar.css('width', `${percentComplete}%`).text(`${percentComplete}%`);
-                    progressText.text(`${percentComplete}% (${formatBytes(event.loaded)} / ${formatBytes(event.total)})`);
+                    xhr.upload.onprogress = function (event) {
+            if (event.lengthComputable) {
+                const percentComplete = Math.round((event.loaded / event.total) * 100);
+
+                // Thêm class animating
+                if (!progressBar.hasClass('animating')) {
+                    progressBar.addClass('animating');
                 }
-            };
 
-            // Hiển thị spinner sau khi upload hoàn tất
-            xhr.upload.onloadend = function () {
-                progressContainer.show();
-                recognitionLoading.show();
-            };
+                progressBar.css('width', percentComplete + '%');
+                progressText.text(`${percentComplete}% (${formatBytes(event.loaded)} / ${formatBytes(event.total)})`);
+            }
+        };
+
+        xhr.upload.onloadend = function () {
+            // Xóa animation
+            progressBar.removeClass('animating');
+
+            progressContainer.hide();
+            uploadMessage.hide();
+            recognitionLoading.show();
+            $('.btn-save').text('Processing...');
+        };
 
             // Xử lý phản hồi từ server
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    recognitionLoading.hide();
+            xhr.onload = function () {
+                console.log('=== XHR COMPLETE ===');
+                console.log('Status:', xhr.status);
+                console.log('Response:', xhr.responseText.substring(0, 200));
 
-                    if (xhr.status === 200 || xhr.status === 302) {
-                        const redirectUrl = xhr.getResponseHeader('Location') || '/Channel/Index';
-                        window.location.href = redirectUrl;
-                    } else {
-                        resultContainer.html(`<p class="text-danger">Lỗi upload: ${xhr.statusText} (Mã lỗi: ${xhr.status})</p>`);
+                recognitionLoading.hide();
+
+                if (xhr.status === 200) {
+                    try {
+                        const contentType = xhr.getResponseHeader('Content-Type');
+                        console.log('Content-Type:', contentType);
+
+                        if (contentType && contentType.includes('application/json')) {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.redirectUrl) {
+                                console.log('Redirecting to:', response.redirectUrl);
+                                window.location.href = response.redirectUrl;
+                                return;
+                            }
+                        }
+                        console.log('Redirecting to default: /Channel/Index');
+                        window.location.href = '/Channel/Index';
+                    } catch (e) {
+                        console.error('Parse error:', e);
+                        window.location.href = '/Channel/Index';
                     }
+                } else if (xhr.status === 302) {
+                    const redirectUrl = xhr.getResponseHeader('Location') || '/Channel/Index';
+                    console.log('302 Redirect to:', redirectUrl);
+                    window.location.href = redirectUrl;
+                } else {
+                    console.error('Error status:', xhr.status);
+                    resultContainer.html(`<p class="text-danger"><i class="fas fa-exclamation-circle"></i> Lỗi upload: ${xhr.statusText} (Mã: ${xhr.status})</p>`);
+                    $('.btn-save').prop('disabled', false).text('Save');
                 }
             };
 
             xhr.onerror = function () {
+                console.error('=== XHR ERROR ===');
                 progressContainer.hide();
+                uploadMessage.hide();
                 recognitionLoading.hide();
-                resultContainer.html('<p class="text-danger">Có lỗi kết nối mạng khi upload video.</p>');
+                resultContainer.html('<p class="text-danger"><i class="fas fa-exclamation-circle"></i> Có lỗi kết nối mạng.</p>');
+                $('.btn-save').prop('disabled', false).text('Save');
             };
 
+            console.log('Sending XHR request...');
             xhr.send(formData);
         });
 
-        // Hàm định dạng dung lượng
+        // Hủy upload
+        $('#cancelUpload').on('click', function (e) {
+            e.preventDefault();
+            console.log('Upload cancelled by user');
+            if (xhr) {
+                xhr.abort();
+            }
+            $('#progressContainer').hide();
+            $('#uploadMessage').hide();
+            $('#recognitionLoading').hide();
+            $('#resultContainer').html('<p class="text-warning"><i class="fas fa-times-circle"></i> Upload đã bị hủy.</p>');
+            $('.btn-save').prop('disabled', false).text('Save');
+        });
+
+        // Format bytes
         function formatBytes(bytes) {
             if (bytes === 0) return '0 KB';
             const k = 1024;

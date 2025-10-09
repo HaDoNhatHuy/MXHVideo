@@ -277,7 +277,10 @@ namespace Web_Video.Controllers
                             await model.VideoUpload.CopyToAsync(stream);
                         }
 
-                        // Nhận diện khuôn mặt (giữ nguyên logic cũ)
+                        // Tính thời lượng video
+                        string duration = await GetVideoDuration(videoPath);
+
+                        // Nhận diện khuôn mặt
                         string recognitionResult = await ProcessVideo(videoPath);
 
                         // Tạo video mới
@@ -285,20 +288,21 @@ namespace Web_Video.Controllers
                         {
                             Id = Guid.NewGuid(),
                             Title = model.Title,
+                            Description = model.Description,
+                            CategoryId = model.CategoryId,
+                            ChannelId = await UnitOfWork.ChannelRepo.GetChannelIdByUserId(User.GetUserId()),
+                            Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload),
+                            Duration = duration, // Lưu thời lượng
                             VideoFile = new VideoFile
                             {
                                 ContentType = model.VideoUpload.ContentType,
-                                Contents = GetContentsAsync(model.VideoUpload).GetAwaiter().GetResult(),
+                                Contents = await GetContentsAsync(model.VideoUpload),
                                 Extension = SD.GetFileExtension(model.VideoUpload.ContentType)
                             },
-                            Description = model.Description,
-                            CategoryId = model.CategoryId,
-                            ChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(User.GetUserId()).GetAwaiter().GetResult(),
-                            Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload),
                             RecognizedCelebrities = recognitionResult
                         };
 
-                        // Tính thời lượng xuất hiện của celebrities (sử dụng frames)
+                        // Tính thời lượng xuất hiện của celebrities
                         var httpClient = _httpClientFactory.CreateClient();
                         var requestBody = new { video_path = videoPath };
                         var content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
@@ -310,20 +314,20 @@ namespace Web_Video.Controllers
                             {
                                 var resultJson = await response.Content.ReadAsStringAsync();
                                 var framesData = JsonConvert.DeserializeObject<Dictionary<string, object>>(resultJson)["frames"];
-                                videoToAdd.CelebrityFrames = JsonConvert.SerializeObject(framesData);  // Lưu JSON frames
+                                videoToAdd.CelebrityFrames = JsonConvert.SerializeObject(framesData);
                             }
                             else
                             {
-                                videoToAdd.CelebrityFrames = "{}";  // Fallback nếu API fail
+                                videoToAdd.CelebrityFrames = "{}";
                             }
                         }
                         catch (Exception ex)
                         {
                             Console.WriteLine($"API Exception: {ex.Message}");
-                            videoToAdd.CelebrityFrames = "{}";  // Fallback nếu lỗi
+                            videoToAdd.CelebrityFrames = "{}";
                         }
 
-                        // Lưu người nổi tiếng vào bảng Celebrity và liên kết với video
+                        // Lưu người nổi tiếng
                         await SaveRecognizedCelebrities(videoToAdd, recognitionResult);
 
                         UnitOfWork.VideoRepo.Add(videoToAdd);
@@ -358,6 +362,22 @@ namespace Web_Video.Controllers
             // Nếu không hợp lệ, trả về view với lỗi
             model.CategoryDropdown = await GetCategoryDropdownAsync();
             return View(model);
+        }
+
+        // Phương thức tính thời lượng video
+        private async Task<string> GetVideoDuration(string videoPath)
+        {
+            try
+            {
+                Xabe.FFmpeg.FFmpeg.SetExecutablesPath(@"C:\FFmpeg\ffmpeg\bin");
+                var mediaInfo = await FFmpeg.GetMediaInfo(videoPath);
+                var duration = mediaInfo.Duration;
+                return duration.ToString(@"mm\:ss");
+            }
+            catch
+            {
+                return "0:00"; // Fallback nếu lỗi
+            }
         }
         // Phương thức lưu người nổi tiếng vào bảng Celebrity và liên kết với video
         private async Task SaveRecognizedCelebrities(Video video, string recognitionResult)
@@ -458,16 +478,47 @@ namespace Web_Video.Controllers
                 : "Không nhận diện được nhân vật nổi tiếng.";
         }
         #region API Endpoints
-        [HttpGet]
-        public async Task<IActionResult> GetVideosForChannelGrid(BaseParameters parameters)
-        {
-            var userChannelId = await UnitOfWork.ChannelRepo.GetChannelIdByUserId(User.GetUserId());
-            var videosForGrid = await UnitOfWork.VideoRepo.GetVideosForChannelGridAsync(userChannelId, parameters);
-            var paginatedResults = new PaginatedResult<VideoGridChannelDto>(videosForGrid, videosForGrid.TotalItemsCount,
-                videosForGrid.PageNumber, videosForGrid.PageSize, videosForGrid.TotalPages);
+        //[HttpGet]
+        //public async Task<IActionResult> GetVideosForChannelGrid(int pageNumber = 1, int pageSize = 10, string sortBy = "")
+        //{
+        //    try
+        //    {
+        //        var userId = User.GetUserId();
+        //        if (string.IsNullOrEmpty(userId))
+        //        {
+        //            return Json(new ApiResponse(401, message: "Người dùng chưa đăng nhập."));
+        //        }
 
-            return Json(new ApiResponse(200, result: paginatedResults));
-        }
+        //        var userChannelId = await UnitOfWork.ChannelRepo.GetChannelIdByUserId(userId);
+        //        if (userChannelId == Guid.Empty)
+        //        {
+        //            return Json(new ApiResponse(404, message: "Không tìm thấy kênh của người dùng."));
+        //        }
+
+        //        var parameters = new BaseParameters
+        //        {
+        //            PageNumber = pageNumber,
+        //            PageSize = pageSize,
+        //            SortBy = sortBy
+        //        };
+
+        //        var videosForGrid = await UnitOfWork.VideoRepo.GetVideosForChannelGridAsync(userChannelId, parameters);
+
+        //        var paginatedResults = new
+        //        {
+        //            items = videosForGrid, // Sử dụng trực tiếp videosForGrid vì nó là List<VideoGridChannelDto>
+        //            totalItemsCount = videosForGrid.TotalItemsCount, // Sử dụng TotalItemsCount
+        //            pageNumber = videosForGrid.PageNumber,
+        //            totalPages = videosForGrid.TotalPages
+        //        };
+
+        //        return Json(new ApiResponse(200, result: paginatedResults));
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return Json(new ApiResponse(500, message: $"Đã xảy ra lỗi: {ex.Message}"));
+        //    }
+        //}
 
         [HttpDelete]
         public async Task<IActionResult> DeleteVideo(Guid id)

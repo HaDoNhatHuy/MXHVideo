@@ -21,20 +21,30 @@ builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
 builder.AddApplicationServices();
 builder.AddAuthenticationServices();
 
+// Thêm CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
+app.UseCors("AllowAll"); // Thêm CORS middleware
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -46,7 +56,6 @@ app.MapControllerRoute(
 
 await InitializeContextAsync();
 app.Run();
-
 
 async Task InitializeContextAsync()
 {
@@ -64,6 +73,6 @@ async Task InitializeContextAsync()
     catch (Exception ex)
     {
         var logger = services.GetService<ILogger<Program>>();
-        logger.LogError(ex, "An error occured while migrating the data");
+        logger.LogError(ex, "An error occurred while migrating the data");
     }
 }

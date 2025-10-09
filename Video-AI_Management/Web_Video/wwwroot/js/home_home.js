@@ -126,7 +126,7 @@
                 const durationStr = v.duration ? formatDuration(v.duration) : '3:50';
                 const progressTime = v.progress ? Math.floor(v.progress / 100 * (v.duration ? v.duration.TotalSeconds : 230)) : '1:40';
                 html += `
-                    <div class="col-xl-3 col-sm-6 mb-3">
+                    <div class="col-xl-6 col-sm-6 mb-3">
                         <div class="video-card history-video h-100">
                             <div class="video-card-image">
                                 <a class="video-close" href="#" data-video-id="${v.id}"><i class="fas fa-times-circle"></i></a>
@@ -155,7 +155,7 @@
             } else {
                 const durationStr = v.duration ? formatDuration(v.duration) : '3:50';
                 html += `
-                    <div class="col-xl-3 col-sm-6 mb-3">
+                    <div class="col-xl-6 col-sm-6 mb-3">
                         <div class="video-card h-100">
                             <div class="video-card-image">
                                 <a class="play-icon" href="/Video/Watch/${v.id}"><i class="fas fa-play-circle"></i></a>
@@ -191,7 +191,7 @@
                     url: url,
                     type: 'POST',
                     success: function () {
-                        $(this).closest('.col-xl-3').remove();
+                        $(this).closest('.col-xl-6').remove();
                     }.bind(this),
                     error: function () {
                         alert(`Không thể xóa ${page === 'history' ? 'lịch sử' : 'thích'}.`);

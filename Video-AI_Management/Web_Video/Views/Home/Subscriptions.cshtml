@@ -1,0 +1,291 @@
+﻿@model Web_Video.ViewModels.Home.HomeViewModel
+
+@{
+    ViewData["Title"] = "Subscriptions";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="video-block section-padding">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="main-title">
+                <div class="btn-group float-right right-action">
+                    <a href="#" class="right-action-link text-gray" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Sort by <i class="fa fa-caret-down" aria-hidden="true"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right">
+                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> &nbsp; Top Rated</a>
+                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-signal"></i> &nbsp; Viewed</a>
+                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-times-circle"></i> &nbsp; Close</a>
+                    </div>
+                </div>
+                <h6 class="text-primary">My Subscriptions</h6> <!-- Thay đổi màu sắc tiêu đề -->
+            </div>
+        </div>
+        <div id="subscriptions-container" class="row justify-content-center">
+            <!-- Danh sách kênh sẽ được thêm động bằng JavaScript -->
+        </div>
+        <div id="loading" class="text-center" style="display: none;">
+            <p class="text-muted">Loading more channels...</p> <!-- Cải thiện văn bản loading -->
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Tùy chỉnh giao diện card */
+    .channels-card {
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        background: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+        .channels-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+    .channels-card-image img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .channels-card-image-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        gap: 5px;
+    }
+
+        .channels-card-image-btn .btn {
+            padding: 2px 8px;
+            font-size: 12px;
+        }
+
+    .channels-card-body {
+        padding: 10px;
+        text-align: center;
+    }
+
+    .channels-title a {
+        color: #1a73e8;
+        font-weight: 500;
+        font-size: 16px;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+        .channels-title a:hover {
+            color: #1557a0;
+        }
+
+    .channels-view {
+        color: #6c757d;
+        font-size: 14px;
+    }
+
+    /* Responsive design */
+    @@media (max-width: 768px) {
+        .channels-card-image img
+
+    {
+        height: 120px;
+    }
+
+    .channels-card-body {
+        padding: 8px;
+    }
+
+    .channels-title a {
+        font-size: 14px;
+    }
+
+    .channels-view {
+        font-size: 12px;
+    }
+
+    }
+
+    @@media (max-width: 576px) {
+        .channels-card
+
+    {
+        margin-bottom: 15px;
+    }
+
+    #subscriptions-container {
+        justify-content: center;
+    }
+
+    }
+
+    /* Tùy chỉnh loading */
+    #loading p {
+        font-size: 16px;
+        padding: 15px;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            console.log('Document ready');
+            let pageNumber = 1;
+            let pageSize = 12;
+            let isLoading = false;
+            let hasMoreData = true;
+
+            // Hàm tải danh sách kênh
+            function loadSubscriptions(append = true) {
+                if (isLoading || !hasMoreData) return;
+
+                isLoading = true;
+                $('#loading').show();
+                console.log('Loading subscriptions, page:', pageNumber);
+
+                $.ajax({
+                    url: `/Home/GetSubscriptions?pageNumber=${pageNumber}&pageSize=${pageSize}&t=${new Date().getTime()}`,
+                    type: 'GET',
+                    success: function(response) {
+                        $('#loading').hide();
+                        isLoading = false;
+                        console.log('API Response:', response);
+
+                        const subscriptionsContainer = $('#subscriptions-container');
+                        const sidebarSubscriptions = $('#sidebar-subscriptions'); // Nếu có trong _Layout.cshtml
+
+                        if (response.statusCode === 200 && response.result && response.result.items) {
+                            const subscriptions = response.result.items;
+                            console.log('Subscriptions:', subscriptions);
+                            console.log('First subscription:', subscriptions[0]);
+
+                            if (subscriptions.length === 0) {
+                                hasMoreData = false;
+                                if (pageNumber === 1) {
+                                    subscriptionsContainer.append('<p class="text-center text-muted">Không có kênh nào được đăng ký.</p>');
+                                }
+                                return;
+                            }
+
+                            if (!append) {
+                                subscriptionsContainer.empty();
+                                if (sidebarSubscriptions.length) {
+                                    sidebarSubscriptions.empty();
+                                }
+                            }
+
+                            subscriptions.forEach(sub => {
+                                const channelId = sub.id || sub.Id;
+                                const channelName = sub.channelName || sub.ChannelName;
+                                const videosCount = sub.videosCount || sub.VideosCount || 0;
+                                const thumbnail = sub.thumbnail || sub.Thumbnail || '/avatarUser/avt-default.jpg';
+
+                                if (!channelId || !channelName) {
+                                    console.error('Invalid subscription data:', sub);
+                                    return;
+                                }
+
+                                const cardHtml = `
+                                    <div class="col-xl-6 col-sm-6 mb-4">
+                                        <div class="channels-card">
+                                            <div class="channels-card-image">
+                                                <a href="/Member/Channel/${channelId}"><img class="img-fluid" src="${thumbnail}" alt="${channelName}"></a>
+                                                <div class="channels-card-image-btn">
+                                                    <button type="button" class="btn btn-secondary btn-sm border-none">Subscribed <strong>${videosCount}</strong></button>
+                                                    <button type="button" class="btn btn-warning btn-sm border-none unsubscribe-btn" data-channel-id="${channelId}"><i class="fas fa-times-circle"></i></button>
+                                                </div>
+                                            </div>
+                                            <div class="channels-card-body">
+                                                <div class="channels-title">
+                                                    <a href="/Member/Channel/${channelId}">${channelName}</a>
+                                                </div>
+                                                <div class="channels-view">
+                                                    ${videosCount} videos
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>`;
+                                subscriptionsContainer.append(cardHtml);
+
+                                if (sidebarSubscriptions.length) {
+                                    const sidebarHtml = `
+                                        <li class="mb-2">
+                                            <a href="/Member/Channel/${channelId}" class="d-flex align-items-center">
+                                                <img class="img-fluid rounded-circle mr-2" style="width: 30px; height: 30px;" src="${thumbnail}" alt=""> ${channelName}
+                                            </a>
+                                        </li>`;
+                                    sidebarSubscriptions.append(sidebarHtml);
+                                }
+                            });
+
+                            $('.unsubscribe-btn').off('click').on('click', function() {
+                                const channelId = $(this).data('channel-id');
+                                $.ajax({
+                                    url: '/Video/SubscribeChannel',
+                                    type: 'PUT',
+                                    headers: {
+                                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                                    },
+                                    data: { channelId: channelId },
+                                    success: function(response) {
+                                        console.log('Unsubscribe Response:', response);
+                                        if (response.statusCode === 200 && response.message === "Unsubscribed") {
+                                            alert(response.data);
+                                            pageNumber = 1;
+                                            hasMoreData = true;
+                                            loadSubscriptions(false);
+                                        } else {
+                                            alert('Lỗi khi hủy đăng ký: ' + response.message);
+                                        }
+                                    },
+                                    error: function(xhr) {
+                                        console.error('Unsubscribe Error:', xhr);
+                                        alert('Lỗi khi hủy đăng ký kênh.');
+                                    }
+                                });
+                            });
+
+                            if (subscriptions.length < pageSize) {
+                                hasMoreData = false;
+                            } else {
+                                pageNumber++;
+                            }
+                        } else {
+                            hasMoreData = false;
+                            if (pageNumber === 1) {
+                                subscriptionsContainer.append('<p class="text-center text-muted">Không có kênh nào được đăng ký.</p>');
+                            }
+                            console.error('Invalid response structure:', response);
+                        }
+                    },
+                    error: function(xhr) {
+                        $('#loading').hide();
+                        isLoading = false;
+                        console.error('API Error:', xhr);
+                        if (pageNumber === 1) {
+                            subscriptionsContainer.append('<p class="text-center text-danger">Lỗi khi tải danh sách kênh.</p>');
+                        }
+                    }
+                });
+            }
+
+            let scrollTimeout;
+            $(window).on('scroll', function() {
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(function() {
+                    if ($(window).scrollTop() + $(window).height() > $(document).height() - 200) {
+                        loadSubscriptions();
+                    }
+                }, 200);
+            });
+
+            loadSubscriptions();
+        });
+    </script>
+}

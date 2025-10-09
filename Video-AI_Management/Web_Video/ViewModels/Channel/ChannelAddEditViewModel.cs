@@ -8,6 +8,8 @@ namespace Web_Video.ViewModels.Channel
     public class ChannelAddEditViewModel
     {
         [Required]
+        public Guid Id { get; set; } // Thêm Id của kênh
+        [Required]
         [Display(Name = "Channel name")]
         [RegularExpression("^[a-zA-Z]{3,15}", ErrorMessage = "Name must be between 3 and 15 characters long and can only contain letters (A-Z, a-z)")]
         public string Name { get; set; }
@@ -20,6 +22,10 @@ namespace Web_Video.ViewModels.Channel
         public int SubcribersCount { get; set; }
         public IFormFile Avatar { get; set; } // Thêm thuộc tính để upload avatar
         public string AvatarUrl { get; set; } // URL của avatar hiện tại (dùng khi chỉnh sửa)
+        public IFormFile Banner { get; set; } // Thêm trường cho banner
+        public string BannerUrl { get; set; } // Thêm trường cho URL banner
+        public int TotalVideos { get; set; }
+        public long TotalViews { get; set; }
         public DateTime CreatedDate { get; set; } 
     }
 }

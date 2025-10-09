@@ -9,6 +9,7 @@ namespace Database_Video.Entities
         public string? ChannelName { get; set; }
         public string? About { get; set; }
         public string? ChannelPicture { get; set; }
+        public string? BannerPicture { get; set; } // Thêm trường này
         public DateTime? CreatedDate { get; set; } = DateTime.UtcNow;
         [ForeignKey("AppUserId")]
         public string? AppUserId { get; set; }

@@ -1,479 +1,16 @@
 ﻿@model Web_Video.ViewModels.Channel.ChannelAddEditViewModel
-
-<style>
-    /* Style giống YouTube */
-    body {
-        font-family: 'Roboto', Arial, sans-serif;
-        background-color: #f9f9f9;
-    }
-
-    /* Channel form (Create/Edit) */
-    .channel-form-container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 24px;
-        background-color: #fff;
-        border-radius: 12px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    }
-
-        .channel-form-container h2 {
-            font-size: 24px;
-            font-weight: 500;
-            color: #030303;
-            margin-bottom: 24px;
-        }
-
-    .avatar-section {
-        text-align: center;
-        margin-bottom: 24px;
-    }
-
-    .avatar-preview {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 1px solid #e0e0e0;
-        display: block;
-        margin: 0 auto 12px;
-    }
-
-    .avatar-upload-btn {
-        background-color: #f1f1f1;
-        color: #606060;
-        border: none;
-        padding: 8px 16px;
-        font-size: 14px;
-        border-radius: 18px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
-
-        .avatar-upload-btn:hover {
-            background-color: #e0e0e0;
-        }
-
-    .form-group {
-        margin-bottom: 24px;
-    }
-
-        .form-group label {
-            font-size: 14px;
-            font-weight: 500;
-            color: #030303;
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px 12px;
-            font-size: 14px;
-            color: #030303;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            background-color: #fafafa;
-            transition: border-color 0.2s;
-        }
-
-            .form-group input:focus,
-            .form-group textarea:focus {
-                border-color: #065fd4;
-                outline: none;
-                background-color: #fff;
-            }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 120px;
-        }
-
-        .form-group .text-danger {
-            font-size: 12px;
-            color: #cc0000;
-            margin-top: 4px;
-        }
-
-    .form-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-    }
-
-    .btn-submit {
-        background-color: #065fd4;
-        color: #fff;
-        border: none;
-        padding: 10px 24px;
-        font-size: 14px;
-        font-weight: 500;
-        border-radius: 18px;
-        text-transform: uppercase;
-        transition: background-color 0.2s;
-    }
-
-        .btn-submit:hover {
-            background-color: #003087;
-        }
-
-    .btn-cancel {
-        background-color: #f1f1f1;
-        color: #606060;
-        border: none;
-        padding: 10px 24px;
-        font-size: 14px;
-        font-weight: 500;
-        border-radius: 18px;
-        text-transform: uppercase;
-        transition: background-color 0.2s;
-    }
-
-        .btn-cancel:hover {
-            background-color: #e0e0e0;
-        }
-
-    /* Modal */
-    .modal-content {
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    }
-
-    .modal-header {
-        border-bottom: 1px solid #e0e0e0;
-        padding: 16px 24px;
-    }
-
-    .modal-title {
-        font-size: 20px;
-        font-weight: 500;
-        color: #030303;
-    }
-
-    .modal-body {
-        padding: 24px;
-    }
-
-    .modal-footer {
-        border-top: 1px solid #e0e0e0;
-        padding: 16px 24px;
-    }
-
-    /* Các style khác giữ nguyên */
-    .channel-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin: 20px 0;
-    }
-
-        .channel-header h4 {
-            font-size: 16px;
-            color: #606060;
-        }
-
-    .btn-upload {
-        background-color: #cc0000;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        font-size: 14px;
-        border-radius: 2px;
-        text-transform: uppercase;
-        font-weight: 500;
-    }
-
-        .btn-upload:hover {
-            background-color: #e60000;
-        }
-
-    .nav-tabs {
-        border-bottom: 1px solid #e0e0e0;
-    }
-
-        .nav-tabs .nav-link {
-            color: #606060;
-            font-size: 16px;
-            font-weight: 500;
-            text-transform: uppercase;
-            border: none;
-            border-bottom: 3px solid transparent;
-            padding: 10px 20px;
-        }
-
-            .nav-tabs .nav-link.active {
-                color: #030303;
-                border-bottom: 3px solid #cc0000;
-            }
-
-    .video-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 20px;
-        margin-top: 20px;
-    }
-
-    .video-item {
-        position: relative;
-        min-height: 250px;
-    }
-
-        .video-item img {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 8px;
-        }
-
-        .video-item .title {
-            font-size: 14px;
-            color: #030303;
-            margin-top: 8px;
-            font-weight: 500;
-            line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .video-item .meta {
-            font-size: 12px;
-            color: #606060;
-            margin-top: 4px;
-            display: -webkit-box;
-            -webkit-line-clamp: 1;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .video-item .dropdown {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-        }
-
-        .video-item .dropdown-toggle::after {
-            display: none;
-        }
-
-        .video-item .dropdown-menu {
-            min-width: 120px;
-        }
-
-        .video-item .dropdown-item {
-            font-size: 14px;
-            color: #030303;
-        }
-
-            .video-item .dropdown-item:hover {
-                background-color: #f1f1f1;
-            }
-
-    .delete-loading {
-        display: none;
-        margin-left: 5px;
-    }
-
-    #globalLoading {
-        display: none;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 1000;
-    }
-
-    .pagination-section {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        margin-top: 20px;
-    }
-
-        .pagination-section .navbar-nav {
-            margin-right: 10px;
-        }
-
-        .pagination-section .nav-link {
-            color: #606060;
-            font-size: 14px;
-        }
-
-        .pagination-section .btn-group .btn {
-            font-size: 14px;
-            color: #606060;
-            border: 1px solid #e0e0e0;
-            background-color: white;
-        }
-
-            .pagination-section .btn-group .btn:disabled {
-                color: #b0b0b0;
-            }
-
-    /* Style cho tab About */
-    .about-section {
-        max-width: 100%;
-        margin: 20px 0;
-        background-color: #fff;
-        border-radius: 12px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        padding: 24px;
-    }
-
-    .about-header {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        margin-bottom: 20px;
-    }
-
-    .about-avatar {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 1px solid #e0e0e0;
-        transition: transform 0.2s;
-    }
-
-        .about-avatar:hover {
-            transform: scale(1.05);
-        }
-
-    .about-title {
-        font-size: 24px;
-        font-weight: 500;
-        color: #030303;
-        margin: 0;
-    }
-
-    .about-description {
-        font-size: 14px;
-        color: #606060;
-        line-height: 1.6;
-        margin-bottom: 20px;
-        white-space: pre-wrap;
-    }
-
-    .about-stats {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 16px;
-        font-size: 14px;
-        color: #606060;
-        margin-bottom: 20px;
-    }
-
-        .about-stats span {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .about-stats i {
-            font-size: 16px;
-            color: #606060;
-        }
-
-    .about-actions {
-        display: flex;
-        justify-content: flex-end;
-    }
-
-    .about-section .edit-btn {
-        background-color: #f1f1f1;
-        color: #030303;
-        border: none;
-        padding: 8px 16px;
-        font-size: 14px;
-        border-radius: 18px;
-        text-transform: uppercase;
-        font-weight: 500;
-        transition: background-color 0.2s;
-    }
-
-        .about-section .edit-btn:hover {
-            background-color: #e0e0e0;
-        }
-
-    /* Style cho tab Analytics */
-    .analytics-section {
-        max-width: 100%;
-        margin: 20px 0;
-    }
-
-        .analytics-section h2 {
-            font-size: 20px;
-            font-weight: 500;
-            color: #030303;
-            margin-bottom: 20px;
-        }
-
-        .analytics-section .filter {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 20px;
-        }
-
-            .analytics-section .filter select {
-                padding: 5px 10px;
-                font-size: 14px;
-                border: 1px solid #e0e0e0;
-                border-radius: 4px;
-            }
-
-        .analytics-section .overview {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-            .analytics-section .overview .card {
-                flex: 1;
-                padding: 20px;
-                background-color: white;
-                border: 1px solid #e0e0e0;
-                border-radius: 8px;
-                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            }
-
-                .analytics-section .overview .card h3 {
-                    font-size: 14px;
-                    color: #606060;
-                    margin-bottom: 10px;
-                }
-
-                .analytics-section .overview .card p {
-                    font-size: 24px;
-                    font-weight: 500;
-                    color: #030303;
-                }
-
-        .analytics-section .chart-container {
-            background-color: white;
-            padding: 20px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            margin-bottom: 30px;
-        }
-
-            .analytics-section .chart-container h3 {
-                font-size: 16px;
-                color: #030303;
-                margin-bottom: 20px;
-            }
-
-            .analytics-section .chart-container canvas {
-                max-height: 300px;
-            }
-</style>
+@{
+    ViewData["Title"] = "My Channel";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@section Css {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.css" rel="stylesheet">
+    <link href="/css/channelStyle.css" rel="stylesheet" />
+}
 
 <!-- Spinner toàn màn hình -->
-<div id="globalLoading">
+<div id="globalLoading" style="display: none;">
     <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
     </div>
@@ -481,34 +18,39 @@
 
 <!-- Modal để chỉnh sửa thông tin channel -->
 <div class="modal fade" id="editChannelModal" tabindex="-1" aria-labelledby="editChannelModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editChannelModalLabel">Chỉnh sửa kênh</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: #282828; border: none;">
+            <div class="modal-header" style="border-bottom: 1px solid #3f3f3f;">
+                <h5 class="modal-title" style="color: #f1f1f1;">Chỉnh sửa kênh</h5>
+                <button type="button" class="btn-close btn-close-white" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="editChannelForm" asp-action="EditChannel" asp-controller="Channel" method="post" enctype="multipart/form-data">
-                    <div class="avatar-section">
-                        <img id="editAvatarPreview" src="@(string.IsNullOrEmpty(Model.AvatarUrl) ? "/avatarUser/avt-default.jpg" : Model.AvatarUrl)" alt="Avatar Preview" class="avatar-preview" />
-                        <input type="file" id="editAvatarInput" name="Avatar" accept="image/*" style="display: none;" />
-                        <button type="button" class="avatar-upload-btn" onclick="document.getElementById('editAvatarInput').click()">Thay đổi ảnh đại diện</button>
+                    <div class="mb-4 text-center">
+                        <img id="editAvatarPreview" src="@(string.IsNullOrEmpty(Model.AvatarUrl) ? "/avatarUser/avt-default.jpg" : Model.AvatarUrl)" alt="Avatar" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 16px;">
+                        <div>
+                            <input type="file" id="editAvatarInput" name="Avatar" accept="image/*" style="display: none;">
+                            <button type="button" class="btn-custom btn-customize" onclick="document.getElementById('editAvatarInput').click()">
+                                <i class="bi bi-camera"></i>
+                                Thay đổi ảnh đại diện
+                            </button>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label asp-for="Name" class="form-label">Tên kênh</label>
-                        <input id="modal_profile_name" asp-for="Name" type="text" class="form-control" />
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label" style="color: #f1f1f1;">Tên kênh</label>
+                        <input asp-for="Name" type="text" class="form-control" id="channelName" style="background-color: #3f3f3f; border: 1px solid #5f5f5f; color: #f1f1f1;">
                         <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
-                    <div class="form-group">
-                        <label asp-for="About" class="form-label">Mô tả kênh</label>
-                        <textarea id="modal_profile_about" asp-for="About" class="form-control AboutChannel" rows="6"></textarea>
+                    <div class="mb-3">
+                        <label asp-for="About" class="form-label" style="color: #f1f1f1;">Mô tả kênh</label>
+                        <textarea asp-for="About" class="form-control AboutChannel" id="channelAbout" rows="6" style="background-color: #3f3f3f; border: 1px solid #5f5f5f; color: #f1f1f1;"></textarea>
                         <span asp-validation-for="About" class="text-danger"></span>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-submit" onclick="submitEditChannelForm()">Cập nhật</button>
+            <div class="modal-footer" style="border-top: 1px solid #3f3f3f;">
+                <button type="button" class="btn-custom btn-manage" data-dismiss="modal">Hủy</button>
+                <button type="button" class="btn-custom btn-customize" onclick="submitEditChannelForm()">Cập nhật</button>
             </div>
         </div>
     </div>
@@ -519,173 +61,283 @@
     <div class="channel-form-container">
         <h2>Tạo kênh của bạn</h2>
         <form asp-action="CreateChannel" method="post" enctype="multipart/form-data">
-            <div class="avatar-section">
-                <img id="createAvatarPreview" src="/avatarUser/avt-default.jpg" alt="Avatar Preview" class="avatar-preview" />
-                <input type="file" id="createAvatarInput" name="Avatar" accept="image/*" style="display: none;" />
-                <button type="button" class="avatar-upload-btn" onclick="document.getElementById('createAvatarInput').click()">Tải ảnh đại diện</button>
+            <div class="mb-4 text-center">
+                <img id="createAvatarPreview" src="/avatarChannel/channel-default.jpg" alt="Avatar" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 16px;">
+                <div>
+                    <input type="file" id="createAvatarInput" name="Avatar" accept="image/*" style="display: none;">
+                    <button type="button" class="btn-custom btn-customize" onclick="document.getElementById('createAvatarInput').click()">
+                        <i class="bi bi-camera"></i>
+                        Tải ảnh đại diện
+                    </button>
+                </div>
             </div>
-            <div class="form-group">
-                <label asp-for="Name" class="form-label">Tên kênh</label>
-                <input asp-for="Name" type="text" class="form-control" />
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label" style="color: #f1f1f1;">Tên kênh</label>
+                <input asp-for="Name" type="text" class="form-control" style="background-color: #3f3f3f; border: 1px solid #5f5f5f; color: #f1f1f1;">
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="About" class="form-label">Mô tả kênh</label>
-                <textarea asp-for="About" rows="6" class="form-control AboutChannel"></textarea>
+            <div class="mb-3">
+                <label asp-for="About" class="form-label" style="color: #f1f1f1;">Mô tả kênh</label>
+                <textarea asp-for="About" rows="6" class="form-control AboutChannel" style="background-color: #3f3f3f; border: 1px solid #5f5f5f; color: #f1f1f1;"></textarea>
                 <span asp-validation-for="About" class="text-danger"></span>
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn btn-submit">Tạo kênh</button>
+                <button type="submit" class="btn-custom btn-customize">Tạo kênh</button>
             </div>
         </form>
     </div>
 }
 else
 {
-    <div class="channel-header">
-        <a class="btn btn-upload" asp-controller="Video" asp-action="CreateEditVideo">Tải video lên</a>
-        <h4>Người đăng ký: @Model.SubcribersCount.ToString("N0")</h4>
+    <!-- Channel Banner -->
+    <div class="channel-banner">
+        <img src="@(string.IsNullOrEmpty(Model.BannerUrl) ? "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1920" : Model.BannerUrl)" alt="Channel Banner">
     </div>
 
-    <ul class="nav nav-tabs">
-        <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#myvideos">Video</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#analytics">Phân tích</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#profile">Giới thiệu</a>
-        </li>
-    </ul>
-    <div class="tab-content">
-        <div class="tab-pane fade" id="myvideos">
-            <div class="video-grid" id="videosGrid">
-                <!-- Videos will be populated here -->
-            </div>
-            <div class="pagination-section">
-                <ul class="navbar-nav me-3">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" id="itemsPerPageDropdown" role="button" aria-expanded="false">Số hàng mỗi trang:</a>
-                        <div class="dropdown-menu">
-                            <button type="button" class="dropdown-item pageSizeBtn" data-value="5">5</button>
-                            <button type="button" class="dropdown-item pageSizeBtn" data-value="10">10</button>
-                            <button type="button" class="dropdown-item pageSizeBtn" data-value="20">20</button>
-                            <button type="button" class="dropdown-item pageSizeBtn" data-value="50">50</button>
-                            <button type="button" class="dropdown-item pageSizeBtn" data-value="100">100</button>
-                        </div>
-                    </li>
-                </ul>
-                <ul class="navbar-nav me-3">
-                    <li class="nav-item">
-                        <span class="nav-link" id="itemsPerPageDisplay"></span>
-                    </li>
-                </ul>
-                <ul class="navbar-nav me-3">
-                    <li class="nav-item">
-                        <span class="nav-link" id="paginationSummery"></span>
-                    </li>
-                </ul>
-                <div id="paginationBtnGroup" class="btn-group">
+    <!-- Channel Info -->
+    <div class="channel-info-wrapper">
+        <div class="channel-info">
+            <img src="@(string.IsNullOrEmpty(Model.AvatarUrl) ? "/avatarUser/avt-default.jpg" : Model.AvatarUrl)" alt="Channel Avatar" class="channel-avatar">
+            <div class="channel-details">
+                <h1 class="channel-name">@Model.Name</h1>
+                <div class="channel-handle">@Model.Name • @Model.SubcribersCount.ToString("N0") người đăng ký</div>
+                <div class="channel-stats">
+                    <span>@Model.TotalVideos video</span>
+                    <span class="stat-dot"></span>
+                    <span>@Model.TotalViews.ToString("N0") lượt xem</span>
+                    <span class="stat-dot"></span>
+                    <span>Tham gia @Model.CreatedDate.ToString("dd MMMM yyyy")</span>
+                </div>
+                <div class="channel-actions">
+                    <button class="btn-custom btn-customize" data-toggle="modal" data-target="#editChannelModal">
+                        <i class="bi bi-pencil"></i>
+                        Tùy chỉnh kênh
+                    </button>
+                    <a class="btn-custom btn-manage" href="@Url.Action("CreateEditVideo", "Video")">
+                        <i class="bi bi-gear"></i>
+                        Tải video lên
+                    </a>
                 </div>
             </div>
         </div>
-        <div class="tab-pane fade" id="analytics">
-            <div class="analytics-section">
-                <h2>Phân tích</h2>
-                <div class="filter">
-                    <select id="timeFilter" onchange="updateAnalytics()">
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="channel-nav">
+        <div class="channel-nav-inner">
+            <a class="nav-tab active" data-tab="myvideos">Video</a>
+            <a class="nav-tab" data-tab="analytics">Phân tích</a>
+            <a class="nav-tab" data-tab="profile">Giới thiệu</a>
+        </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="channel-content">
+        <!-- Video Tab -->
+        <div id="myvideos" class="tab-pane active">
+            <div class="videos-section">
+                <div class="section-header">
+                    <div class="section-title">Tất cả video</div>
+                    <button class="play-all-btn">
+                        <i class="bi bi-play-fill"></i>
+                        Phát tất cả
+                    </button>
+                </div>
+                <div class="video-grid" id="videosGrid">
+                    <!-- Videos will be populated here -->
+                </div>
+                <div id="loadingMore" style="display: none; text-align: center; margin-top: 20px;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-pane">
+            <div class="section-title">Tổng quan hiệu suất</div>
+            <div class="analytics-overview">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-label">Lượt xem</div>
+                        <i class="bi bi-eye metric-icon"></i>
+                    </div>
+                    <div class="metric-value" id="totalViews">0</div>
+                    <div class="metric-change positive">
+                        <i class="bi bi-arrow-up"></i>
+                        <span id="viewsChange">+0% so với tháng trước</span>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-label">Người đăng ký</div>
+                        <i class="bi bi-person-plus metric-icon"></i>
+                    </div>
+                    <div class="metric-value" id="subscribers">0</div>
+                    <div class="metric-change positive">
+                        <i class="bi bi-arrow-up"></i>
+                        <span id="subscribersChange">+0% so với tháng trước</span>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-label">Lượt thích</div>
+                        <i class="bi bi-heart metric-icon"></i>
+                    </div>
+                    <div class="metric-value" id="likes">0</div>
+                    <div class="metric-change positive">
+                        <i class="bi bi-arrow-up"></i>
+                        <span id="likesChange">+0% so với tháng trước</span>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-label">Bình luận</div>
+                        <i class="bi bi-chat metric-icon"></i>
+                    </div>
+                    <div class="metric-value" id="comments">0</div>
+                    <div class="metric-change positive">
+                        <i class="bi bi-arrow-up"></i>
+                        <span id="commentsChange">+0% so với tháng trước</span>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title">Lượt xem theo thời gian</div>
+                    <select class="time-filter" id="timeFilter">
                         <option value="7">7 ngày qua</option>
                         <option value="28" selected>28 ngày qua</option>
                         <option value="90">90 ngày qua</option>
                         <option value="all">Tất cả thời gian</option>
                     </select>
                 </div>
-                <div class="overview">
-                    <div class="card">
-                        <h3>Tổng lượt xem</h3>
-                        <p id="totalViews">0</p>
-                    </div>
-                    <div class="card">
-                        <h3>Người đăng ký</h3>
-                        <p id="subscribers">0</p>
-                    </div>
-                    <div class="card">
-                        <h3>Lượt thích</h3>
-                        <p id="likes">0</p>
-                    </div>
-                    <div class="card">
-                        <h3>Bình luận</h3>
-                        <p id="comments">0</p>
-                    </div>
+                <canvas id="viewsChart" height="80"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title">Nguồn lưu lượng truy cập</div>
                 </div>
-                <div class="chart-container">
-                    <h3>Lượt xem theo thời gian</h3>
-                    <canvas id="viewsChart"></canvas>
-                </div>
-                <div class="chart-container">
-                    <h3>Nguồn lưu lượng truy cập</h3>
-                    <canvas id="trafficSourcesChart"></canvas>
-                </div>
+                <canvas id="trafficSourcesChart" height="80"></canvas>
             </div>
         </div>
-        <div class="tab-pane fade" id="profile">
-            <div class="about-section">
-                <div class="about-header">
-                    <img src="@(string.IsNullOrEmpty(Model.AvatarUrl) ? "/avatarChannel/channel-default.jpg" : Model.AvatarUrl)" alt="Channel Avatar" class="about-avatar" />
-                    <h2 class="about-title">@Model.Name</h2>
-                </div>
-                <p class="about-description">@Model.About</p>
-                <div class="about-stats">
-                    <span><i class="bi bi-calendar3"></i> Tham gia @Model.CreatedDate.ToString("dd MMMM yyyy")</span>
-                    <span><i class="bi bi-eye"></i> <span id="totalViewsAbout">0</span> lượt xem</span>
-                </div>
-                <div class="about-actions">
-                    <button class="edit-btn" data-bs-toggle="modal" data-bs-target="#editChannelModal">Chỉnh sửa kênh</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
 
-@section Css {
-    <!-- include summernote css/js -->
-    <link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.css" rel="stylesheet">
+        <!-- About Tab -->
+        <div id="profile" class="tab-pane">
+            <div class="about-content">
+                <div class="about-section">
+                    <h3>Mô tả</h3>
+                    <p id="channelDescription">@Model.About</p>
+                </div>
+                <div class="about-section">
+                    <h3>Thống kê kênh</h3>
+                    <div class="about-stats-grid">
+                        <div class="stat-item">
+                            <i class="bi bi-calendar-event stat-icon"></i>
+                            <div class="stat-content">
+                                <div class="stat-value">@Model.CreatedDate.ToString("dd MMMM yyyy")</div>
+                                <div class="stat-label">Ngày tham gia</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <i class="bi bi-eye stat-icon"></i>
+                            <div class="stat-content">
+                                <div class="stat-value" id="totalViewsAbout">@Model.TotalViews.ToString("N0")</div>
+                                <div class="stat-label">Tổng lượt xem</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <i class="bi bi-camera-video stat-icon"></i>
+                            <div class="stat-content">
+                                <div class="stat-value">@Model.TotalVideos</div>
+                                <div class="stat-label">Tổng số video</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <i class="bi bi-people stat-icon"></i>
+                            <div class="stat-content">
+                                <div class="stat-value" id="subscribersAbout">@Model.SubcribersCount.ToString("N0")</div>
+                                <div class="stat-label">Người đăng ký</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-section">
+                    <h3>Liên kết</h3>
+                    <div class="about-links">
+                        <a href="#" class="social-link" title="Website"><i class="bi bi-globe"></i></a>
+                        <a href="#" class="social-link" title="Twitter"><i class="bi bi-twitter"></i></a>
+                        <a href="#" class="social-link" title="Instagram"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="social-link" title="Facebook"><i class="bi bi-facebook"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
 }
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.js"></script>
-    <script>
-        $(document).ready(function() {
-          $('.AboutChannel').summernote();
-        });
-    </script>
-    <!-- Thêm Chart.js để vẽ biểu đồ -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
     <script>
         let pageNumber = 1;
-        let pageSize = 5;
+        let pageSize = 10; // Số video mỗi lần tải
         let sortBy = '';
+        let isLoading = false;
+        let hasMoreVideos = true;
+        let viewsChart, trafficChart;
 
-        $(function () {
-            $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
-                var currentTabId = $(e.target).attr('href');
-                localStorage.setItem('activeTab', currentTabId);
-                if (currentTabId === '#analytics') {
+        $(document).ready(function () {
+            // Khởi tạo summernote cho phần About
+            $('.AboutChannel').summernote({
+                height: 200,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'italic', 'underline']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['insert', ['link']],
+                ]
+            });
+
+            // Xử lý chuyển tab
+            $('.nav-tab').on('click', function () {
+                $('.nav-tab').removeClass('active');
+                $('.tab-pane').removeClass('active');
+
+                $(this).addClass('active');
+                const tabId = $(this).attr('data-tab');
+                $('#' + tabId).addClass('active');
+
+                localStorage.setItem('activeTab', '#' + tabId);
+
+                if (tabId === 'analytics') {
                     updateAnalytics();
+                } else if (tabId === 'myvideos') {
+                    pageNumber = 1;
+                    hasMoreVideos = true;
+                    $('#videosGrid').empty();
+                    getVideos();
                 }
             });
 
+            // Khôi phục tab đã chọn trước đó
             var activeTab = localStorage.getItem('activeTab');
             if (activeTab) {
-                $('a[href="' + activeTab + '"]').tab('show');
+                $('.nav-tab[data-tab="' + activeTab.substring(1) + '"]').click();
             } else {
-                $('a[href="#myvideos"]').tab('show');
+                $('.nav-tab[data-tab="myvideos"]').click();
             }
 
-            getMyVideos();
-            getTotalViewsForAbout();
+            // Xử lý infinite scroll
+            $(window).on('scroll', function () {
+                if ($(window).scrollTop() + $(window).height() >= $('#videosGrid').offset().top + $('#videosGrid').outerHeight() - 100 && !isLoading && hasMoreVideos) {
+                    getVideos();
+                }
+            });
 
             // Xử lý preview avatar khi upload
             $('#createAvatarInput').on('change', function (e) {
@@ -709,175 +361,110 @@ else
                     reader.readAsDataURL(file);
                 }
             });
+
+            // Cập nhật analytics khi thay đổi bộ lọc thời gian
+            $('#timeFilter').on('change', updateAnalytics);
+
+            // Tải tổng số lượt xem và subscribers cho tab About
+            getTotalViewsForAbout();
         });
 
-        function getMyVideos() {
-            const parameters = {
-                pageNumber,
-                pageSize,
-                sortBy
-            }
+        function getVideos() {
+            if (isLoading || !hasMoreVideos) return;
+
+            isLoading = true;
+            $('#videosGrid').append('<div class="video-card loading-skeleton" style="height: 250px;"></div>'.repeat(pageSize));
 
             $.ajax({
-                url: "/Video/GetVideosForChannelGrid",
+                url: "/Channel/GetVideosForChannelGrid",
                 type: "GET",
-                data: parameters,
+                data: {
+                    pageNumber: pageNumber,
+                    pageSize: pageSize,
+                    sortBy: sortBy
+                },
                 success: function (data) {
-                    const result = data.result;
+                    $('.loading-skeleton').remove();
 
-                    $('#videosGrid').empty();
-                    $('#paginationSummery').empty();
-                    $('#paginationBtnGroup').empty();
-                    $('#itemsPerPageDisplay').empty();
-
-                    populateVideoGrid(result.items);
-
-                    if (result.totalItemsCount > 0) {
-                        $('#itemsPerPageDisplay').text(pageSize);
-
-                        const from = (result.pageNumber - 1) * result.pageSize + 1;
-                        const to = result.pageNumber * result.pageSize > result.totalItemsCount ? result.totalItemsCount : result.pageNumber * result.pageSize;
-                        $('#paginationSummery').text(`${from}-${to} of ${result.totalItemsCount}`);
-
-                        let firstPageBtn = '';
-                        firstPageBtn += `<button type="button" class="btn btn-sm paginationBtn" ${result.pageNumber == 1 ? 'disabled' : ''} data-value="1" data-bs-toggle="tooltip" data-bs-placement="bottom" title="First Page">`;
-                        firstPageBtn += '<i class="bi bi-chevron-bar-left"></i>';
-                        firstPageBtn += '</button>';
-                        $('#paginationBtnGroup').append(firstPageBtn);
-
-                        let previousePageBtn = '';
-                        previousePageBtn += `<button type="button" class="btn btn-sm paginationBtn" ${result.pageNumber == 1 ? 'disabled' : ''} data-value="${result.pageNumber - 1}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Previous Page">`;
-                        previousePageBtn += '<i class="bi bi-chevron-left"></i>';
-                        previousePageBtn += '</button>';
-                        $('#paginationBtnGroup').append(previousePageBtn);
-
-                        let nextPageBtn = '';
-                        nextPageBtn += `<button type="button" class="btn btn-sm paginationBtn" ${result.pageNumber == result.totalPages ? 'disabled' : ''} data-value="${result.pageNumber + 1}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Next Page">`;
-                        nextPageBtn += '<i class="bi bi-chevron-right"></i>';
-                        nextPageBtn += '</button>';
-                        $('#paginationBtnGroup').append(nextPageBtn);
-
-                        let lastPageBtn = '';
-                        lastPageBtn += `<button type="button" class="btn btn-sm paginationBtn" ${result.pageNumber == result.totalPages ? 'disabled' : ''}  data-value="${result.totalPages}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Last Page">`;
-                        lastPageBtn += '<i class="bi bi-chevron-bar-right"></i>';
-                        lastPageBtn += '</button>';
-                        $('#paginationBtnGroup').append(lastPageBtn);
-
-                        $('.paginationBtn').click(function () {
-                            pageNumber = $(this).data('value');
-                            getMyVideos();
-                        });
-                    } else {
-                        $('#itemsPerPageDropdown').hide();
+                    // Kiểm tra cấu trúc response
+                    if (!data || typeof data !== 'object') {
+                        $('#videosGrid').append('<p>Đã xảy ra lỗi khi tải video: Phản hồi không hợp lệ.</p>');
+                        hasMoreVideos = false;
+                        return;
                     }
+
+                    // Kiểm tra statusCode
+                    if (data.statusCode !== 200) {
+                        $('#videosGrid').append(`<p>Lỗi: ${data.message || 'Không thể tải video.'}</p>`);
+                        hasMoreVideos = false;
+                        return;
+                    }
+
+                    // Kiểm tra result
+                    if (!data.result || !Array.isArray(data.result.items)) {
+                        $('#videosGrid').append('<p>Đã xảy ra lỗi: Dữ liệu video không hợp lệ.</p>');
+                        hasMoreVideos = false;
+                        return;
+                    }
+
+                    const result = data.result;
+                    if (result.items.length === 0) {
+                        hasMoreVideos = false;
+                        if (pageNumber === 1) {
+                            $('#videosGrid').append('<p>Bạn chưa có video nào.</p>');
+                        }
+                    } else {
+                        populateVideoGrid(result.items);
+                        pageNumber++;
+                        if (result.items.length < pageSize) {
+                            hasMoreVideos = false;
+                        }
+                    }
+                },
+                error: function (xhr) {
+                    $('.loading-skeleton').remove();
+                    $('#videosGrid').append('<p>Đã xảy ra lỗi khi tải video: ' + (xhr.responseJSON?.message || 'Lỗi không xác định') + '</p>');
+                    hasMoreVideos = false;
+                },
+                complete: function () {
+                    isLoading = false;
                 }
             });
-        }
-
-        $('.pageSizeBtn').click(function () {
-            pageSize = $(this).data('value');
-            getMyVideos();
-        });
-
-        $('.sortBy').click(function () {
-            const sortByValue = $(this).data('value');
-            $sortBySpan = $('#' + sortByValue + 'SortBy');
-            const $i = $sortBySpan.find('i');
-
-            if ($i.hasClass('bi-arrow-up-short')) {
-                $sortBySpan.empty();
-                $sortBySpan.append('<i class="bi bi-arrow-down-short"></i>');
-                sortBy = sortByValue + '-d';
-            } else if ($i.hasClass('bi-arrow-down-short')) {
-                $sortBySpan.empty();
-                sortBy = '';
-            } else {
-                $sortBySpan.empty();
-                $sortBySpan.append('<i class="bi bi-arrow-up-short"></i>');
-                sortBy = sortByValue + '-a';
-            }
-
-            removeAllOtherArrows(sortByValue);
-            getMyVideos();
-        });
-
-        function removeAllOtherArrows(exception) {
-            if (exception == 'title') {
-                $('#dateSortBy').empty();
-                $('#viewsSortBy').empty();
-                $('#commentsSortBy').empty();
-                $('#likesSortBy').empty();
-                $('#dislikesSortBy').empty();
-                $('#categorySortBy').empty();
-            } else if (exception == 'date') {
-                $('#titleSortBy').empty();
-                $('#viewsSortBy').empty();
-                $('#commentsSortBy').empty();
-                $('#likesSortBy').empty();
-                $('#dislikesSortBy').empty();
-                $('#categorySortBy').empty();
-            } else if (exception == 'views') {
-                $('#titleSortBy').empty();
-                $('#dateSortBy').empty();
-                $('#commentsSortBy').empty();
-                $('#likesSortBy').empty();
-                $('#dislikesSortBy').empty();
-                $('#categorySortBy').empty();
-            } else if (exception == 'comments') {
-                $('#titleSortBy').empty();
-                $('#dateSortBy').empty();
-                $('#viewsSortBy').empty();
-                $('#likesSortBy').empty();
-                $('#dislikesSortBy').empty();
-                $('#categorySortBy').empty();
-            } else if (exception == 'likes') {
-                $('#titleSortBy').empty();
-                $('#dateSortBy').empty();
-                $('#viewsSortBy').empty();
-                $('#commentsSortBy').empty();
-                $('#dislikesSortBy').empty();
-                $('#categorySortBy').empty();
-            } else if (exception == 'dislikes') {
-                $('#titleSortBy').empty();
-                $('#dateSortBy').empty();
-                $('#viewsSortBy').empty();
-                $('#commentsSortBy').empty();
-                $('#likesSortBy').empty();
-                $('#categorySortBy').empty();
-            } else if (exception == 'category') {
-                $('#titleSortBy').empty();
-                $('#dateSortBy').empty();
-                $('#viewsSortBy').empty();
-                $('#commentsSortBy').empty();
-                $('#likesSortBy').empty();
-                $('#dislikesSortBy').empty();
-            }
         }
 
         function populateVideoGrid(videos) {
             let videoItems = '';
 
             if (videos.length > 0) {
-                videos.map((v, index) => {
-                    videoItems += '<div class="video-item">';
-                    videoItems += `<a href="/Video/Watch/${v.id}"><img src="${v.thumbnail}" alt="${v.title}" /></a>`;
-                    videoItems += `<div class="dropdown">`;
-                    videoItems += `<button class="btn btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-three-dots-vertical"></i></button>`;
-                    videoItems += `<ul class="dropdown-menu">`;
-                    videoItems += `<li><a class="dropdown-item" href="/Video/CreateEditVideo/${v.id}"><i class="bi bi-pencil me-2"></i>Chỉnh sửa</a></li>`;
-                    videoItems += `<li><a class="dropdown-item delete-video-btn" href="#" data-video-id="${v.id}" data-video-title="${v.title}"><i class="bi bi-trash3 me-2"></i>Xóa</a></li>`;
-                    videoItems += `<span class="delete-loading"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Loading...</span></div></span>`;
-                    videoItems += `</ul>`;
-                    videoItems += `</div>`;
-                    videoItems += `<div class="title"><a href="/Video/Watch/${v.id}" class="text-dark">${v.title}</a></div>`;
-                    videoItems += `<div class="meta">${v.views.toLocaleString()} lượt xem • ${new Date(v.createdAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}</div>`;
+                videos.forEach((v) => {
+                    videoItems += '<div class="video-card">';
+                    videoItems += '<div class="video-thumbnail-wrapper">';
+                    videoItems += `<img src="${v.thumbnail || '/images/default-thumbnail.jpg'}" alt="${v.title}" class="video-thumbnail">`;
+                    videoItems += `<span class="video-duration">${v.duration || '0:00'}</span>`;
+                    videoItems += '<button class="video-menu"><i class="bi bi-three-dots-vertical"></i></button>';
+                    videoItems += '</div>';
+                    videoItems += '<div class="video-info">';
+                    videoItems += `<div class="video-title"><a href="/Video/Watch/${v.id}">${v.title}</a></div>`;
+                    videoItems += `<div class="video-meta">${v.views.toLocaleString()} lượt xem • ${new Date(v.createdAt).toLocaleDateString('vi-VN')}</div>`;
+                    videoItems += '</div>';
                     videoItems += '</div>';
                 });
-            } else {
-                videoItems = '<p>Bạn chưa có video nào</p>';
             }
 
             $('#videosGrid').append(videoItems);
+
+            // Xử lý menu dropdown cho video
+            $('.video-menu').off('click').on('click', function () {
+                const videoId = $(this).closest('.video-card').find('a').attr('href').split('/').pop();
+                const videoTitle = $(this).closest('.video-card').find('.video-title').text();
+                const dropdownMenu = `
+                    <ul class="dropdown-menu show" style="position: absolute; top: 40px; right: 0;">
+                        <li><a class="dropdown-item" href="/Video/CreateEditVideo/${videoId}"><i class="bi bi-pencil me-2"></i>Chỉnh sửa</a></li>
+                        <li><a class="dropdown-item delete-video-btn" href="#" data-video-id="${videoId}" data-video-title="${videoTitle}"><i class="bi bi-trash3 me-2"></i>Xóa</a></li>
+                        <span class="delete-loading"><div class="spinner-border spinner-border-sm text-primary" role="status"></div></span>
+                    </ul>`;
+                $(this).after(dropdownMenu);
+            });
         }
 
         function getTotalViewsForAbout() {
@@ -885,7 +472,12 @@ else
                 url: "/Channel/GetTotalViews",
                 type: "GET",
                 success: function (data) {
-                    $('#totalViewsAbout').text(`${data.totalViews.toLocaleString()}`);
+                    $('#totalViewsAbout').text(data.totalViews.toLocaleString());
+                    $('#subscribersAbout').text(data.subscribers.toLocaleString());
+                },
+                error: function () {
+                    $('#totalViewsAbout').text('0');
+                    $('#subscribersAbout').text('0');
                 }
             });
         }
@@ -898,40 +490,54 @@ else
                 type: "GET",
                 data: { timeFilter: timeFilter },
                 success: function (data) {
-                    // Cập nhật số liệu tổng quan
                     $('#totalViews').text(data.totalViews.toLocaleString());
                     $('#subscribers').text(data.subscribers.toLocaleString());
                     $('#likes').text(data.likes.toLocaleString());
                     $('#comments').text(data.comments.toLocaleString());
+                    $('#viewsChange').text(`+${data.viewsChange || 0}% so với tháng trước`);
+                    $('#subscribersChange').text(`+${data.subscribersChange || 0}% so với tháng trước`);
+                    $('#likesChange').text(`+${data.likesChange || 0}% so với tháng trước`);
+                    $('#commentsChange').text(`+${data.commentsChange || 0}% so với tháng trước`);
 
-                    // Cập nhật biểu đồ Views Over Time
-                    const viewsChartCtx = document.getElementById('viewsChart').getContext('2d');
-                    new Chart(viewsChartCtx, {
+                    if (viewsChart) viewsChart.destroy();
+                    const viewsCtx = document.getElementById('viewsChart').getContext('2d');
+                    viewsChart = new Chart(viewsCtx, {
                         type: 'line',
                         data: {
                             labels: data.viewsOverTime.labels,
                             datasets: [{
                                 label: 'Lượt xem',
                                 data: data.viewsOverTime.data,
-                                borderColor: '#cc0000',
-                                backgroundColor: 'rgba(204, 0, 0, 0.1)',
+                                borderColor: '#3ea6ff',
+                                backgroundColor: 'rgba(62, 166, 255, 0.1)',
                                 fill: true,
-                                tension: 0.4
+                                tension: 0.4,
+                                borderWidth: 2
                             }]
                         },
                         options: {
                             responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
                             scales: {
                                 x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Ngày'
+                                    grid: {
+                                        color: '#3f3f3f'
+                                    },
+                                    ticks: {
+                                        color: '#aaa'
                                     }
                                 },
                                 y: {
-                                    title: {
-                                        display: true,
-                                        text: 'Lượt xem'
+                                    grid: {
+                                        color: '#3f3f3f'
+                                    },
+                                    ticks: {
+                                        color: '#aaa'
                                     },
                                     beginAtZero: true
                                 }
@@ -939,27 +545,51 @@ else
                         }
                     });
 
-                    // Cập nhật biểu đồ Traffic Sources
-                    const trafficSourcesChartCtx = document.getElementById('trafficSourcesChart').getContext('2d');
-                    new Chart(trafficSourcesChartCtx, {
-                        type: 'pie',
+                    if (trafficChart) trafficChart.destroy();
+                    const trafficCtx = document.getElementById('trafficSourcesChart').getContext('2d');
+                    trafficChart = new Chart(trafficCtx, {
+                        type: 'doughnut',
                         data: {
                             labels: data.trafficSources.labels,
                             datasets: [{
-                                label: 'Nguồn lưu lượng truy cập',
                                 data: data.trafficSources.data,
                                 backgroundColor: [
-                                    '#cc0000',
-                                    '#ff6666',
-                                    '#ff9999',
-                                    '#ffcccc'
-                                ]
+                                    '#3ea6ff',
+                                    '#ff6b6b',
+                                    '#4ecdc4',
+                                    '#ffe66d',
+                                    '#a8dadc'
+                                ],
+                                borderWidth: 0
                             }]
                         },
                         options: {
-                            responsive: true
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'right',
+                                    labels: {
+                                        color: '#f1f1f1',
+                                        padding: 15,
+                                        font: {
+                                            size: 12
+                                        }
+                                    }
+                                }
+                            }
                         }
                     });
+                },
+                error: function () {
+                    $('#totalViews').text('0');
+                    $('#subscribers').text('0');
+                    $('#likes').text('0');
+                    $('#comments').text('0');
+                    $('#viewsChange').text('+0% so với tháng trước');
+                    $('#subscribersChange').text('+0% so với tháng trước');
+                    $('#likesChange').text('+0% so với tháng trước');
+                    $('#commentsChange').text('+0% so với tháng trước');
                 }
             });
         }
@@ -986,7 +616,10 @@ else
                     type: "DELETE",
                     success: function (data) {
                         displayNotification(data.isSuccess, data.title, data.message, 'modal');
-                        getMyVideos();
+                        pageNumber = 1;
+                        hasMoreVideos = true;
+                        $('#videosGrid').empty();
+                        getVideos();
                     },
                     error: function (xhr) {
                         displayNotification(false, "Lỗi", "Đã xảy ra lỗi khi xóa video.", 'modal');

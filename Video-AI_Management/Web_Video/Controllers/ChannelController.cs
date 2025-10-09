@@ -1,5 +1,7 @@
 ﻿using DataAccess.Data;
 using Database_Video.Entities;
+using Database_Video.IRepo;
+using Database_Video.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,23 +20,27 @@ using WebVideo.Utility;
 namespace Web_Video.Controllers
 {
     [Authorize(Roles = $"{SD.UserRole}")]
+
     public class ChannelController : CoreController
     {
         private readonly DataContext _context;
+        private readonly IUnitOfWork UnitOfWork;
 
-        public ChannelController(DataContext context)
+        public ChannelController(DataContext context, IUnitOfWork unitOfWork)
         {
             _context = context;
+            UnitOfWork = unitOfWork;
         }
+
         public async Task<IActionResult> Index(string stringModel)
         {
             ViewData["CurrentPage"] = "Channel";
             var model = new ChannelAddEditViewModel();
-            HttpContext.Session.GetString("ChannelModelFromSession");
+
             if (!string.IsNullOrEmpty(stringModel))
             {
                 model = JsonConvert.DeserializeObject<ChannelAddEditViewModel>(stringModel);
-                if (model.Errors.Count > 0)
+                if (model.Errors.Any())
                 {
                     foreach (var error in model.Errors)
                     {
@@ -44,17 +50,28 @@ namespace Web_Video.Controllers
                     return View(model);
                 }
             }
-            var channel = await UnitOfWork.ChannelRepo.GetFirstOrDefaultAsync(x => x.AppUserId == User.GetUserId(), includeProperties: "Subscribers");
+
+            var channel = await _context.Channels
+                .Include(c => c.Subscribers)
+                .Include(c => c.Videos)
+                .FirstOrDefaultAsync(x => x.AppUserId == User.GetUserId());
+
             if (channel != null)
             {
+                model.Id = channel.Id;
                 model.Name = channel.ChannelName;
                 model.About = channel.About;
                 model.CreatedDate = channel.CreatedDate ?? DateTime.UtcNow;
                 model.AvatarUrl = channel.ChannelPicture;
-                model.SubcribersCount = channel.Subscribers.Count();
+                model.BannerUrl = channel.BannerPicture ?? "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1920";
+                model.SubcribersCount = channel.Subscribers.Count;
+                model.TotalVideos = channel.Videos.Count;
+                model.TotalViews = channel.Videos.Sum(v => v.Views ?? 0);
             }
+
             return View(model);
         }
+
         [HttpPost]
         public async Task<IActionResult> CreateChannel(ChannelAddEditViewModel model)
         {
@@ -62,12 +79,12 @@ namespace Web_Video.Controllers
             {
                 foreach (var item in ModelState)
                 {
-                    if (item.Value.Errors.Count > 0)
+                    if (item.Value.Errors.Any())
                     {
                         model.Errors.Add(new ModelErrorViewModel
                         {
                             Key = item.Key,
-                            ErrorMessage = item.Value.Errors.Select(x => x.ErrorMessage).FirstOrDefault()
+                            ErrorMessage = item.Value.Errors.FirstOrDefault()?.ErrorMessage
                         });
                     }
                 }
@@ -75,242 +92,369 @@ namespace Web_Video.Controllers
                 return RedirectToAction("Index");
             }
 
-            var channelNameExists = await UnitOfWork.ChannelRepo.AnyAsync(x => x.ChannelName.ToLower() == model.Name.ToLower());
-            if (channelNameExists)
+            try
             {
-                model.Errors.Add(new ModelErrorViewModel
+                var channelNameExists = await _context.Channels.AnyAsync(x => x.ChannelName.ToLower() == model.Name.ToLower());
+                if (channelNameExists)
                 {
-                    Key = "Name",
-                    ErrorMessage = $"Channel name of {model.Name} is taken. Please try another name."
-                });
-                HttpContext.Session.SetString("ChannelModelFromSession", JsonConvert.SerializeObject(model));
+                    model.Errors.Add(new ModelErrorViewModel
+                    {
+                        Key = "Name",
+                        ErrorMessage = $"Channel name '{model.Name}' is already taken. Please choose another name."
+                    });
+                    HttpContext.Session.SetString("ChannelModelFromSession", JsonConvert.SerializeObject(model));
+                    return RedirectToAction("Index");
+                }
+
+                var channelToAdd = new Channel
+                {
+                    AppUserId = User.GetUserId(),
+                    ChannelName = model.Name,
+                    About = model.About,
+                    ChannelPicture = "/avatarUser/avt-default.jpg",
+                    BannerPicture = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1920",
+                    CreatedDate = DateTime.UtcNow
+                };
+
+                if (model.Avatar != null && model.Avatar.Length > 0)
+                {
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/avatarUser");
+                    Directory.CreateDirectory(uploadsFolder);
+                    var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(model.Avatar.FileName)}";
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await model.Avatar.CopyToAsync(fileStream);
+                    }
+                    channelToAdd.ChannelPicture = $"/avatarUser/{uniqueFileName}";
+                }
+
+                if (model.Banner != null && model.Banner.Length > 0)
+                {
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/bannerUser");
+                    Directory.CreateDirectory(uploadsFolder);
+                    var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(model.Banner.FileName)}";
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await model.Banner.CopyToAsync(fileStream);
+                    }
+                    channelToAdd.BannerPicture = $"/bannerUser/{uniqueFileName}";
+                }
+
+                _context.Channels.Add(channelToAdd);
+                await _context.SaveChangesAsync();
+
+                TempData["notification"] = "true;Channel created successfully;Your channel has been created and you can upload videos now.";
                 return RedirectToAction("Index");
             }
-
-            var channelToAdd = new Channel
+            catch (Exception ex)
             {
-                AppUserId = User.GetUserId(),
-                ChannelName = model.Name,
-                About = model.About,
-                ChannelPicture = "/avatarUser/avt-default.jpg" // Ảnh mặc định nếu không upload
-            };
-
-            // Xử lý upload ảnh đại diện kênh
-            if (model.Avatar != null && model.Avatar.Length > 0)
-            {
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/avatarUser");
-                if (!Directory.Exists(uploadsFolder))
-                {
-                    Directory.CreateDirectory(uploadsFolder);
-                }
-
-                var uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(model.Avatar.FileName);
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    await model.Avatar.CopyToAsync(fileStream);
-                }
-
-                channelToAdd.ChannelPicture = "/avatarUser/" + uniqueFileName; // Lưu đường dẫn ảnh
+                TempData["notification"] = $"false;Error;An error occurred while creating the channel: {ex.Message}";
+                return RedirectToAction("Index");
             }
-
-            UnitOfWork.ChannelRepo.Add(channelToAdd);
-            await UnitOfWork.CompleteAsync();
-
-            TempData["notification"] = "true;Channel created successfully; Your channel has been created and you can upload clips now";
-            return RedirectToAction("Index");
         }
 
         [HttpPost]
         public async Task<IActionResult> EditChannel(ChannelAddEditViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                var channel = await UnitOfWork.ChannelRepo.GetFirstOrDefaultAsync(x => x.AppUserId == User.GetUserId());
-                if (channel != null)
+                foreach (var item in ModelState)
                 {
-                    channel.ChannelName = model.Name;
-                    channel.About = model.About;
-
-                    // Xử lý upload ảnh đại diện kênh
-                    if (model.Avatar != null && model.Avatar.Length > 0)
+                    if (item.Value.Errors.Any())
                     {
-                        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/avatarUser");
-                        if (!Directory.Exists(uploadsFolder))
+                        model.Errors.Add(new ModelErrorViewModel
                         {
-                            Directory.CreateDirectory(uploadsFolder);
-                        }
-
-                        var uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(model.Avatar.FileName);
-                        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                        using (var fileStream = new FileStream(filePath, FileMode.Create))
-                        {
-                            await model.Avatar.CopyToAsync(fileStream);
-                        }
-
-                        // Xóa ảnh cũ nếu không phải ảnh mặc định
-                        if (!string.IsNullOrEmpty(channel.ChannelPicture) && channel.ChannelPicture != "/avatarUser/avt-default.jpg")
-                        {
-                            var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", channel.ChannelPicture.TrimStart('/'));
-                            if (System.IO.File.Exists(oldFilePath))
-                            {
-                                System.IO.File.Delete(oldFilePath);
-                            }
-                        }
-
-                        channel.ChannelPicture = "/avatarUser/" + uniqueFileName; // Cập nhật đường dẫn ảnh mới
+                            Key = item.Key,
+                            ErrorMessage = item.Value.Errors.FirstOrDefault()?.ErrorMessage
+                        });
                     }
+                }
+                HttpContext.Session.SetString("ChannelModelFromSession", JsonConvert.SerializeObject(model));
+                return RedirectToAction("Index");
+            }
 
-                    await UnitOfWork.CompleteAsync();
-
-                    TempData["notification"] = "true;Channel updated; Your channel has been updated";
+            try
+            {
+                var channel = await _context.Channels.FirstOrDefaultAsync(x => x.AppUserId == User.GetUserId());
+                if (channel == null)
+                {
+                    TempData["notification"] = "false;Channel not found;Your channel was not found.";
                     return RedirectToAction("Index");
                 }
+
+                var channelNameExists = await _context.Channels.AnyAsync(x => x.ChannelName.ToLower() == model.Name.ToLower() && x.Id != channel.Id);
+                if (channelNameExists)
+                {
+                    model.Errors.Add(new ModelErrorViewModel
+                    {
+                        Key = "Name",
+                        ErrorMessage = $"Channel name '{model.Name}' is already taken. Please choose another name."
+                    });
+                    HttpContext.Session.SetString("ChannelModelFromSession", JsonConvert.SerializeObject(model));
+                    return RedirectToAction("Index");
+                }
+
+                channel.ChannelName = model.Name;
+                channel.About = model.About;
+
+                if (model.Avatar != null && model.Avatar.Length > 0)
+                {
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/avatarUser");
+                    Directory.CreateDirectory(uploadsFolder);
+                    var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(model.Avatar.FileName)}";
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await model.Avatar.CopyToAsync(fileStream);
+                    }
+                    if (!string.IsNullOrEmpty(channel.ChannelPicture) && channel.ChannelPicture != "/avatarUser/avt-default.jpg")
+                    {
+                        var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", channel.ChannelPicture.TrimStart('/'));
+                        if (System.IO.File.Exists(oldFilePath))
+                        {
+                            System.IO.File.Delete(oldFilePath);
+                        }
+                    }
+                    channel.ChannelPicture = $"/avatarUser/{uniqueFileName}";
+                }
+
+                if (model.Banner != null && model.Banner.Length > 0)
+                {
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/bannerUser");
+                    Directory.CreateDirectory(uploadsFolder);
+                    var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(model.Banner.FileName)}";
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await model.Banner.CopyToAsync(fileStream);
+                    }
+                    if (!string.IsNullOrEmpty(channel.BannerPicture) && !channel.BannerPicture.StartsWith("https://"))
+                    {
+                        var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", channel.BannerPicture.TrimStart('/'));
+                        if (System.IO.File.Exists(oldFilePath))
+                        {
+                            System.IO.File.Delete(oldFilePath);
+                        }
+                    }
+                    channel.BannerPicture = $"/bannerUser/{uniqueFileName}";
+                }
+
+                await _context.SaveChangesAsync();
+                TempData["notification"] = "true;Channel updated;Your channel has been updated successfully.";
+                return RedirectToAction("Index");
             }
-            TempData["notification"] = "false;Channel not found; Your channel was not found";
-            return RedirectToAction("Index");
+            catch (Exception ex)
+            {
+                TempData["notification"] = $"false;Error;An error occurred while updating the channel: {ex.Message}";
+                return RedirectToAction("Index");
+            }
         }
+
         [HttpGet]
         public async Task<IActionResult> GetAnalytics(string timeFilter)
         {
-            // Xác định khoảng thời gian
-            DateTime startDate;
-            int groupByDays;
-            switch (timeFilter?.ToLower())
+            try
             {
-                case "7":
-                    startDate = DateTime.UtcNow.AddDays(-7);
-                    groupByDays = 1; // Nhóm theo ngày
-                    break;
-                case "28":
-                    startDate = DateTime.UtcNow.AddDays(-28);
-                    groupByDays = 4; // Nhóm theo 4 ngày
-                    break;
-                case "90":
-                    startDate = DateTime.UtcNow.AddDays(-90);
-                    groupByDays = 10; // Nhóm theo 10 ngày
-                    break;
-                case "all":
-                default:
-                    startDate = DateTime.MinValue; // Lấy tất cả dữ liệu
-                    groupByDays = 30; // Nhóm mặc định theo tháng cho dữ liệu lớn
-                    break;
-            }
-
-            // Lấy channelId từ user hiện tại
-            var userId = User.GetUserId();
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized("User not authenticated.");
-            }
-
-            var channelId = await UnitOfWork.ChannelRepo.GetChannelIdByUserId(userId);
-            if (channelId == Guid.Empty)
-            {
-                return NotFound("Channel not found for the user.");
-            }
-
-            // Truy vấn video theo channel và khoảng thời gian
-            var videosQuery = _context.Videos
-                .Where(v => v.ChannelId == channelId && v.UploadDate >= startDate);
-            // Tính tổng lượt xem
-            //var totalViews = await videosQuery.SumAsync(v => v.Views ?? 0);
-            var totalViews = _context.VideoViews
-                .Where(v => v.AppUserId == userId)
-                .Count();
-            // Tính tổng lượt thích
-            var totalLikes = await videosQuery
-                .SelectMany(v => v.LikeDislikes)
-                .CountAsync(ld => ld.Liked == true);
-            // Tính tổng bình luận
-            var totalComments = await videosQuery
-                .SelectMany(v => v.Comments)
-                .CountAsync();
-            //// Tính tổng lượt xem, lượt thích, bình luận
-            //var analytics = await videosQuery
-            //    .GroupBy(_ => 1)
-            //    .Select(g => new
-            //    {
-            //        TotalViews = g.Sum(v => v.Views ?? 0),
-            //        TotalLikes = g.Sum(v => v.LikeDislikes.Count(ld => ld.Liked == true)),
-            //        TotalComments = g.Sum(v => v.Comments.Count())
-            //    })
-            //    .FirstOrDefaultAsync();
-
-            // Lấy số lượng subscribers
-            var subscribers = await _context.Channels
-                .Where(c => c.Id == channelId)
-                .Select(c => c.Subscribers.Count())
-                .FirstOrDefaultAsync();
-
-            // Dữ liệu cho biểu đồ Views Over Time
-            var viewsOverTime = new
-            {
-                Labels = new List<string>(),
-                Data = new List<int>()
-            };
-
-            if (timeFilter != "all")
-            {
-                // Nhóm theo ngày cố định
-                var endDate = DateTime.UtcNow.Date;
-                for (var date = startDate.Date; date <= endDate; date = date.AddDays(groupByDays))
+                var userId = User.GetUserId();
+                if (string.IsNullOrEmpty(userId))
                 {
-                    var nextDate = date.AddDays(groupByDays);
-                    viewsOverTime.Labels.Add(date.ToString("MMM d"));
-                    viewsOverTime.Data.Add(await videosQuery
-                        .Where(v => v.UploadDate.Date >= date && v.UploadDate.Date < nextDate)
-                        .SumAsync(v => v.Views ?? 0));
+                    return Unauthorized(new { message = "User not authenticated." });
                 }
-            }
-            else
-            {
-                // Nhóm động cho "all"
-                var firstVideoDate = await videosQuery.MinAsync(v => (DateTime?)v.UploadDate) ?? DateTime.UtcNow;
-                var totalDays = (DateTime.UtcNow.Date - firstVideoDate.Date).Days;
-                groupByDays = Math.Max(1, totalDays / 10); // Đảm bảo tối đa 10 điểm dữ liệu
 
-                for (var i = totalDays; i >= 0; i -= groupByDays)
+                var channel = await _context.Channels
+                    .Include(c => c.Videos)
+                    .ThenInclude(v => v.LikeDislikes)
+                    .Include(c => c.Videos)
+                    .ThenInclude(v => v.Comments)
+                    .Include(c => c.Subscribers)
+                    .FirstOrDefaultAsync(c => c.AppUserId == userId);
+
+                if (channel == null)
                 {
-                    var date = DateTime.UtcNow.AddDays(-i).Date;
-                    var nextDate = date.AddDays(groupByDays);
-                    viewsOverTime.Labels.Add(date.ToString("MMM d"));
-                    viewsOverTime.Data.Add(await videosQuery
-                        .Where(v => v.UploadDate.Date >= date && v.UploadDate.Date < nextDate)
-                        .SumAsync(v => v.Views ?? 0));
+                    return NotFound(new { message = "Channel not found." });
                 }
+
+                DateTime startDate;
+                int groupByDays;
+                switch (timeFilter?.ToLower())
+                {
+                    case "7": startDate = DateTime.UtcNow.AddDays(-7); groupByDays = 1; break;
+                    case "28": startDate = DateTime.UtcNow.AddDays(-28); groupByDays = 4; break;
+                    case "90": startDate = DateTime.UtcNow.AddDays(-90); groupByDays = 10; break;
+                    case "all": default: startDate = DateTime.MinValue; groupByDays = 30; break;
+                }
+
+                var filteredVideos = channel.Videos.Where(v => v.UploadDate >= startDate).ToList();
+                var totalViews = filteredVideos.Sum(v => v.Views ?? 0);
+                var totalLikes = filteredVideos.SelectMany(v => v.LikeDislikes).Count(ld => ld.Liked == true);
+                var totalComments = filteredVideos.SelectMany(v => v.Comments).Count();
+                var totalSubscribers = channel.Subscribers.Count;
+
+                var previousStartDate = startDate.AddMonths(-1);
+                var previousEndDate = startDate;
+                var previousVideos = channel.Videos.Where(v => v.UploadDate >= previousStartDate && v.UploadDate < previousEndDate).ToList();
+
+                var previousViews = previousVideos.Sum(v => v.Views ?? 0);
+                var previousLikes = previousVideos.SelectMany(v => v.LikeDislikes).Count(ld => ld.Liked == true);
+                var previousComments = previousVideos.SelectMany(v => v.Comments).Count();
+
+                double viewsChange = previousViews > 0 ? Math.Round(((double)(totalViews - previousViews) / previousViews) * 100, 1) : 0;
+                double subscribersChange = 0;
+                double likesChange = previousLikes > 0 ? Math.Round(((double)(totalLikes - previousLikes) / previousLikes) * 100, 1) : 0;
+                double commentsChange = previousComments > 0 ? Math.Round(((double)(totalComments - previousComments) / previousComments) * 100, 1) : 0;
+
+                var viewsOverTimeLabels = new List<string>();
+                var viewsOverTimeData = new List<int>();
+
+                if (timeFilter != "all")
+                {
+                    var endDate = DateTime.UtcNow.Date;
+                    for (var date = startDate.Date; date <= endDate; date = date.AddDays(groupByDays))
+                    {
+                        var nextDate = date.AddDays(groupByDays);
+                        viewsOverTimeLabels.Add(date.ToString("MMM d"));
+                        viewsOverTimeData.Add(filteredVideos.Where(v => v.UploadDate.Date >= date && v.UploadDate.Date < nextDate).Sum(v => v.Views ?? 0));
+                    }
+                }
+                else
+                {
+                    var firstVideoDate = filteredVideos.Any() ? filteredVideos.Min(v => v.UploadDate.Date) : DateTime.UtcNow.Date;
+                    var totalDays = (DateTime.UtcNow.Date - firstVideoDate).Days;
+                    groupByDays = Math.Max(1, totalDays / 10);
+                    for (var i = 0; i <= totalDays; i += groupByDays)
+                    {
+                        var date = firstVideoDate.AddDays(i);
+                        var nextDate = date.AddDays(groupByDays);
+                        viewsOverTimeLabels.Add(date.ToString("MMM d"));
+                        viewsOverTimeData.Add(filteredVideos.Where(v => v.UploadDate.Date >= date && v.UploadDate.Date < nextDate).Sum(v => v.Views ?? 0));
+                    }
+                }
+
+                var viewsOverTime = new { Labels = viewsOverTimeLabels, Data = viewsOverTimeData };
+                var trafficSources = new { Labels = new[] { "Direct", "Search", "External", "Social" }, Data = new[] { 40, 30, 20, 10 } };
+
+                return Json(new
+                {
+                    statusCode = 200,
+                    result = new
+                    {
+                        totalViews,
+                        subscribers = totalSubscribers,
+                        likes = totalLikes,
+                        comments = totalComments,
+                        viewsChange,
+                        subscribersChange,
+                        likesChange,
+                        commentsChange,
+                        viewsOverTime,
+                        trafficSources
+                    }
+                });
             }
-
-            // Dữ liệu cho biểu đồ Traffic Sources (giả lập hoặc lấy từ nguồn thực nếu có)
-            var trafficSources = new
+            catch (Exception ex)
             {
-                Labels = new[] { "Direct", "Search", "External", "Social" },
-                Data = new[] { 40, 30, 20, 10 } // Có thể thay bằng dữ liệu thực từ DB
-            };
-
-            // Kết quả trả về
-            var result = new
-            {
-                TotalViews = totalViews,
-                Subscribers = subscribers,
-                Likes = totalLikes,
-                Comments = totalComments,
-                ViewsOverTime = viewsOverTime,
-                TrafficSources = trafficSources
-            };
-
-            return Json(result);
+                return StatusCode(500, new { statusCode = 500, message = $"Error in GetAnalytics: {ex.Message}" });
+            }
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetVideosForChannelGrid(int pageNumber = 1, int pageSize = 10, string sortBy = "")
+        {
+            try
+            {
+                Console.WriteLine($"GetVideosForChannelGrid called: pageNumber={pageNumber}, pageSize={pageSize}, sortBy={sortBy}");
+                var userId = User.GetUserId();
+                Console.WriteLine($"UserId: {userId}");
+                if (string.IsNullOrEmpty(userId))
+                {
+                    Console.WriteLine("Unauthorized: User not authenticated");
+                    return Unauthorized(new { statusCode = 401, message = "User not authenticated." });
+                }
+
+                var userChannelId = await UnitOfWork.ChannelRepo.GetChannelIdByUserId(userId);
+                Console.WriteLine($"UserChannelId: {userChannelId}");
+                if (userChannelId == Guid.Empty)
+                {
+                    Console.WriteLine("Not found: Channel not found for user");
+                    return NotFound(new { statusCode = 404, message = "Channel not found." });
+                }
+
+                var parameters = new BaseParameters
+                {
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    SortBy = sortBy
+                };
+
+                var videosForGrid = await UnitOfWork.VideoRepo.GetVideosForChannelGridAsync(userChannelId, parameters);
+                Console.WriteLine($"Videos returned: {videosForGrid?.Count ?? 0}");
+                if (videosForGrid == null || videosForGrid == null)
+                {
+                    Console.WriteLine("No videos found or repository returned null");
+                    return Json(new
+                    {
+                        statusCode = 200,
+                        result = new
+                        {
+                            items = new List<object>(),
+                            totalItemsCount = 0,
+                            pageNumber,
+                            totalPages = 0
+                        }
+                    });
+                }
+
+                return Json(new
+                {
+                    statusCode = 200,
+                    result = new
+                    {
+                        items = videosForGrid,
+                        totalItemsCount = videosForGrid.TotalItemsCount,
+                        pageNumber = videosForGrid.PageNumber,
+                        totalPages = videosForGrid.TotalPages
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetVideosForChannelGrid: {ex.Message}\n{ex.StackTrace}");
+                return StatusCode(500, new { statusCode = 500, message = $"Error: {ex.Message}" });
+            }
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetTotalViews()
         {
-            var userId = User.GetUserId();
-            var totalViews = _context.VideoViews
-                .Where(v => v.AppUserId == userId)
-                .Count();
-            return Json(new { totalViews });
+            try
+            {
+                var userId = User.GetUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { statusCode = 401, message = "User not authenticated." });
+                }
+
+                var channel = await _context.Channels
+                    .Include(c => c.Videos)
+                    .Include(c => c.Subscribers)
+                    .FirstOrDefaultAsync(c => c.AppUserId == userId);
+
+                if (channel == null)
+                {
+                    return NotFound(new { statusCode = 404, message = "Channel not found." });
+                }
+
+                var totalViews = channel.Videos.Sum(v => v.Views ?? 0);
+                var subscribers = channel.Subscribers.Count;
+
+                return Json(new { statusCode = 200, totalViews, subscribers });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { statusCode = 500, message = $"Error in GetTotalViews: {ex.Message}" });
+            }
         }
     }
 }

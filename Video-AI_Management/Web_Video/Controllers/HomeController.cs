@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,12 +23,10 @@ namespace Web_Video.Controllers
     public class HomeController : CoreController
     {
         private readonly ILogger<HomeController> _logger;
-        private readonly DataContext Context;
 
-        public HomeController(DataContext context, IUnitOfWork unitOfWork, ILogger<HomeController> logger)
+        public HomeController(DataContext context, ILogger<HomeController> logger)
         {
             _logger = logger;
-            Context = context;
         }
 
         public async Task<IActionResult> Index()
@@ -87,17 +85,28 @@ namespace Web_Video.Controllers
 
         [Authorize(Roles = $"{SD.UserRole}")]
         [HttpGet]
-        public async Task<IActionResult> GetSubscriptions()
+        public async Task<IActionResult> GetSubscriptions(int pageNumber = 1, int pageSize = 12)
         {
-            var userSubscribedChannels = await Context.Subscribes
+            var query = Context.Subscribes
                 .Where(x => x.AppUserId == User.GetUserId())
                 .Select(x => new
                 {
                     Id = x.ChannelId,
-                    ChannelName = x.Channel.ChannelName,
+                    ChannelName = x.Channel.ChannelName ?? "Unknown Channel",
                     VideosCount = x.Channel.Videos.Count
-                }).ToListAsync();
-            return Json(new ApiResponse(200, result: userSubscribedChannels));
+                    // Thêm Thumbnail nếu có: Thumbnail = x.Channel.Thumbnail
+                });
+
+            var totalItems = await query.CountAsync();
+            var items = await query
+                .OrderBy(x => x.ChannelName) // Sắp xếp theo tên kênh
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+            var paginatedResults = new PaginatedResult<object>(items, totalItems, pageNumber, pageSize, totalPages);
+            return Json(new ApiResponse(200, result: paginatedResults));
         }
 
         [Authorize(Roles = $"{SD.UserRole}")]
@@ -117,7 +126,7 @@ namespace Web_Video.Controllers
                     x.LastVisit,
                     //Duration = x.Video.Duration,
                     //Progress = x.Progress,
-                    Views = x.Video.Views // Th�m tr??ng Views
+                    Views = x.Video.Views // Thêm tr??ng Views
                 });
             var totalItems = await query.CountAsync();
             var items = await query
@@ -147,7 +156,7 @@ namespace Web_Video.Controllers
                     x.Video.UploadDate,
                     //Duration = x.Video.Duration,
                     //Progress = x.VideoView?.Progress ?? 0,
-                    Views = x.Video.Views // Th�m tr??ng Views
+                    Views = x.Video.Views // Thêm tr??ng Views
                 });
             var totalItems = await query.CountAsync();
             var items = await query
@@ -206,7 +215,7 @@ namespace Web_Video.Controllers
 
             if (videoView == null)
             {
-                // Th�m m?i b?n ghi VideoView
+                // Thêm m?i b?n ghi VideoView
                 videoView = new VideoView
                 {
                     AppUserId = User.GetUserId(),
@@ -214,13 +223,13 @@ namespace Web_Video.Controllers
                     LastVisit = DateTime.UtcNow,
                     NumberOfVisit = 1,
                     IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                    // C�c tr??ng kh�c nh? City, PostalCode, Country, Is_Proxy c� th? ???c c?p nh?t t? d?ch v? IP2Location n?u c�
+                    // Các tr??ng khác nh? City, PostalCode, Country, Is_Proxy có th? ???c c?p nh?t t? d?ch v? IP2Location n?u có
                 };
                 Context.VideoViews.Add(videoView);
             }
             else
             {
-                // C?p nh?t b?n ghi hi?n c�
+                // C?p nh?t b?n ghi hi?n có
                 videoView.LastVisit = DateTime.UtcNow;
                 videoView.NumberOfVisit += 1;
             }

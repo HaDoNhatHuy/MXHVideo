@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Database_Video.DTOs
+﻿namespace Database_Video.DTOs
 {
     public class VideoGridChannelDto
     {
@@ -8,6 +6,7 @@ namespace Database_Video.DTOs
         public string Thumbnail { get; set; }
         public string Title { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string Duration { get; set; } // Thêm Duration
         public int Views { get; set; }
         public int Comments { get; set; }
         public int Likes { get; set; }

@@ -13,6 +13,7 @@ namespace Database_Video.Entities
         [Required]
         public string? Thumbnail { get; set; }
         public DateTime UploadDate { get; set; } = DateTime.Now;
+        public string? Duration { get; set; } // Thêm trường Duration (ví dụ: "03:45")
         public int? Views { get; set; }
         [ForeignKey("CategoryId")]
         public Guid? CategoryId { get; set; }

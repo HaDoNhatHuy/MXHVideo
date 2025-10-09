@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Database_Video.Pagination
+﻿namespace Database_Video.Pagination
 {
     //This is the class that we send back to the browser to show the paginated results
     public class PaginatedResult<T> where T : class
