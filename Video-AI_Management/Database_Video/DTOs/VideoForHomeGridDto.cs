@@ -9,6 +9,7 @@
         public DateTime CreatedAt { get; set; }
         public int Views { get; set; }
         public string ChannelName { get; set; }
+        public string Duration { get; set; } // Thêm mới: Trường Duration
         public Guid ChannelId { get; set; }
         public Guid CategoryId { get; set; }
         public string CreatedAtTimeAgo { get; set; } // Thêm mới: Thời gian tương đối

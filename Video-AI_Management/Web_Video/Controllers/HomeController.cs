@@ -85,28 +85,38 @@ namespace Web_Video.Controllers
 
         [Authorize(Roles = $"{SD.UserRole}")]
         [HttpGet]
-        public async Task<IActionResult> GetSubscriptions(int pageNumber = 1, int pageSize = 12)
+        public async Task<IActionResult> GetSubscriptions(int pageNumber = 1, int pageSize = 5)
         {
+            _logger.LogInformation("GetSubscriptions called for user {UserId}, page {PageNumber}", User.GetUserId(), pageNumber);
             var query = Context.Subscribes
                 .Where(x => x.AppUserId == User.GetUserId())
                 .Select(x => new
                 {
-                    Id = x.ChannelId,
-                    ChannelName = x.Channel.ChannelName ?? "Unknown Channel",
-                    VideosCount = x.Channel.Videos.Count
-                    // Thêm Thumbnail nếu có: Thumbnail = x.Channel.Thumbnail
+                    id = x.ChannelId,
+                    channelName = x.Channel.ChannelName ?? "Unknown Channel",
+                    channelPicture = x.Channel.ChannelPicture ?? "/avatarUser/avt-default.jpg"
                 });
 
             var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
             var items = await query
-                .OrderBy(x => x.ChannelName) // Sắp xếp theo tên kênh
+                .OrderBy(x => x.channelName)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
-            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
-            var paginatedResults = new PaginatedResult<object>(items, totalItems, pageNumber, pageSize, totalPages);
-            return Json(new ApiResponse(200, result: paginatedResults));
+            _logger.LogInformation("Subscriptions count: {Count}, total pages: {TotalPages}", items.Count, totalPages);
+            return Json(new
+            {
+                statusCode = 200,
+                result = new
+                {
+                    items = items,
+                    totalItems = totalItems,
+                    totalPages = totalPages,
+                    currentPage = pageNumber
+                }
+            });
         }
 
         [Authorize(Roles = $"{SD.UserRole}")]
@@ -124,13 +134,11 @@ namespace Web_Video.Controllers
                     ChannelId = x.Video.Channel.Id,
                     LastVisitTimeAgo = SD.TimeAgo(x.LastVisit),
                     x.LastVisit,
-                    //Duration = x.Video.Duration,
-                    //Progress = x.Progress,
-                    Views = x.Video.Views // Thêm tr??ng Views
+                    Views = x.Video.Views
                 });
             var totalItems = await query.CountAsync();
             var items = await query
-                .OrderByDescending(x => x.LastVisit) // S?p x?p theo LastVisit gi?m d?n
+                .OrderByDescending(x => x.LastVisit)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -154,9 +162,7 @@ namespace Web_Video.Controllers
                     ChannelId = x.Video.Channel.Id,
                     CreatedAtTimeAgo = SD.TimeAgo(x.Video.UploadDate),
                     x.Video.UploadDate,
-                    //Duration = x.Video.Duration,
-                    //Progress = x.VideoView?.Progress ?? 0,
-                    Views = x.Video.Views // Thêm tr??ng Views
+                    Views = x.Video.Views
                 });
             var totalItems = await query.CountAsync();
             var items = await query
@@ -215,7 +221,6 @@ namespace Web_Video.Controllers
 
             if (videoView == null)
             {
-                // Thêm m?i b?n ghi VideoView
                 videoView = new VideoView
                 {
                     AppUserId = User.GetUserId(),
@@ -223,18 +228,15 @@ namespace Web_Video.Controllers
                     LastVisit = DateTime.UtcNow,
                     NumberOfVisit = 1,
                     IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                    // Các tr??ng khác nh? City, PostalCode, Country, Is_Proxy có th? ???c c?p nh?t t? d?ch v? IP2Location n?u có
                 };
                 Context.VideoViews.Add(videoView);
             }
             else
             {
-                // C?p nh?t b?n ghi hi?n có
                 videoView.LastVisit = DateTime.UtcNow;
                 videoView.NumberOfVisit += 1;
             }
 
-            // T?ng Views trong b?ng Video
             var video = await Context.Videos.FirstOrDefaultAsync(x => x.Id == videoGuid);
             if (video != null)
             {

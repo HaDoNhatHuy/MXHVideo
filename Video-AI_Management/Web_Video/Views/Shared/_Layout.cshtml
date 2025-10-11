@@ -101,6 +101,37 @@
         .modal-backdrop {
             z-index: 1040;
         }
+
+        /* Style cho danh sách kênh trong sidebar */
+        .channel-sidebar-list ul li a {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+        }
+
+            .channel-sidebar-list ul li a img {
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                margin-right: 8px;
+            }
+
+        /* Style cho nút Xem thêm */
+        .load-more-btn {
+            display: flex;
+            justify-content: center;
+            padding: 8px 16px;
+            cursor: pointer;
+            color: #606060;
+        }
+
+            .load-more-btn:hover {
+                background-color: #f5f5f5;
+            }
+
+            .load-more-btn i {
+                margin-right: 8px;
+            }
     </style>
 </head>
 <body id="page-top" data-page="@ViewData["CurrentPage"]">
@@ -175,7 +206,7 @@
                             <h6>Admin Panel</h6>
                             <a class="dropdown-item" asp-controller="Admin" asp-action="Category"><i class="fas fa-fw fa-list"></i> &nbsp; Category</a>
                             <a class="dropdown-item" asp-controller="Admin" asp-action="AddEditUser"><i class="fas fa-fw fa-user-shield"></i> &nbsp; User Management</a>
-                            <a class="dropdown-item" asp-controller="Admin" asp-action="AllUsers"><i class="fas fa-fw fa-user-shield"></i> &nbsp; All User</a>                            
+                            <a class="dropdown-item" asp-controller="Admin" asp-action="AllUsers"><i class="fas fa-fw fa-user-shield"></i> &nbsp; All User</a>
                         }
                         @if (User.IsInRole(SD.ModeratorRole))
                         {
@@ -249,35 +280,29 @@
                 </li>
                 <li class="nav-item channel-sidebar-list">
                     <h6>SUBSCRIPTIONS</h6>
-                    <ul>
-                        <li>
-                            <a asp-controller="Subscriptions" asp-action="Index">
-                                <img class="img-fluid" alt="" src="/img/s1.png"> Your Life
-                            </a>
-                        </li>
-                    </ul>
+                    <ul id="subscriptionsList"></ul>
                 </li>
             }
             <li class="nav-item channel-sidebar-list">
                 <h6>EXPLORE</h6>
                 <ul>
                     <li class="nav-item">
-                        <a class="nav-link" asp-controller="Subscriptions" asp-action="Index">
+                        <a class="nav-link" asp-controller="Category" asp-action="Index" asp-route-categoryId="@Guid.Parse("F12B613B-5719-4FCE-83FF-E7B08ECE172B")">
                             <i class="fas fa-fw fa-music"></i> <span>Music</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" asp-controller="Subscriptions" asp-action="Index">
+                        <a class="nav-link" asp-controller="Category" asp-action="Index" asp-route-categoryId="@Guid.Parse("DD488F44-3BCE-4D02-998B-DF48B22B7AED")">
                             <i class="fas fa-fw fa-gamepad"></i> <span>Gaming</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" asp-controller="Subscriptions" asp-action="Index">
+                        <a class="nav-link" asp-controller="Category" asp-action="Index" asp-route-categoryId="@Guid.Parse("A3B68743-C049-4449-807C-C29531EE78DF")">
                             <i class="fas fa-fw fa-newspaper"></i> <span>News</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" asp-controller="Subscriptions" asp-action="Index">
+                        <a class="nav-link" asp-controller="Category" asp-action="Index" asp-route-categoryId="@Guid.Parse("B0B863E6-E86C-40A8-9AA1-230122EEFC61")">
                             <i class="fas fa-fw fa-dumbbell"></i> <span>Sports</span>
                         </a>
                     </li>
@@ -313,9 +338,6 @@
         </div>
     </div>
     <!-- Bootstrap core JavaScript-->
-    @* <script src="/vendor/jquery/jquery.min.js"></script> *@
-    <!-- Bootstrap core JavaScript-->
-    @* <script src="/lib/jquery/dist/jquery.min.js"></script> *@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <!-- Core plugin JavaScript-->
@@ -323,16 +345,24 @@
     <!-- Owl Carousel -->
     <script src="/vendor/owl-carousel/owl.carousel.js"></script>
     <!-- Custom scripts for all pages-->
-    <script src="/js_new/custom.js" asp-append-version="true"></script>   
+    <script src="/js_new/custom.js" asp-append-version="true"></script>
     <script>
         $(document).ready(function () {
             const sidebar = $('#sidebarMenu');
             const content = $('.youtube-content');
             const toggleBtn = $('#toggleSidebarBtn');
             const overlay = $('#sidebarOverlay');
+            const subscriptionsList = $('#subscriptionsList');
+
+            // Kiểm tra trạng thái xác thực người dùng
+            const isAuthenticated = @Json.Serialize(User.Identity.IsAuthenticated);
 
             // Kiểm tra trang hiện tại từ ViewData
             const currentPage = '@ViewData["CurrentPage"]';
+
+            // Biến để theo dõi trang hiện tại của subscriptions
+            let currentSubPage = 1;
+            let totalSubPages = 1;
 
             // Ẩn sidebar trên Watch, Login, Register ở màn hình lớn
             if (currentPage === 'Watch' || currentPage === 'Login' || currentPage === 'Register') {
@@ -385,6 +415,71 @@
                     content.removeClass('full-width');
                 }
             });
+
+            // Load danh sách kênh đăng ký
+            if (isAuthenticated) {
+                console.log('User is authenticated, loading subscriptions');
+                loadSubscriptions();
+            }
+
+            function loadSubscriptions(page = 1) {
+                console.log('Loading subscriptions, page:', page);
+                $.ajax({
+                    url: `/Home/GetSubscriptions?pageNumber=${page}&pageSize=5`,
+                    type: 'GET',
+                    success: function (response) {
+                        console.log('Subscriptions API response:', response);
+                        if (response.statusCode === 200 && response.result && response.result.items) {
+                            const items = response.result.items;
+                            totalSubPages = response.result.totalPages || 1;
+                            currentSubPage = response.result.currentPage || page;
+
+                            if (page === 1) {
+                                subscriptionsList.empty();
+                            }
+
+                            if (items.length === 0 && page === 1) {
+                                subscriptionsList.append('<li><span>No subscriptions found</span></li>');
+                            } else {
+                                items.forEach(item => {
+                                    const channelItem = `
+                                        <li>
+                                            <a href="/Member/Channel/${item.id}">
+                                                <img class="img-fluid" alt="${item.channelName}" src="${item.channelPicture}">
+                                                ${item.channelName}
+                                            </a>
+                                        </li>`;
+                                    subscriptionsList.append(channelItem);
+                                });
+                            }
+
+                            // Thêm hoặc cập nhật nút "Xem thêm"
+                            const existingLoadMore = subscriptionsList.find('.load-more-btn');
+                            if (existingLoadMore.length > 0) {
+                                existingLoadMore.remove();
+                            }
+
+                            if (currentSubPage < totalSubPages) {
+                                subscriptionsList.append(`
+                                    <li class="load-more-btn">
+                                        <i class="fas fa-angle-down"></i> Xem thêm
+                                    </li>
+                                `);
+                                subscriptionsList.find('.load-more-btn').on('click', function () {
+                                    loadSubscriptions(currentSubPage + 1);
+                                });
+                            }
+                        } else {
+                            console.error('Invalid response format:', response);
+                            subscriptionsList.append('<li><span>Error loading subscriptions</span></li>');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error loading subscriptions:', error);
+                        subscriptionsList.append('<li><span>Error loading subscriptions</span></li>');
+                    }
+                });
+            }
 
             // Xử lý gợi ý tìm kiếm
             const searchInput = document.getElementById('searchInput');
