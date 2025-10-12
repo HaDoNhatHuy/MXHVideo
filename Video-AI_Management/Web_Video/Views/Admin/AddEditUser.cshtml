@@ -1,141 +1,368 @@
 ﻿@model Web_Video.ViewModels.Admin.UserAddEditViewModel
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
 
-<div class="youtube-admin-container d-flex justify-content-center align-items-center min-vh-100">
-    <div class="youtube-admin-card col-lg-5 col-md-8 col-sm-10 p-4">
-        <!-- Tiêu đề -->
-        <div class="text-center mb-4">
-            <h3 class="fw-bold" style="font-size: 20px;">
-                @(Model.Id != Guid.Empty ? "Chỉnh sửa" : "Thêm") Người dùng
-            </h3>
-            <p class="text-muted" style="font-size: 14px;">
-                Quản lý thông tin người dùng trong hệ thống
+<div class="modern-admin-container d-flex justify-content-center align-items-center min-vh-100">
+    <div class="modern-admin-card col-lg-6 col-md-8 col-sm-10">
+        <!-- Header với gradient -->
+        <div class="card-header text-center">
+            <div class="icon-wrapper mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+            <h2 class="fw-bold mb-2">
+                @(Model.Id != Guid.Empty ? "Chỉnh sửa" : "Thêm mới") Người dùng
+            </h2>
+            <p class="subtitle">
+                Quản lý thông tin người dùng một cách dễ dàng và hiệu quả
             </p>
         </div>
 
-        <!-- Form -->
-        <form method="post" asp-action="AddEditUser">
-            <input type="text" asp-for="Id" hidden />
+        <!-- Form Body -->
+        <div class="card-body">
+            <form method="post" asp-action="AddEditUser">
+                <input type="text" asp-for="Id" hidden />
 
-            <!-- Trường FullName -->
-            <div class="form-floating mb-3">
-                <input asp-for="FullName" placeholder="Name (Username)" class="form-control rounded-pill" />
-                <label asp-for="FullName">Họ và tên</label>
-                <span asp-validation-for="FullName" class="text-danger d-block mt-1" style="font-size: 14px;"></span>
-            </div>
+                <!-- Họ và tên -->
+                <div class="modern-form-group mb-4">
+                    <label asp-for="FullName" class="modern-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="label-icon">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        Họ và tên
+                    </label>
+                    <input asp-for="FullName" placeholder="Nhập họ và tên đầy đủ" class="modern-input" />
+                    <span asp-validation-for="FullName" class="error-message"></span>
+                </div>
 
-            <!-- Trường Email -->
-            <div class="form-floating mb-3">
-                <input asp-for="Email" placeholder="Email" class="form-control rounded-pill" />
-                <label asp-for="Email">Email</label>
-                <span asp-validation-for="Email" class="text-danger d-block mt-1" style="font-size: 14px;"></span>
-            </div>
+                <!-- Email -->
+                <div class="modern-form-group mb-4">
+                    <label asp-for="Email" class="modern-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="label-icon">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        Địa chỉ Email
+                    </label>
+                    <input asp-for="Email" placeholder="example@domain.com" class="modern-input" />
+                    <span asp-validation-for="Email" class="error-message"></span>
+                </div>
 
-            <!-- Trường Password -->
-            <div class="form-floating mb-3">
-                <input asp-for="Password" type="password" placeholder="Password" class="form-control rounded-pill" />
-                <label asp-for="Password">
-                    Mật khẩu @(Model.Id != Guid.Empty ? "(Để trống nếu không muốn thay đổi)" : "")
-                </label>
-                <span asp-validation-for="Password" class="text-danger d-block mt-1" style="font-size: 14px;"></span>
-            </div>
-
-            <!-- Trường UserRoles -->
-            <div class="mb-3">
-                <label asp-for="UserRoles" class="form-label fw-bold" style="font-size: 14px;">Vai trò</label>
-                <div class="btn-group d-flex flex-wrap gap-2" role="group">
-                    @foreach (var role in Model.ApplicationRoles)
+                <!-- Mật khẩu -->
+                <div class="modern-form-group mb-4">
+                    <label asp-for="Password" class="modern-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="label-icon">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        Mật khẩu
+                    </label>
+                    <input asp-for="Password" type="password" placeholder="@(Model.Id != Guid.Empty ? "Để trống nếu không muốn thay đổi" : "Nhập mật khẩu")" class="modern-input" />
+                    @if (Model.Id != Guid.Empty)
                     {
-                        var isChecked = Model.UserRoles.Contains(role);
-                        <input type="checkbox" name="UserRoles" value="@role" id="@role" class="btn-check" @(isChecked ? "checked" : "") />
-                        <label class="btn btn-outline-primary rounded-pill px-3 py-1" for="@role" style="font-size: 14px;">@role</label>
+                        <small class="form-text">💡 Để trống nếu không muốn thay đổi mật khẩu</small>
                     }
+                    <span asp-validation-for="Password" class="error-message"></span>
                 </div>
-                <span asp-validation-for="UserRoles" class="text-danger d-block mt-1" style="font-size: 14px;"></span>
-            </div>
 
-            <!-- Thông báo lỗi -->
-            <div class="mb-3">
-                <div asp-validation-summary="All" class="text-danger" style="font-size: 14px;"></div>
-            </div>
+                <!-- Vai trò -->
+                <div class="modern-form-group mb-4">
+                    <label class="modern-label mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="label-icon">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        Vai trò người dùng
+                    </label>
+                    <div class="role-group">
+                        @foreach (var role in Model.ApplicationRoles)
+                        {
+                            var isChecked = Model.UserRoles.Contains(role);
+                            <div class="role-checkbox">
+                                <input type="checkbox" name="UserRoles" value="@role" id="@role" @(isChecked ? "checked" : "") />
+                                <label for="@role">@role</label>
+                            </div>
+                        }
+                    </div>
+                    <span asp-validation-for="UserRoles" class="error-message"></span>
+                </div>
 
-            <!-- Nút hành động -->
-            <div class="row mt-4">
-                <div class="col-6">
-                    <button class="btn btn-danger rounded-pill w-100 py-2" type="submit">
-                        @(Model.Id != Guid.Empty ? "Chỉnh sửa" : "Thêm") Người dùng
+                <!-- Thông báo lỗi tổng -->
+                <div class="mb-4">
+                    <div asp-validation-summary="All" class="alert-error"></div>
+                </div>
+
+                <!-- Nút hành động -->
+                <div class="action-buttons">
+                    <button class="btn-primary-modern" type="submit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        @(Model.Id != Guid.Empty ? "Cập nhật" : "Thêm mới")
                     </button>
-                </div>
-                <div class="col-6">
-                    <a asp-action="AllUsers" class="btn btn-outline-secondary rounded-pill w-100 py-2">
-                        Quay lại danh sách
+                    <a asp-action="AllUsers" class="btn-secondary-modern">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        Quay lại
                     </a>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
-
-<style>
-    .youtube-admin-container {
-        background-color: #f9f9f9;
-        font-family: 'Roboto', sans-serif;
-    }
-
-    .youtube-admin-card {
-        background-color: #fff;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        border: 1px solid #e0e0e0;
-    }
-
-        .youtube-admin-card .form-control {
-            border: 1px solid #ccc;
-            padding: 12px 16px;
-            font-size: 16px;
-            height: auto;
+@section Css{
+    <style>
+        * {
+            box-sizing: border-box;
         }
 
-        .youtube-admin-card .form-floating > label {
-            padding: 12px 16px;
-            font-size: 16px;
-            color: #606060;
+        .modern-admin-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        .youtube-admin-card .btn-danger {
-            background-color: #ff0000;
+        .modern-admin-card {
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @@keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 30px;
+            color: #ffffff;
+        }
+
+        .icon-wrapper {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            backdrop-filter: blur(10px);
+        }
+
+            .icon-wrapper svg {
+                color: #ffffff;
+            }
+
+        .card-header h2 {
+            font-size: 28px;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 15px;
+            margin: 0;
+        }
+
+        .card-body {
+            padding: 40px 30px;
+        }
+
+        .modern-form-group {
+            position: relative;
+        }
+
+        .modern-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .label-icon {
+            color: #667eea;
+        }
+
+        .modern-input {
+            width: 100%;
+            padding: 14px 18px;
+            font-size: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: #f8fafc;
+            color: #2d3748;
+            transition: all 0.3s ease;
+        }
+
+            .modern-input:focus {
+                outline: none;
+                border-color: #667eea;
+                background: #ffffff;
+                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            }
+
+            .modern-input::placeholder {
+                color: #a0aec0;
+            }
+
+        .form-text {
+            display: block;
+            margin-top: 6px;
+            font-size: 13px;
+            color: #718096;
+        }
+
+        .error-message {
+            display: block;
+            margin-top: 6px;
+            font-size: 13px;
+            color: #f56565;
+            font-weight: 500;
+        }
+
+        .alert-error {
+            color: #f56565;
+            font-size: 14px;
+        }
+
+        .role-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .role-checkbox {
+            position: relative;
+        }
+
+            .role-checkbox input[type="checkbox"] {
+                position: absolute;
+                opacity: 0;
+                cursor: pointer;
+            }
+
+            .role-checkbox label {
+                display: inline-block;
+                padding: 10px 20px;
+                font-size: 14px;
+                font-weight: 500;
+                color: #667eea;
+                background: #f0f4ff;
+                border: 2px solid #e0e7ff;
+                border-radius: 20px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                user-select: none;
+            }
+
+            .role-checkbox input[type="checkbox"]:checked + label {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: #ffffff;
+                border-color: #667eea;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            }
+
+            .role-checkbox label:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn-primary-modern,
+        .btn-secondary-modern {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 12px;
             border: none;
-            font-weight: 500;
-            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
         }
 
-            .youtube-admin-card .btn-danger:hover {
-                background-color: #e60000;
+        .btn-primary-modern {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+            .btn-primary-modern:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
             }
 
-        .youtube-admin-card .btn-outline-secondary {
-            border-color: #606060;
-            color: #606060;
-            font-weight: 500;
-            font-size: 16px;
+        .btn-secondary-modern {
+            background: #ffffff;
+            color: #4a5568;
+            border: 2px solid #e2e8f0;
         }
 
-            .youtube-admin-card .btn-outline-secondary:hover {
-                background-color: #f1f1f1;
-                color: #030303;
+            .btn-secondary-modern:hover {
+                background: #f7fafc;
+                border-color: #cbd5e0;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             }
 
-        .youtube-admin-card .btn-outline-primary {
-            border-color: #065fd4;
-            color: #065fd4;
-        }
+        @@media (max-width: 768px) {
+            .card-body {
+                padding: 30px 20px;
+            }
 
-        .youtube-admin-card .btn-check:checked + .btn-outline-primary {
-            background-color: #065fd4;
-            color: #fff;
-            border-color: #065fd4;
+            .card-header {
+                padding: 30px 20px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .card-header h2 {
+                font-size: 24px;
+            }
         }
-</style>
+    </style>
+}

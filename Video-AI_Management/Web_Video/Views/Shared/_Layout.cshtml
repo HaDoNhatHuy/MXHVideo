@@ -203,7 +203,7 @@
                         @if (User.IsInRole(SD.AdminRole))
                         {
                             <div class="dropdown-divider"></div>
-                            <h6>Admin Panel</h6>
+                            <h6 style="margin-left:10px;">Admin Panel</h6>
                             <a class="dropdown-item" asp-controller="Admin" asp-action="Category"><i class="fas fa-fw fa-list"></i> &nbsp; Category</a>
                             <a class="dropdown-item" asp-controller="Admin" asp-action="AddEditUser"><i class="fas fa-fw fa-user-shield"></i> &nbsp; User Management</a>
                             <a class="dropdown-item" asp-controller="Admin" asp-action="AllUsers"><i class="fas fa-fw fa-user-shield"></i> &nbsp; All User</a>
@@ -211,7 +211,7 @@
                         @if (User.IsInRole(SD.ModeratorRole))
                         {
                             <div class="dropdown-divider"></div>
-                            <h6>Moderator Panel</h6>
+                            <h6 style="margin-left:10px;">Moderator Panel</h6>
                             <a class="dropdown-item" asp-controller="Moderator" asp-action="AllVideos"><i class="fas fa-fw fa-video"></i> &nbsp; Video Management</a>
                             <div class="dropdown-divider"></div>
                         }

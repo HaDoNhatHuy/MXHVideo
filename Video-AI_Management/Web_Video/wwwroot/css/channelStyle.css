@@ -4,11 +4,11 @@
     box-sizing: border-box;
 }
 
-body {
+/*body {
     font-family: 'Roboto', Arial, sans-serif;
-    background-color: #f9fafb; /* Màu nền sáng hơn */
-    color: #1a202c; /* Màu chữ đậm để tương phản */
-}
+    background-color: #f9fafb;*/ /* Màu nền sáng hơn */
+    /*color: #1a202c;*/ /* Màu chữ đậm để tương phản */
+/*}*/
 
 /* Channel Banner */
 .channel-banner {

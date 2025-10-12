@@ -1,87 +1,185 @@
 ﻿@model IEnumerable<Web_Video.ViewModels.Admin.UserDisplayGridViewModel>
-
-<div class="youtube-admin-container p-4">
-    <!-- Tiêu đề và nút Create User -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="section-title fw-bold" style="font-size: 24px;">Tất cả người dùng</h2>
-        <a class="btn btn-danger rounded-pill px-4 py-2" asp-action="AddEditUser">
-            <i class="bi bi-person-plus me-1"></i> Tạo người dùng
-        </a>
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="modern-user-container">
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="icon-badge">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="page-title">Quản lý người dùng</h1>
+                    <p class="page-subtitle">Tổng cộng @Model.Count() người dùng trong hệ thống</p>
+                </div>
+            </div>
+            <a class="btn-create-user" asp-action="AddEditUser">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                    <line x1="23" y1="11" x2="17" y2="11"></line>
+                </svg>
+                Thêm người dùng
+            </a>
+        </div>
     </div>
 
-    <!-- Danh sách người dùng -->
-    <div class="youtube-user-list">
+    <!-- User List -->
+    <div class="user-grid">
         @if (!Model.Any())
         {
-            <div class="text-center p-3">Không có người dùng nào để hiển thị.</div>
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <h3>Chưa có người dùng</h3>
+                <p>Hãy thêm người dùng đầu tiên vào hệ thống</p>
+            </div>
         }
         else
         {
             @foreach (var user in Model)
             {
                 <div class="user-card">
-                    <div class="user-content">
-                        <!-- Thông tin người dùng -->
-                        <div class="user-info d-flex flex-column flex-md-row align-items-md-center gap-3">
-                            <div class="user-details flex-grow-1">
-                                <div class="user-name fw-bold" style="font-size: 16px;">
-                                    @user.FullName
-                                    <span class="user-locked ms-2" style="font-size: 14px;">
-                                        @if (user.IsLocked)
-                                        {
-                                            <i class="bi bi-lock-fill text-danger"></i>
-                                        }
-                                        else
-                                        {
-                                            <i class="bi bi-unlock-fill text-success"></i>
-                                        }
+                    <!-- Card Header -->
+                    <div class="card-header-section">
+                        <div class="user-avatar">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="user-header-info">
+                            <div class="user-name-row">
+                                <h3 class="user-name">@user.FullName</h3>
+                                @if (user.IsLocked)
+                                {
+                                    <span class="status-badge locked">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                        </svg>
+                                        Đã khóa
                                     </span>
-                                </div>
-                                <div class="user-meta text-muted" style="font-size: 14px;">
-                                    <span>Email: @user.Email</span> •
-                                    <span>Ngày tham gia: @user.JoinDate.ToLongDateString()</span> •
-                                    <span>
-                                        Kênh:
-                                        <a href="@Url.Action("Channel", "Member", new { id = user.ChannelId })" class="text-primary">
-                                            @user.ChannelName
-                                        </a>
+                                }
+                                else
+                                {
+                                    <span class="status-badge active">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                            <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                                        </svg>
+                                        Hoạt động
                                     </span>
-                                </div>
-                                <div class="user-roles mt-1" style="font-size: 14px;">
-                                    Vai trò:
-                                    @for (int i = 0; i < user.AssignedRoles.Count(); i++)
-                                    {
-                                        <span class="badge bg-primary rounded-pill me-1">
-                                            @user.AssignedRoles.ElementAt(i)
-                                        </span>
-                                    }
-                                </div>
-                            </div>
-
-                            <!-- Nút hành động -->
-                            <div class="user-actions d-flex flex-wrap gap-2">
-                                <form method="post" class="d-inline">
-                                    @if (!user.IsLocked)
-                                    {
-                                        <button asp-action="LockUser" asp-route-id="@user.Id" class="btn btn-outline-warning rounded-pill px-3 py-1">
-                                            <i class="bi bi-lock me-1"></i> Khóa
-                                        </button>
-                                    }
-                                    else
-                                    {
-                                        <button asp-action="UnlockUser" asp-route-id="@user.Id" class="btn btn-outline-info rounded-pill px-3 py-1">
-                                            <i class="bi bi-unlock me-1"></i> Mở khóa
-                                        </button>
-                                    }
-                                </form>
-                                <a class="btn btn-outline-primary rounded-pill px-3 py-1" asp-action="AddEditUser" asp-route-id="@user.Id">
-                                    <i class="bi bi-pencil me-1"></i> Sửa
-                                </a>
-                                <button class="btn btn-outline-danger rounded-pill px-3 py-1" onclick="deleteUser('@user.Id', '@user.FullName')">
-                                    <i class="bi bi-trash me-1"></i> Xóa
-                                </button>
+                                }
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Card Body -->
+                    <div class="card-body-section">
+                        <!-- Email -->
+                        <div class="info-row">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="info-icon">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                <polyline points="22,6 12,13 2,6"></polyline>
+                            </svg>
+                            <span>@user.Email</span>
+                        </div>
+
+                        <!-- Join Date -->
+                        <div class="info-row">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="info-icon">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            <span>Tham gia: @user.JoinDate.ToString("dd/MM/yyyy")</span>
+                        </div>
+
+                        <!-- Channel -->
+                        <div class="info-row">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="info-icon">
+                                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
+                                <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
+                            </svg>
+                            <a href="@Url.Action("Channel", "Member", new { id = user.ChannelId })" class="channel-link">
+                                @user.ChannelName
+                            </a>
+                        </div>
+
+                        <!-- Roles -->
+                        <div class="roles-section">
+                            <div class="roles-label">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                    <path d="M2 17l10 5 10-5"></path>
+                                    <path d="M2 12l10 5 10-5"></path>
+                                </svg>
+                                Vai trò:
+                            </div>
+                            <div class="roles-list">
+                                @foreach (var role in user.AssignedRoles)
+                                {
+                                    <span class="role-badge">@role</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Footer - Actions -->
+                    <div class="card-footer-section">
+                        <form method="post" class="d-inline">
+                            @if (!user.IsLocked)
+                            {
+                                <button asp-action="LockUser" asp-route-id="@user.Id" class="action-btn lock-btn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                    </svg>
+                                    Khóa
+                                </button>
+                            }
+                            else
+                            {
+                                <button asp-action="UnlockUser" asp-route-id="@user.Id" class="action-btn unlock-btn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                        <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                                    </svg>
+                                    Mở khóa
+                                </button>
+                            }
+                        </form>
+                        <a class="action-btn edit-btn" asp-action="AddEditUser" asp-route-id="@user.Id">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                            Sửa
+                        </a>
+                        <button class="action-btn delete-btn" onclick="deleteUser('@user.Id', '@user.FullName')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                            Xóa
+                        </button>
                     </div>
                 </div>
             }
@@ -112,125 +210,423 @@
             }
         }
     </script>
-
+}
+@section Css {
     <style>
-        .youtube-admin-container {
-            background-color: #f9f9f9;
-            font-family: 'Roboto', sans-serif;
-            min-height: calc(100vh - 56px);
+        * {
+            box-sizing: border-box;
         }
 
-        .youtube-user-list {
+        .modern-user-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Header Section */
+        .page-header {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @@keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .icon-badge {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2d3748;
+            margin: 0;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: #718096;
+            margin: 4px 0 0 0;
+        }
+
+        .btn-create-user {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+        }
+
+            .btn-create-user:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+                color: #ffffff;
+            }
+
+        /* User Grid */
+        .user-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 24px;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 80px 20px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .empty-icon {
+            display: inline-flex;
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .empty-state h3 {
+            font-size: 24px;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            color: #718096;
+        }
+
+        /* User Card */
+        .user-card {
+            background: #ffffff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
-            gap: 16px;
-        }
-
-        .user-card {
-            background-color: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e0e0e0;
-            padding: 16px;
-            transition: transform 0.2s ease-in-out;
         }
 
             .user-card:hover {
-                transform: translateY(-4px);
+                transform: translateY(-5px);
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
             }
 
-        .user-content {
+        /* Card Header */
+        .card-header-section {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 24px;
             display: flex;
-            flex-direction: column;
+            align-items: center;
             gap: 16px;
+            border-bottom: 1px solid #e2e8f0;
         }
 
-        .user-info {
+        .user-avatar {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
             display: flex;
-            flex-direction: column;
-            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
-        .user-details {
-            flex-grow: 1;
+        .user-header-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .user-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+            margin: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+            .status-badge.active {
+                background: #d4edda;
+                color: #155724;
+            }
+
+            .status-badge.locked {
+                background: #f8d7da;
+                color: #721c24;
+            }
+
+        /* Card Body */
+        .card-body-section {
+            padding: 24px;
+            flex: 1;
+        }
+
+        .info-row {
             display: flex;
             align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            font-size: 14px;
+            color: #4a5568;
         }
 
-        .user-meta {
-            color: #606060;
+        .info-icon {
+            color: #667eea;
+            flex-shrink: 0;
         }
 
-        .user-roles .badge {
-            font-size: 12px;
-            padding: 4px 8px;
+        .channel-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
         }
 
-        .user-actions {
+            .channel-link:hover {
+                color: #764ba2;
+                text-decoration: underline;
+            }
+
+        .roles-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .roles-label {
             display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+            .roles-label svg {
+                color: #667eea;
+            }
+
+        .roles-list {
+            display: flex;
+            flex-wrap: wrap;
             gap: 8px;
         }
 
-        .btn-danger {
-            background-color: #ff0000;
-            border: none;
-            font-weight: 500;
-            font-size: 14px;
+        .role-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+            color: #5a67d8;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
         }
 
-            .btn-danger:hover {
-                background-color: #e60000;
-            }
-
-        .btn-outline-danger {
-            border-color: #ff0000;
-            color: #ff0000;
-            font-weight: 500;
-            font-size: 14px;
+        /* Card Footer */
+        .card-footer-section {
+            padding: 16px 24px;
+            background: #f7fafc;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
-            .btn-outline-danger:hover {
-                background-color: #ff0000;
-                color: #fff;
-            }
-
-        .btn-outline-primary {
-            border-color: #065fd4;
-            color: #065fd4;
-            font-weight: 500;
-            font-size: 14px;
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 10px;
+            border: 2px solid;
+            background: #ffffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
         }
 
-            .btn-outline-primary:hover {
-                background-color: #065fd4;
-                color: #fff;
-            }
-
-        .btn-outline-warning {
-            border-color: #fbbc05;
-            color: #fbbc05;
-            font-weight: 500;
-            font-size: 14px;
+        .lock-btn {
+            border-color: #f59e0b;
+            color: #f59e0b;
         }
 
-            .btn-outline-warning:hover {
-                background-color: #fbbc05;
-                color: #fff;
+            .lock-btn:hover {
+                background: #f59e0b;
+                color: #ffffff;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
             }
 
-        .btn-outline-info {
-            border-color: #34a853;
-            color: #34a853;
-            font-weight: 500;
-            font-size: 14px;
+        .unlock-btn {
+            border-color: #10b981;
+            color: #10b981;
         }
 
-            .btn-outline-info:hover {
-                background-color: #34a853;
-                color: #fff;
+            .unlock-btn:hover {
+                background: #10b981;
+                color: #ffffff;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
             }
+
+        .edit-btn {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+            .edit-btn:hover {
+                background: #667eea;
+                color: #ffffff;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            }
+
+        .delete-btn {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+            .delete-btn:hover {
+                background: #ef4444;
+                color: #ffffff;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .modern-user-container {
+                padding: 20px 10px;
+            }
+
+            .page-header {
+                padding: 20px;
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .page-title {
+                font-size: 22px;
+            }
+
+            .user-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card-footer-section {
+                gap: 6px;
+            }
+
+            .action-btn {
+                flex: 1;
+                justify-content: center;
+                min-width: calc(50% - 3px);
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .icon-badge {
+                width: 50px;
+                height: 50px;
+            }
+
+            .user-avatar {
+                width: 48px;
+                height: 48px;
+            }
+
+            .action-btn {
+                min-width: 100%;
+            }
+        }
     </style>
 }

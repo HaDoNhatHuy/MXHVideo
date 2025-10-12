@@ -1,15 +1,38 @@
-﻿<div class="youtube-admin-container p-4">
-    <!-- Tiêu đề và nút Create -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="section-title fw-bold" style="font-size: 24px;">Danh mục</h2>
-        <button type="button" class="btn btn-danger rounded-pill px-4 py-2 actions" onclick="createNewRecord()">
-            <i class="bi bi-plus-circle me-1"></i> Tạo mới
-        </button>
+﻿@{
+    ViewData["Title"] = "Quản lý danh mục";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="modern-category-container">
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="icon-badge">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="page-title">Quản lý danh mục</h1>
+                    <p class="page-subtitle">Tổ chức và quản lý các danh mục video</p>
+                </div>
+            </div>
+            <button type="button" class="btn-create-category actions" onclick="createNewRecord()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                Tạo mới
+            </button>
+        </div>
     </div>
 
-    <!-- Danh sách danh mục -->
-    <div class="youtube-category-list" id="categoryList">
-        <!-- Danh mục sẽ được hiển thị động bằng JavaScript -->
+    <!-- Category List -->
+    <div class="category-list-wrapper">
+        <div class="category-list" id="categoryList">
+            <!-- Categories will be loaded dynamically -->
+        </div>
     </div>
 </div>
 
@@ -31,7 +54,7 @@
                 },
                 error: function (xhr, status, error) {
                     console.error('Error fetching categories:', error);
-                    $('#categoryList').html('<div class="text-center p-3">Có lỗi xảy ra khi tải danh sách danh mục.</div>');
+                    $('#categoryList').html('<div class="empty-state"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></div><h3>Có lỗi xảy ra</h3><p>Không thể tải danh sách danh mục</p></div>');
                 }
             });
         }
@@ -39,22 +62,39 @@
         function displayCategories() {
             $('#categoryList').empty();
             if (categories.length === 0) {
-                $('#categoryList').html('<div class="text-center p-3">Không có danh mục nào để hiển thị.</div>');
+                $('#categoryList').html('<div class="empty-state"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></div><h3>Chưa có danh mục</h3><p>Hãy tạo danh mục đầu tiên cho hệ thống</p></div>');
                 return;
             }
 
             categories.forEach((value, index) => {
                 const cardHtml = `
                     <div class="category-card" id="cardId_${index}">
-                        <div class="category-content d-flex align-items-center">
-                            <span class="category-index me-3" style="font-size: 16px; color: #606060;">${index + 1}</span>
-                            <div class="category-name flex-grow-1" id="nameId_${index}">${value.name}</div>
+                        <div class="category-content">
+                            <div class="category-number">${index + 1}</div>
+                            <div class="category-info">
+                                <div class="category-name" id="nameId_${index}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="name-icon">
+                                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                    ${value.name}
+                                </div>
+                            </div>
                             <div class="category-actions">
-                                <button class="btn btn-outline-warning rounded-pill px-3 py-1 me-2 actions" onclick="displayTableRow('edit', ${index}, '${value.id}', '${value.name}')">
-                                    <i class="bi bi-pencil me-1"></i> Sửa
+                                <button class="action-btn edit-btn actions" onclick="displayTableRow('edit', ${index}, '${value.id}', '${value.name}')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Sửa
                                 </button>
-                                <button class="btn btn-outline-danger rounded-pill px-3 py-1 actions" onclick="deleteRecord('${value.id}', '${value.name}')">
-                                    <i class="bi bi-trash me-1"></i> Xóa
+                                <button class="action-btn delete-btn actions" onclick="deleteRecord('${value.id}', '${value.name}')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                    </svg>
+                                    Xóa
                                 </button>
                             </div>
                         </div>
@@ -71,33 +111,62 @@
             if (mode === 'display') {
                 $('.actions').prop('disabled', false);
                 innerHtml = `
-                    <div class="category-content d-flex align-items-center">
-                        <span class="category-index me-3" style="font-size: 16px; color: #606060;">${index + 1}</span>
-                        <div class="category-name flex-grow-1" id="nameId_${index}">${name}</div>
+                    <div class="category-content">
+                        <div class="category-number">${index + 1}</div>
+                        <div class="category-info">
+                            <div class="category-name" id="nameId_${index}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="name-icon">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                ${name}
+                            </div>
+                        </div>
                         <div class="category-actions">
-                            <button class="btn btn-outline-warning rounded-pill px-3 py-1 me-2 actions" onclick="displayTableRow('edit', ${index}, '${id}', '${name}')">
-                                <i class="bi bi-pencil me-1"></i> Sửa
+                            <button class="action-btn edit-btn actions" onclick="displayTableRow('edit', ${index}, '${id}', '${name}')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                Sửa
                             </button>
-                            <button class="btn btn-outline-danger rounded-pill px-3 py-1 actions" onclick="deleteRecord('${id}', '${name}')">
-                                <i class="bi bi-trash me-1"></i> Xóa
+                            <button class="action-btn delete-btn actions" onclick="deleteRecord('${id}', '${name}')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                                Xóa
                             </button>
                         </div>
                     </div>`;
             } else {
                 $('.actions').prop('disabled', true);
                 innerHtml = `
-                    <div class="category-content d-flex align-items-center">
-                        <span class="category-index me-3" style="font-size: 16px; color: #606060;">${index + 1}</span>
-                        <div class="category-name flex-grow-1">
-                            <input type="text" class="form-control rounded-pill" id="inputId_${index}" value="${name}" />
-                            <span class="text-danger" id="validateionTextId_${index}" style="font-size: 14px;"></span>
+                    <div class="category-content edit-mode">
+                        <div class="category-number">${index + 1}</div>
+                        <div class="category-info-edit">
+                            <div class="input-wrapper">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                <input type="text" class="edit-input" id="inputId_${index}" value="${name}" placeholder="Nhập tên danh mục" />
+                            </div>
+                            <span class="error-message" id="validateionTextId_${index}"></span>
                         </div>
                         <div class="category-actions">
-                            <button class="btn btn-success rounded-pill px-3 py-1 me-2" onclick="save(${index}, '${id}')">
-                                <i class="bi bi-check-circle me-1"></i> Lưu
+                            <button class="action-btn save-btn" onclick="save(${index}, '${id}')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Lưu
                             </button>
-                            <button class="btn btn-danger rounded-pill px-3 py-1" onclick="displayTableRow('display', ${index}, '${id}', '${name}')">
-                                <i class="bi bi-x-circle me-1"></i> Hủy
+                            <button class="action-btn cancel-btn" onclick="displayTableRow('display', ${index}, '${id}', '${name}')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                                Hủy
                             </button>
                         </div>
                     </div>`;
@@ -110,24 +179,37 @@
             $('.actions').prop('disabled', true);
             const index = categories.length;
             const cardHtml = `
-                <div class="category-card" id="cardId_${index}">
-                    <div class="category-content d-flex align-items-center">
-                        <span class="category-index me-3" style="font-size: 16px; color: #606060;">${index + 1}</span>
-                        <div class="category-name flex-grow-1">
-                            <input type="text" class="form-control rounded-pill" id="inputId_${index}" />
-                            <span class="text-danger" id="validateionTextId_${index}" style="font-size: 14px;"></span>
+                <div class="category-card new-category" id="cardId_${index}">
+                    <div class="category-content edit-mode">
+                        <div class="category-number">${index + 1}</div>
+                        <div class="category-info-edit">
+                            <div class="input-wrapper">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                <input type="text" class="edit-input" id="inputId_${index}" placeholder="Nhập tên danh mục mới" autofocus />
+                            </div>
+                            <span class="error-message" id="validateionTextId_${index}"></span>
                         </div>
                         <div class="category-actions" id="tdActionId_${index}">
-                            <button class="btn btn-success rounded-pill px-3 py-1 me-2" onclick="save(${index})">
-                                <i class="bi bi-check-circle me-1"></i> Lưu
+                            <button class="action-btn save-btn" onclick="save(${index})">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Lưu
                             </button>
-                            <button class="btn btn-danger rounded-pill px-3 py-1" onclick="cancelNewRecord(${index})">
-                                <i class="bi bi-x-circle me-1"></i> Hủy
+                            <button class="action-btn cancel-btn" onclick="cancelNewRecord(${index})">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                                Hủy
                             </button>
                         </div>
                     </div>
                 </div>`;
-            $('#categoryList').append(cardHtml);
+            $('#categoryList').prepend(cardHtml);
+            $(`#inputId_${index}`).focus();
         }
 
         function cancelNewRecord(index) {
@@ -186,99 +268,448 @@
             }
         }
     </script>
-
+}
+@section Css {
     <style>
-        .youtube-admin-container {
-            background-color: #f9f9f9;
-            font-family: 'Roboto', sans-serif;
-            min-height: calc(100vh - 56px);
+        * {
+            box-sizing: border-box;
         }
 
-        .youtube-category-list {
+        .modern-category-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Header Section */
+        .page-header {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @@keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .icon-badge {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2d3748;
+            margin: 0;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: #718096;
+            margin: 4px 0 0 0;
+        }
+
+        .btn-create-category {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+            .btn-create-category:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            }
+
+            .btn-create-category:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+        /* Category List */
+        .category-list-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .category-list {
             display: flex;
             flex-direction: column;
             gap: 16px;
+            animation: fadeIn 0.6s ease-out;
         }
 
-        .category-card {
-            background-color: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e0e0e0;
-            padding: 16px;
-            transition: transform 0.2s ease-in-out;
-        }
-
-            .category-card:hover {
-                transform: translateY(-4px);
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
             }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .empty-icon {
+            display: inline-flex;
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .empty-state h3 {
+            font-size: 24px;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            color: #718096;
+        }
+
+        /* Category Card */
+        .category-card {
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .category-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .category-card.new-category {
+            border: 2px dashed #667eea;
+            animation: pulse 0.5s ease-out;
+        }
+
+        @@keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
+        }
 
         .category-content {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 20px;
+            padding: 20px 24px;
+        }
+
+            .category-content.edit-mode {
+                background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            }
+
+        /* Category Number */
+        .category-number {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        /* Category Info */
+        .category-info {
+            flex: 1;
+            min-width: 0;
         }
 
         .category-name {
+            display: flex;
+            align-items: center;
+            gap: 12px;
             font-size: 16px;
-            color: #030303;
-            flex-grow: 1;
+            font-weight: 600;
+            color: #2d3748;
         }
 
-            .category-name input {
-                font-size: 16px;
-                padding: 8px 16px;
+        .name-icon {
+            color: #667eea;
+            flex-shrink: 0;
+        }
+
+        /* Edit Mode */
+        .category-info-edit {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            color: #667eea;
+            pointer-events: none;
+        }
+
+        .edit-input {
+            width: 100%;
+            padding: 12px 16px 12px 48px;
+            font-size: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: #ffffff;
+            color: #2d3748;
+            transition: all 0.3s ease;
+        }
+
+            .edit-input:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
             }
 
+            .edit-input::placeholder {
+                color: #a0aec0;
+            }
+
+        .error-message {
+            display: block;
+            margin-top: 6px;
+            margin-left: 48px;
+            font-size: 13px;
+            color: #f56565;
+            font-weight: 500;
+        }
+
+        /* Actions */
         .category-actions {
             display: flex;
             gap: 8px;
+            flex-shrink: 0;
         }
 
-        .btn-danger {
-            background-color: #ff0000;
-            border: none;
-            font-weight: 500;
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 18px;
             font-size: 14px;
+            font-weight: 600;
+            border-radius: 10px;
+            border: 2px solid;
+            background: #ffffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
         }
 
-            .btn-danger:hover {
-                background-color: #e60000;
+        .edit-btn {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+            .edit-btn:hover:not(:disabled) {
+                background: #667eea;
+                color: #ffffff;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
             }
 
-        .btn-outline-danger {
-            border-color: #ff0000;
-            color: #ff0000;
-            font-weight: 500;
-            font-size: 14px;
+        .delete-btn {
+            border-color: #ef4444;
+            color: #ef4444;
         }
 
-            .btn-outline-danger:hover {
-                background-color: #ff0000;
-                color: #fff;
+            .delete-btn:hover:not(:disabled) {
+                background: #ef4444;
+                color: #ffffff;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
             }
 
-        .btn-success {
-            background-color: #34a853;
-            border: none;
-            font-weight: 500;
-            font-size: 14px;
+        .save-btn {
+            border-color: #10b981;
+            color: #10b981;
         }
 
-            .btn-success:hover {
-                background-color: #2e9445;
+            .save-btn:hover {
+                background: #10b981;
+                color: #ffffff;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
             }
 
-        .btn-outline-warning {
-            border-color: #fbbc05;
-            color: #fbbc05;
-            font-weight: 500;
-            font-size: 14px;
+        .cancel-btn {
+            border-color: #6b7280;
+            color: #6b7280;
         }
 
-            .btn-outline-warning:hover {
-                background-color: #fbbc05;
-                color: #fff;
+            .cancel-btn:hover {
+                background: #6b7280;
+                color: #ffffff;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
             }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .modern-category-container {
+                padding: 20px 10px;
+            }
+
+            .page-header {
+                padding: 20px;
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .page-title {
+                font-size: 22px;
+            }
+
+            .category-content {
+                flex-wrap: wrap;
+                gap: 16px;
+            }
+
+            .category-number {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            .category-actions {
+                width: 100%;
+                justify-content: stretch;
+            }
+
+            .action-btn {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .icon-badge {
+                width: 50px;
+                height: 50px;
+            }
+
+            .header-left {
+                gap: 15px;
+            }
+
+            .btn-create-category {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .category-content {
+                padding: 16px;
+            }
+
+            .input-icon {
+                left: 12px;
+            }
+
+            .edit-input {
+                padding: 10px 12px 10px 40px;
+            }
+
+            .error-message {
+                margin-left: 40px;
+            }
+        }
     </style>
 }
