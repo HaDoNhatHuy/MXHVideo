@@ -8,10 +8,10 @@
     <!-- Summernote CSS -->
     <link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.css" rel="stylesheet">
     <style>
-        body {
+        /* body {
             font-family: 'Roboto', Arial, sans-serif;
             background-color: #f9f9f9;
-        }
+        } */
 
         .upload-container {
             max-width: 100%;
@@ -220,16 +220,13 @@
         }
 
         @@keyframes spin {
-            0%
+            0% {
+                transform: rotate(0deg);
+            }
 
-        {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         #recognitionLoading {
@@ -285,16 +282,13 @@
             }
 
         @@keyframes shimmer {
-            0%
+            0% {
+                transform: translateX(-100%);
+            }
 
-        {
-            transform: translateX(-100%);
-        }
-
-        100% {
-            transform: translateX(100%);
-        }
-
+            100% {
+                transform: translateX(100%);
+            }
         }
 
         .custom-close-btn {
@@ -351,16 +345,13 @@
         }
 
         @@keyframes spin {
-            0%
+            0% {
+                transform: rotate(0deg);
+            }
 
-        {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         #recognitionLoading p {
@@ -431,6 +422,531 @@
                 background-color: #cccccc;
                 cursor: not-allowed;
             }
+        /* ===== MODERN UPLOAD PROGRESS DESIGN ===== */
+        #progressContainer {
+            margin-top: 20px;
+            padding: 30px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+            border-radius: 16px;
+            border: 2px solid #e8eaf6;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.12);
+            display: none;
+        }
+
+        .custom-progress-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .custom-progress {
+            flex: 1;
+            height: 16px;
+            background: #f0f0f5;
+            border-radius: 12px;
+            overflow: visible;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        .custom-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+
+            /* Shimmer effect */
+            .custom-progress-bar.animating::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient( 90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0) 100% );
+                animation: shimmerMove 1.5s infinite;
+            }
+
+        @@keyframes shimmerMove {
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 200%;
+            }
+        }
+
+        .custom-close-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+            flex-shrink: 0;
+        }
+
+            .custom-close-btn:hover {
+                transform: scale(1.1) rotate(90deg);
+                box-shadow: 0 4px 12px rgba(255, 107, 107, 0.5);
+                color: white;
+                text-decoration: none;
+            }
+
+        #progressText {
+            display: block;
+            font-size: 14px;
+            color: #4a5568;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 8px;
+        }
+
+            #progressText .progress-icon {
+                display: inline-block;
+                margin-right: 8px;
+                animation: bounce 1.5s infinite;
+            }
+
+        @@keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-4px);
+            }
+        }
+
+        /* Upload Message */
+        #uploadMessage {
+            font-size: 14px;
+            color: #764ba2;
+            margin-top: 20px;
+            display: none;
+            padding: 14px 18px;
+            background: linear-gradient(135deg, #fff9e6 0%, #fff5f7 100%);
+            border-left: 4px solid #ffd700;
+            border-radius: 10px;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.15);
+            animation: pulseGlow 2s infinite;
+        }
+
+        @@keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 2px 8px rgba(255, 215, 0, 0.15);
+            }
+
+            50% {
+                box-shadow: 0 2px 12px rgba(255, 215, 0, 0.3);
+            }
+        }
+
+        /* ===== FACE RECOGNITION LOADING ===== */
+        #recognitionLoading {
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+            padding: 50px 30px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+            border-radius: 16px;
+            border: 2px solid #e8eaf6;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.12);
+            position: relative;
+            overflow: hidden;
+        }
+
+            /* Animated background */
+            #recognitionLoading::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(circle, rgba(102, 126, 234, 0.05) 0%, transparent 70%);
+                animation: rotateBackground 15s linear infinite;
+            }
+
+        @@keyframes rotateBackground {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Face Recognition Container */
+        .face-recognition-container {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 30px;
+            z-index: 1;
+        }
+
+        /* Main face icon */
+        .face-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+            animation: facePulse 2s infinite;
+        }
+
+            .face-icon svg {
+                width: 50px;
+                height: 50px;
+                fill: white;
+            }
+
+        @@keyframes facePulse {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+        }
+
+        /* Rotating rings */
+        .scan-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 3px solid transparent;
+        }
+
+        .scan-ring-1 {
+            width: 100%;
+            height: 100%;
+            border-top-color: #667eea;
+            border-right-color: #667eea;
+            animation: rotateScan 2s linear infinite;
+        }
+
+        .scan-ring-2 {
+            width: 85%;
+            height: 85%;
+            border-bottom-color: #764ba2;
+            border-left-color: #764ba2;
+            animation: rotateScan 1.5s linear infinite reverse;
+        }
+
+        .scan-ring-3 {
+            width: 115%;
+            height: 115%;
+            border-top-color: #f093fb;
+            border-right-color: #f093fb;
+            opacity: 0.5;
+            animation: rotateScan 2.5s linear infinite;
+        }
+
+        @@keyframes rotateScan {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        /* Pulse waves */
+        .pulse-wave {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border: 2px solid #667eea;
+            border-radius: 50%;
+            opacity: 0;
+            animation: pulseWave 2s infinite;
+        }
+
+            .pulse-wave:nth-child(2) {
+                animation-delay: 0.5s;
+            }
+
+            .pulse-wave:nth-child(3) {
+                animation-delay: 1s;
+            }
+
+        @@keyframes pulseWave {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(1.8);
+                opacity: 0;
+            }
+        }
+
+        /* Corner brackets */
+        .corner-bracket {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #667eea;
+            animation: cornerBlink 1.5s infinite;
+        }
+
+            .corner-bracket.top-left {
+                top: 0;
+                left: 0;
+                border-right: none;
+                border-bottom: none;
+                border-radius: 8px 0 0 0;
+            }
+
+            .corner-bracket.top-right {
+                top: 0;
+                right: 0;
+                border-left: none;
+                border-bottom: none;
+                border-radius: 0 8px 0 0;
+            }
+
+            .corner-bracket.bottom-left {
+                bottom: 0;
+                left: 0;
+                border-right: none;
+                border-top: none;
+                border-radius: 0 0 0 8px;
+            }
+
+            .corner-bracket.bottom-right {
+                bottom: 0;
+                right: 0;
+                border-left: none;
+                border-top: none;
+                border-radius: 0 0 8px 0;
+            }
+
+        @@keyframes cornerBlink {
+            0%, 100% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* Text */
+        #recognitionLoading p {
+            margin: 0;
+            font-size: 16px;
+            color: #4a5568;
+            font-weight: 600;
+            z-index: 1;
+            position: relative;
+            animation: textFade 2s infinite;
+        }
+
+        @@keyframes textFade {
+            0%, 100% {
+                opacity: 0.7;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .loading-dots {
+            display: inline-block;
+        }
+
+            .loading-dots::after {
+                content: '';
+                animation: dots 1.5s steps(4, end) infinite;
+            }
+
+        @@keyframes dots {
+            0%, 20% {
+                content: '';
+            }
+
+            40% {
+                content: '.';
+            }
+
+            60% {
+                content: '..';
+            }
+
+            80%, 100% {
+                content: '...';
+            }
+        }
+
+        /* ===== RESULT CONTAINER ===== */
+        #resultContainer {
+            margin-top: 20px;
+            animation: slideDown 0.5s ease;
+        }
+
+        @@keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #resultContainer p {
+            padding: 16px 20px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        #resultContainer .text-danger {
+            color: #dc3545;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+            border-left: 4px solid #dc3545;
+        }
+
+        #resultContainer .text-warning {
+            color: #ffa500;
+            background: linear-gradient(135deg, #fff9e6 0%, #ffedd5 100%);
+            border-left: 4px solid #ffa500;
+        }
+
+        #resultContainer .text-success {
+            color: #10b981;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-left: 4px solid #10b981;
+        }
+
+        #resultContainer i {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .fas.fa-exclamation-circle {
+            animation: shake 0.5s;
+        }
+
+        .fas.fa-times-circle {
+            animation: shake 0.5s;
+        }
+
+        .fas.fa-check-circle {
+            animation: bounceIn 0.6s;
+        }
+
+        @@keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-3px);
+            }
+
+            75% {
+                transform: translateX(3px);
+            }
+        }
+
+        @@keyframes bounceIn {
+            0% {
+                transform: scale(0);
+            }
+
+            50% {
+                transform: scale(1.15);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @@media (max-width: 768px) {
+            #progressContainer, #recognitionLoading {
+                padding: 24px 16px;
+                margin-top: 16px;
+            }
+
+            .face-recognition-container {
+                width: 100px;
+                height: 100px;
+            }
+
+            .face-icon {
+                width: 60px;
+                height: 60px;
+            }
+
+                .face-icon svg {
+                    width: 36px;
+                    height: 36px;
+                }
+
+            .corner-bracket {
+                width: 20px;
+                height: 20px;
+                border-width: 2px;
+            }
+
+            #recognitionLoading p {
+                font-size: 14px;
+            }
+
+            .custom-close-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 16px;
+            }
+
+            .custom-progress {
+                height: 12px;
+            }
+        }
     </style>
 }
 <div class="row">
@@ -445,7 +961,7 @@
     <div class="col-lg-10">
         <div class="osahan-title">@(Model.Id != Guid.Empty ? "Edit Video" : "Upload Video")</div>
 
-        <!-- Progress Bar -->
+        <!-- Progress Bar Section -->
         <div id="progressContainer">
             <div class="custom-progress-wrapper">
                 <div class="custom-progress">
@@ -453,18 +969,48 @@
                 </div>
                 <a href="#" id="cancelUpload" class="custom-close-btn">✕</a>
             </div>
-            <span id="progressText">0% (0 KB / 0 KB)</span>
+            <span id="progressText">
+                <span class="progress-icon">📤</span>
+                <span id="progressPercentage">0%</span>
+                (<span id="progressLoaded">0 KB</span> / <span id="progressTotal">0 KB</span>)
+            </span>
         </div>
 
         <!-- Upload Message -->
         <div id="uploadMessage">
-            ⚠️ Your video is still uploading, please keep this page open until it's done.
+            ⚠️ Your video is uploading, please keep this page open until it's done.
         </div>
 
-        <!-- Recognition Loading -->
+        <!-- Face Recognition Loading -->
         <div id="recognitionLoading">
-            <div class="custom-spinner"></div>
-            <p><i class="fas fa-user-check"></i> Đang nhận diện khuôn mặt, vui lòng chờ...</p>
+            <div class="face-recognition-container">
+                <!-- Pulse waves -->
+                <div class="pulse-wave"></div>
+                <div class="pulse-wave"></div>
+                <div class="pulse-wave"></div>
+
+                <!-- Rotating scan rings -->
+                <div class="scan-ring scan-ring-1"></div>
+                <div class="scan-ring scan-ring-2"></div>
+                <div class="scan-ring scan-ring-3"></div>
+
+                <!-- Corner brackets -->
+                <div class="corner-bracket top-left"></div>
+                <div class="corner-bracket top-right"></div>
+                <div class="corner-bracket bottom-left"></div>
+                <div class="corner-bracket bottom-right"></div>
+
+                <!-- Center face icon -->
+                <div class="face-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                    </svg>
+                </div>
+            </div>
+
+            <p>
+                🔍 Đang nhận diện khuôn mặt<span class="loading-dots"></span>
+            </p>
         </div>
 
         <!-- Result Container -->
@@ -698,7 +1244,7 @@
 
         let xhr;
 
-        $('#videoAddEditForm').on('submit', function (e) {
+                $('#videoAddEditForm').on('submit', function (e) {
             e.preventDefault();
             console.log('=== FORM SUBMITTED ===');
 
@@ -710,106 +1256,80 @@
             const resultContainer = $('#resultContainer');
             const uploadMessage = $('#uploadMessage');
 
-            console.log('Elements found:');
-            console.log('- progressContainer:', progressContainer.length);
-            console.log('- progressBar:', progressBar.length);
-            console.log('- progressText:', progressText.length);
-            console.log('- recognitionLoading:', recognitionLoading.length);
-            console.log('- uploadMessage:', uploadMessage.length);
-
-            // Reset tất cả về trạng thái ban đầu
+            // Reset tất cả
             resultContainer.empty();
-
-            // ẨN tất cả trước
             recognitionLoading.hide();
             progressContainer.hide();
             uploadMessage.hide();
 
-            // Set lại progress về 0
-            progressBar.css('width', '0%').attr('aria-valuenow', 0);
-            progressBar.removeClass('progress-bar-striped progress-bar-animated');
-            progressText.text('0% (0 KB / 0 KB)');
+            // Reset progress
+            progressBar.css('width', '0%').removeClass('animating');
+            $('#progressPercentage').text('0%');
+            $('#progressLoaded').text('0 KB');
+            $('#progressTotal').text('0 KB');
 
-            console.log('Reset complete');
-
-            // HIỂN THỊ progress container - thử nhiều cách
-            console.log('Attempting to show progress...');
-
-            // Cách 1: show()
+            // HIỂN THỊ progress container
             progressContainer.show();
             uploadMessage.show();
-
-            // Cách 2: css display
-            progressContainer.css('display', 'block');
-            uploadMessage.css('display', 'block');
-
-            // Cách 3: removeClass nếu có class ẩn
-            progressContainer.removeClass('d-none');
-            uploadMessage.removeClass('d-none');
-
-            // Cách 4: attr style
-            progressContainer.attr('style', 'display: block !important;');
-            uploadMessage.attr('style', 'display: block !important;');
-
-            console.log('After show attempts:');
-            console.log('- progressContainer display:', progressContainer.css('display'));
-            console.log('- progressContainer visible:', progressContainer.is(':visible'));
-            console.log('- uploadMessage display:', uploadMessage.css('display'));
-            console.log('- uploadMessage visible:', uploadMessage.is(':visible'));
 
             // Vô hiệu hóa nút Save
             $('.btn-save').prop('disabled', true).text('Uploading...');
 
             xhr = new XMLHttpRequest();
             xhr.open('POST', '/Video/CreateEditVideo', true);
-            console.log('XHR initialized');
 
-                    xhr.upload.onprogress = function (event) {
-            if (event.lengthComputable) {
-                const percentComplete = Math.round((event.loaded / event.total) * 100);
+            // Theo dõi tiến trình upload
+            xhr.upload.onprogress = function (event) {
+                if (event.lengthComputable) {
+                    const percentComplete = Math.round((event.loaded / event.total) * 100);
 
-                // Thêm class animating
-                if (!progressBar.hasClass('animating')) {
-                    progressBar.addClass('animating');
+                    // Thêm class animating để có hiệu ứng shimmer
+                    if (!progressBar.hasClass('animating')) {
+                        progressBar.addClass('animating');
+                    }
+
+                    // Cập nhật progress bar
+                    progressBar.css('width', percentComplete + '%');
+                    $('#progressPercentage').text(percentComplete + '%');
+                    $('#progressLoaded').text(formatBytes(event.loaded));
+                    $('#progressTotal').text(formatBytes(event.total));
+
+                    console.log(`Upload progress: ${percentComplete}% (${formatBytes(event.loaded)} / ${formatBytes(event.total)})`);
                 }
+            };
 
-                progressBar.css('width', percentComplete + '%');
-                progressText.text(`${percentComplete}% (${formatBytes(event.loaded)} / ${formatBytes(event.total)})`);
-            }
-        };
+            // Khi upload xong, bắt đầu nhận diện khuôn mặt
+            xhr.upload.onloadend = function () {
+                console.log('Upload complete, starting face recognition...');
 
-        xhr.upload.onloadend = function () {
-            // Xóa animation
-            progressBar.removeClass('animating');
+                // Xóa animation shimmer
+                progressBar.removeClass('animating');
 
-            progressContainer.hide();
-            uploadMessage.hide();
-            recognitionLoading.show();
-            $('.btn-save').text('Processing...');
-        };
+                // Ẩn progress, hiện face recognition
+                progressContainer.hide();
+                uploadMessage.hide();
+                recognitionLoading.show();
+                $('.btn-save').text('Processing...');
+            };
 
             // Xử lý phản hồi từ server
             xhr.onload = function () {
                 console.log('=== XHR COMPLETE ===');
                 console.log('Status:', xhr.status);
-                console.log('Response:', xhr.responseText.substring(0, 200));
 
                 recognitionLoading.hide();
 
                 if (xhr.status === 200) {
                     try {
                         const contentType = xhr.getResponseHeader('Content-Type');
-                        console.log('Content-Type:', contentType);
 
                         if (contentType && contentType.includes('application/json')) {
                             const response = JSON.parse(xhr.responseText);
                             if (response.redirectUrl) {
-                                console.log('Redirecting to:', response.redirectUrl);
                                 window.location.href = response.redirectUrl;
                                 return;
                             }
                         }
-                        console.log('Redirecting to default: /Channel/Index');
                         window.location.href = '/Channel/Index';
                     } catch (e) {
                         console.error('Parse error:', e);
@@ -817,11 +1337,14 @@
                     }
                 } else if (xhr.status === 302) {
                     const redirectUrl = xhr.getResponseHeader('Location') || '/Channel/Index';
-                    console.log('302 Redirect to:', redirectUrl);
                     window.location.href = redirectUrl;
                 } else {
-                    console.error('Error status:', xhr.status);
-                    resultContainer.html(`<p class="text-danger"><i class="fas fa-exclamation-circle"></i> Lỗi upload: ${xhr.statusText} (Mã: ${xhr.status})</p>`);
+                    resultContainer.html(`
+                        <p class="text-danger">
+                            <i class="fas fa-exclamation-circle"></i>
+                            Lỗi upload: ${xhr.statusText} (Mã: ${xhr.status})
+                        </p>
+                    `);
                     $('.btn-save').prop('disabled', false).text('Save');
                 }
             };
@@ -831,13 +1354,48 @@
                 progressContainer.hide();
                 uploadMessage.hide();
                 recognitionLoading.hide();
-                resultContainer.html('<p class="text-danger"><i class="fas fa-exclamation-circle"></i> Có lỗi kết nối mạng.</p>');
+                resultContainer.html(`
+                    <p class="text-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Có lỗi kết nối mạng.
+                    </p>
+                `);
                 $('.btn-save').prop('disabled', false).text('Save');
             };
 
             console.log('Sending XHR request...');
             xhr.send(formData);
         });
+
+        // Hủy upload
+        $('#cancelUpload').on('click', function (e) {
+            e.preventDefault();
+            console.log('Upload cancelled by user');
+
+            if (xhr) {
+                xhr.abort();
+            }
+
+            $('#progressContainer').hide();
+            $('#uploadMessage').hide();
+            $('#recognitionLoading').hide();
+            $('#resultContainer').html(`
+                <p class="text-warning">
+                    <i class="fas fa-times-circle"></i>
+                    Upload đã bị hủy.
+                </p>
+            `);
+            $('.btn-save').prop('disabled', false).text('Save');
+        });
+
+        // Format bytes helper function
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 KB';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
 
         // Hủy upload
         $('#cancelUpload').on('click', function (e) {

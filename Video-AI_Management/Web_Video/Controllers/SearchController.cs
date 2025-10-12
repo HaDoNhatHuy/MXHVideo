@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Web_Video.Controllers
 {
-    public class SearchController : Controller
+    public class SearchController : CoreController
     {
         private readonly DataContext _context;
 
@@ -17,23 +17,43 @@ namespace Web_Video.Controllers
             _context = context;
         }
 
+        // ViewModel để chứa kết quả tìm kiếm
+        public class SearchViewModel
+        {
+            public List<Video> Videos { get; set; } = new List<Video>();
+            public List<Channel> Channels { get; set; } = new List<Channel>();
+        }
+
         // Xử lý yêu cầu GET: /Search?query=...
         public async Task<IActionResult> Index(string query)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
                 ViewData["Query"] = "";
-                return View(new List<Video>());
+                return View(new SearchViewModel());
             }
 
+            // Tìm kiếm video
             var videos = await _context.Videos
-                .Include(v => v.Category) // Bao gồm Category để hiển thị tên danh mục
-                .Include(v => v.Channel)  // Bao gồm Channel để hiển thị thông tin kênh
-                .Where(v => v.Title != null && v.Title.ToLower().Contains(query.ToLower()))
+                .Include(v => v.Category)
+                .Include(v => v.Channel)
+                .Where(v => (v.Title != null && v.Title.ToLower().Contains(query.ToLower())) ||
+                            (v.Channel != null && v.Channel.ChannelName != null && v.Channel.ChannelName.ToLower().Contains(query.ToLower())))
                 .ToListAsync();
 
+            // Tìm kiếm kênh
+            var channels = await _context.Channels
+                .Where(c => c.ChannelName != null && c.ChannelName.ToLower().Contains(query.ToLower()))
+                .ToListAsync();
+
+            var viewModel = new SearchViewModel
+            {
+                Videos = videos,
+                Channels = channels
+            };
+
             ViewData["Query"] = query;
-            return View(videos);
+            return View(viewModel);
         }
     }
 }

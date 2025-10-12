@@ -23,12 +23,28 @@ namespace Web_Video.Controllers
         {
             if (string.IsNullOrWhiteSpace(q)) return Ok(new List<string>());
 
-            var results = await _context.Videos
+            // Lấy tiêu đề video
+            var videoTitles = await _context.Videos
                 .Where(v => v.Title != null && v.Title.ToLower().Contains(q.ToLower()))
                 .Select(v => v.Title)
                 .Distinct()
                 .Take(10)
                 .ToListAsync();
+
+            // Lấy tên kênh
+            var channelNames = await _context.Channels
+                .Where(c => c.ChannelName != null && c.ChannelName.ToLower().Contains(q.ToLower()))
+                .Select(c => c.ChannelName)
+                .Distinct()
+                .Take(10)
+                .ToListAsync();
+
+            // Kết hợp và giới hạn 10 kết quả
+            var results = videoTitles
+                .Union(channelNames)
+                .Distinct()
+                .Take(10)
+                .ToList();
 
             return Ok(results);
         }
