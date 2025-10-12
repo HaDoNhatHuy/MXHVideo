@@ -143,9 +143,9 @@
         </button> &nbsp;&nbsp;
         <a class="navbar-brand mr-1" asp-controller="Home" asp-action="Index"><img class="img-fluid" alt="" src="/img/logo.png"></a>
         <!-- Navbar Search -->
-        <form class="d-none d-md-inline-block form-inline ml-auto mr-0 mr-md-5 my-2 my-md-0 osahan-navbar-search" id="searchForm" asp-controller="Search" asp-action="Index" method="get">
+        <form class="d-none d-md-inline-block form-inline ml-auto mr-0 mr-md-5 my-2 my-md-0 osahan-navbar-search" id="searchForm" method="get" asp-controller="Search" asp-action="Index">
             <div class="input-group">
-                <input type="text" class="form-control" id="searchInput" name="query" placeholder="Search for...">
+                <input type="text" class="form-control" id="searchInput" name="query" placeholder="Tìm kiếm...">
                 <div class="input-group-append">
                     <button class="btn btn-light" type="button" id="searchBtn">
                         <i class="fas fa-search"></i>
@@ -153,9 +153,18 @@
                     <button type="button" class="btn btn-light" id="voiceSearchBtn">
                         <i class="fas fa-microphone"></i>
                     </button>
+                    <!-- Nút tìm kiếm bằng hình ảnh -->
+                    <label for="imageUpload" class="btn btn-light mb-0" style="cursor: pointer;">
+                        <i class="fas fa-image"></i>
+                    </label>
+                    <input type="file" id="imageUpload" accept="image/*" style="display: none;">
                 </div>
                 <div id="searchSuggestions"></div>
             </div>
+        </form>
+        <!-- Form riêng cho tìm kiếm bằng hình ảnh -->
+        <form id="imageSearchForm" method="post" asp-controller="Search" asp-action="SearchByImage" enctype="multipart/form-data" style="display: none;">
+            <input type="file" name="image" id="hiddenImageInput">
         </form>
         <!-- Navbar -->
         <ul class="navbar-nav ml-auto ml-md-0 osahan-right-navbar">
@@ -578,6 +587,16 @@
                 if (event.key === 'Enter' || event.keyCode === 13) {
                     getMyVideos();
                 }
+            });
+
+            // Xử lý tìm kiếm bằng hình ảnh
+            $('#imageUpload').on('change', function(e) {
+                // Copy file từ input chính sang input trong form ẩn
+                var fileInput = document.getElementById('hiddenImageInput');
+                fileInput.files = e.target.files;
+
+                // Submit form để render view
+                document.getElementById('imageSearchForm').submit();
             });
 
             // Debug click trên "Logout"
