@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="/vendor/owl-carousel/owl.theme.css">
     @await RenderSectionAsync("Css", false)
     <style>
+        /* Các style hiện có từ _Layout.cshtml */
         #sidebarOverlay {
             display: none;
             position: fixed;
@@ -93,16 +94,14 @@
                 margin-right: 8px;
             }
 
-        /* Đảm bảo modal hiển thị đúng */
         .modal {
             z-index: 1050;
         }
 
         .modal-backdrop {
-            z-index: 1040;
+            z-index: -1;
         }
 
-        /* Style cho danh sách kênh trong sidebar */
         .channel-sidebar-list ul li a {
             display: flex;
             align-items: center;
@@ -116,7 +115,6 @@
                 margin-right: 8px;
             }
 
-        /* Style cho nút Xem thêm */
         .load-more-btn {
             display: flex;
             justify-content: center;
@@ -132,6 +130,239 @@
             .load-more-btn i {
                 margin-right: 8px;
             }
+
+        /* Style mới cho modal chọn ảnh - ĐÃ SỬA */
+        #imageSearchModal .modal-dialog {
+            max-width: 500px;
+            margin: 1.75rem auto;
+        }
+
+        #imageSearchModal .modal-content {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
+            border: none;
+            overflow: hidden;
+        }
+
+        #imageSearchModal .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-bottom: none;
+            padding: 20px 24px;
+        }
+
+        #imageSearchModal .modal-title {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 20px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #imageSearchModal .close {
+            color: #ffffff;
+            opacity: 0.9;
+            text-shadow: none;
+            font-size: 28px;
+            font-weight: 300;
+        }
+
+            #imageSearchModal .close:hover {
+                opacity: 1;
+            }
+
+        #imageSearchModal .modal-body {
+            padding: 30px 24px;
+        }
+
+        .dropzone {
+            border: 3px dashed #d0d7de;
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #f8f9ff 0%, #fff5f7 100%);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+            .dropzone.dragover {
+                border-color: #667eea;
+                background: linear-gradient(135deg, #e8eaf6 0%, #f3e5f5 100%);
+                box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
+                transform: scale(1.02);
+            }
+
+        .dropzone-icon {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 16px;
+        }
+
+        .dropzone-text {
+            font-size: 16px;
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .dropzone-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+            .dropzone-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            }
+
+            .dropzone-btn:active {
+                transform: translateY(0);
+            }
+
+        .preview-container {
+            margin-top: 20px;
+            max-height: 250px;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: none;
+            position: relative;
+        }
+
+            .preview-container.show {
+                display: block;
+            }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 250px;
+            object-fit: contain;
+            border-radius: 12px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .remove-image-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+            .remove-image-btn:hover {
+                background: #ff4444;
+                color: #ffffff;
+                transform: scale(1.1);
+            }
+
+        #submitImageBtn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+
+            #submitImageBtn:hover:not(:disabled) {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+            }
+
+            #submitImageBtn:disabled {
+                background: linear-gradient(135deg, #cbd5e0 0%, #a0aec0 100%);
+                cursor: not-allowed;
+                opacity: 0.6;
+            }
+
+        /* Loading indicator - ĐÃ SỬA ĐỂ CĂNG GIỮA */
+        #loadingIndicator {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+            #loadingIndicator.show {
+                display: flex;
+            }
+
+            #loadingIndicator .spinner-container {
+                background: #ffffff;
+                padding: 40px 50px;
+                border-radius: 20px;
+                text-align: center;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+                animation: fadeInScale 0.3s ease;
+            }
+
+        @@keyframes fadeInScale {
+            from
+
+        {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        }
+
+        #loadingIndicator .spinner-icon {
+            font-size: 48px;
+            color: #667eea;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            from
+
+        {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+
+        }
+
+        #loadingIndicator p {
+            color: #2d3748;
+            margin-top: 20px;
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body id="page-top" data-page="@ViewData["CurrentPage"]">
@@ -153,11 +384,10 @@
                     <button type="button" class="btn btn-light" id="voiceSearchBtn">
                         <i class="fas fa-microphone"></i>
                     </button>
-                    <!-- Nút tìm kiếm bằng hình ảnh -->
-                    <label for="imageUpload" class="btn btn-light mb-0" style="cursor: pointer;">
+                    <!-- Nút mở modal tìm kiếm bằng hình ảnh -->
+                    <button type="button" class="btn btn-light" data-toggle="modal" data-target="#imageSearchModal">
                         <i class="fas fa-image"></i>
-                    </label>
-                    <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                    </button>
                 </div>
                 <div id="searchSuggestions"></div>
             </div>
@@ -166,6 +396,38 @@
         <form id="imageSearchForm" method="post" asp-controller="Search" asp-action="SearchByImage" enctype="multipart/form-data" style="display: none;">
             <input type="file" name="image" id="hiddenImageInput">
         </form>
+        <!-- Modal chọn/kéo thả ảnh -->
+        <div class="modal fade" id="imageSearchModal" tabindex="-1" role="dialog" aria-labelledby="imageSearchModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="imageSearchModalLabel">Tìm kiếm bằng hình ảnh</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="dropzone" id="dropzone">
+                            <p class="dropzone-text">Kéo và thả ảnh vào đây hoặc nhấp để chọn ảnh</p>
+                            <button type="button" class="dropzone-btn" id="selectImageBtn">Chọn ảnh</button>
+                            <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                            <div class="preview-container" id="previewContainer">
+                                <img id="previewImage" class="preview-image" src="" alt="Ảnh xem trước">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary mt-3" id="submitImageBtn" disabled>Tìm kiếm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Loading indicator -->
+        <div id="loadingIndicator" style="display: none;">
+            <!-- Thêm style inline để đảm bảo ẩn -->
+            <div class="spinner-container">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Đang xử lý hình ảnh...</p>
+            </div>
+        </div>
         <!-- Navbar -->
         <ul class="navbar-nav ml-auto ml-md-0 osahan-right-navbar">
             <li class="nav-item mx-1">
@@ -357,6 +619,8 @@
     <script src="/js_new/custom.js" asp-append-version="true"></script>
     <script>
         $(document).ready(function () {
+            console.log('Document ready, loadingIndicator display:', $('#loadingIndicator').css('display')); // Debug trạng thái ban đầu
+
             const sidebar = $('#sidebarMenu');
             const content = $('.youtube-content');
             const toggleBtn = $('#toggleSidebarBtn');
@@ -590,13 +854,87 @@
             });
 
             // Xử lý tìm kiếm bằng hình ảnh
-            $('#imageUpload').on('change', function(e) {
-                // Copy file từ input chính sang input trong form ẩn
-                var fileInput = document.getElementById('hiddenImageInput');
-                fileInput.files = e.target.files;
+            const imageUpload = $('#imageUpload');
+            const selectImageBtn = $('#selectImageBtn');
+            const submitImageBtn = $('#submitImageBtn');
+            const dropzone = $('#dropzone');
+            const previewContainer = $('#previewContainer');
+            const previewImage = $('#previewImage');
 
-                // Submit form để render view
+            // Mở trình chọn file khi nhấp vào nút "Chọn ảnh"
+            selectImageBtn.on('click', function () {
+                console.log('Select image button clicked');
+                imageUpload.click();
+            });
+
+            // Xử lý khi chọn file
+            imageUpload.on('change', function (e) {
+                console.log('Image selected via input');
+                handleImageSelect(e.target.files);
+            });
+
+            // Xử lý kéo thả
+            dropzone.on('dragover', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.addClass('dragover');
+                console.log('Dragover on dropzone');
+            });
+
+            dropzone.on('dragleave', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.removeClass('dragover');
+                console.log('Dragleave on dropzone');
+            });
+
+            dropzone.on('drop', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.removeClass('dragover');
+                const files = e.originalEvent.dataTransfer.files;
+                console.log('Image dropped:', files);
+                handleImageSelect(files);
+            });
+
+            // Hàm xử lý file ảnh
+            function handleImageSelect(files) {
+                if (files && files.length > 0) {
+                    const file = files[0];
+                    if (!file.type.startsWith('image/')) {
+                        alert('Vui lòng chọn một file ảnh (jpg, jpeg, png).');
+                        return;
+                    }
+                    // Hiển thị ảnh xem trước
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        previewImage.attr('src', e.target.result);
+                        previewContainer.show();
+                        submitImageBtn.prop('disabled', false);
+                        console.log('Image preview loaded');
+                    };
+                    reader.readAsDataURL(file);
+                    // Copy file sang input ẩn
+                    document.getElementById('hiddenImageInput').files = files;
+                }
+            }
+
+            // Submit form khi nhấn nút tìm kiếm
+            submitImageBtn.on('click', function () {
+                if (!document.getElementById('hiddenImageInput').files.length) {
+                    alert('Vui lòng chọn một ảnh trước khi tìm kiếm.');
+                    return;
+                }
+                console.log('Submit image search');
+                $('#loadingIndicator').show();
+                $('#imageSearchModal').modal('hide');
                 document.getElementById('imageSearchForm').submit();
+            });
+
+            // Ngăn submit form ngoài ý muốn và debug
+            $('#imageSearchForm').on('submit', function (e) {
+                console.log('imageSearchForm submitting');
+                $('#loadingIndicator').show(); // Đảm bảo chỉ hiển thị khi submit
             });
 
             // Debug click trên "Logout"
