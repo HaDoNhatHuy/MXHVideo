@@ -28,34 +28,7 @@ namespace DataAccess.Repo
             {
                 BaseAddress = new Uri("https://api.ip2location.io")
             };
-        }
-        //public async Task HandleVideoViewAsync(string userId, Guid videoId, string ipAddress)
-        //{
-        //    var fetchedVideoView = await _context.VideoViews
-        //        .Where(x => x.AppUserId == userId && x.VideoId == videoId)
-        //        .OrderByDescending(x => x.LastVisit)
-        //        .FirstOrDefaultAsync();
-        //    if (fetchedVideoView == null)
-        //    {
-        //        await AddVideoViewAsync(userId, videoId, ipAddress);
-        //    }
-        //    else
-        //    {
-        //        DateTime now = DateTime.UtcNow;
-        //        DateTime oneHourAfterLastVisit = fetchedVideoView.LastVisit.AddHours(1);
-        //        if (now > oneHourAfterLastVisit && now.Date == fetchedVideoView.LastVisit.Date)
-        //        {
-        //            // Last visit was more than one hour ago and still in the same day (today)
-        //            fetchedVideoView.LastVisit = DateTime.UtcNow;
-        //            fetchedVideoView.NumberOfVisit++;
-        //        }
-        //        if (fetchedVideoView.LastVisit.Date < now.Date)
-        //        {
-        //            // Last visit was yesterday or more than one day ago
-        //            await AddVideoViewAsync(userId, videoId, ipAddress);
-        //        }
-        //    }
-        //}
+        }        
         public async Task HandleVideoViewAsync(string userId, Guid videoId, string ipAddress)
         {
             // Lấy tất cả VideoView của user với video này
@@ -92,22 +65,6 @@ namespace DataAccess.Repo
         }
 
         #region Private Methods
-        //private async Task AddVideoViewAsync(string userId, Guid videoId, string ipAddress)
-        //{
-        //    var ip2LocationResult = await GetIP2LocationResultAsync(ipAddress);
-        //    var videoViewToAdd = new VideoView
-        //    {
-        //        Id = Guid.NewGuid(),
-        //        AppUserId = userId,
-        //        VideoId = videoId,
-        //        IpAddress = ipAddress,
-        //        Country = ip2LocationResult.Country_Name,
-        //        City = ip2LocationResult.City_Name,
-        //        PostalCode = ip2LocationResult.Zip_Code,
-        //        Is_Proxy = ip2LocationResult.Is_Proxy
-        //    };
-        //    Add(videoViewToAdd);
-        //}
         private async Task AddVideoViewAsync(string userId, Guid videoId, string ipAddress)
         {
             var ip2LocationResult = await GetIP2LocationResultAsync(ipAddress);

@@ -10,16 +10,14 @@
         <!-- Phần video chính -->
         <div class="col-md-8">
             <div class="single-video-left">
-                <!-- Video Player (sử dụng Plyr.js) -->
+                <!-- Video Player (sử dụng Video.js) -->
                 <div class="single-video">
-                    <video id="player" playsinline controls data-poster="@Model.Thumbnail">
-                        <source src="/Video/GetVideoFile?videoId=@Model.Id" type="@Model.VideoContentType" />
-                        <!-- Phụ đề (nếu có, thêm field SubtitleVttUrl vào Model nếu cần) -->
-                        @*  @if (!string.IsNullOrEmpty(Model.SubtitleVttUrl))
-                        {
-                            <track kind="subtitles" src="@Model.SubtitleVttUrl" srclang="vi" label="Tiếng Việt" default />
-                        } *@
-                        Trình duyệt của bạn không hỗ trợ thẻ video.
+                    <video id="player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" playsinline data-poster="@Model.Thumbnail">
+                        <source src="/Video/GetVideoFile?videoId=@Model.Id" type="@(Model.VideoContentType ?? "video/mp4")" />
+                        <p class="vjs-no-js">
+                            To view this video please enable JavaScript, and consider upgrading to a web browser that
+                            <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                        </p>
                     </video>
                 </div>
                 <!-- Tiêu đề và lượt xem -->
@@ -113,8 +111,8 @@
                         @if (!string.IsNullOrEmpty(Model.RecognizedCelebrities))
                         {
                             var celebrities = Model.RecognizedCelebrities
-                            .Replace("Đã nhận diện: ", "")
-                            .Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+                                .Replace("Đã nhận diện: ", "")
+                                .Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
                             foreach (var celebrity in celebrities)
                             {
                                 <span><a href="#">@celebrity</a></span>
@@ -203,149 +201,214 @@
 </div>
 
 @section Css {
-    @* <link rel="stylesheet" href="~/css_new/osahan.css" asp-append-version="true" /> *@
     <link href="/css/video-watch.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" /> <!-- Thêm CSS Plyr.js -->
+    <link rel="stylesheet" href="https://vjs.zencdn.net/8.6.0/video-js.css" />
     <style>
-        /* Giữ nguyên style cũ của bạn */
-
-        /* Style tùy chỉnh cho Plyr.js (tùy chọn, để giống YouTube hơn) */
-        .plyr {
+        .video-js {
             border-radius: 4px;
             overflow: hidden;
+            width: 100%;
+            height: auto;
         }
-
-        .plyr__controls {
-            background: rgba(0, 0, 0, 0.7); /* Nền tối giống YouTube */
-        }
-
-        .plyr--video .plyr__progress__buffer {
-            color: rgba(255, 255, 255, 0.25); /* Buffer bar */
-        }
-
-        .plyr--video .plyr__progress input[type=range]::-webkit-slider-thumb {
-            background: #ff0000; /* Thumb màu đỏ giống YouTube */
+        .vjs-big-play-button {
+            margin: auto;
         }
     </style>
 }
 
 @section Scripts {
     <script src="~/js/site.js"></script>
-    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script> <!-- Thêm JS Plyr.js -->
+    <script src="https://vjs.zencdn.net/8.6.0/video.min.js"></script>
     <script>
-        // Hàm displayNotification (chỉ dùng cho Subscribe)
-        function displayNotification(isSuccess, title, message, type) {
-            if (typeof toastr !== "undefined") {
-                if (isSuccess) toastr.success(message, title);
-                else toastr.error(message, title);
-            } else {
-                alert(`${title}: ${message}`);
+        $(document).ready(function () {
+            // Hàm displayNotification
+            function displayNotification(isSuccess, title, message, type) {
+                if (typeof toastr !== "undefined") {
+                    if (isSuccess) toastr.success(message, title);
+                    else toastr.error(message, title);
+                } else {
+                    alert(`${title}: ${message}`);
+                }
             }
-        }
 
-        // Hàm timeAgo
-        function timeAgo(date) {
-            const now = new Date();
-            const posted = new Date(date);
-            const diffInSeconds = Math.floor((now - posted) / 1000);
-            if (diffInSeconds < 60) return "just now";
-            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-            return `${Math.floor(diffInSeconds / 86400)} days ago`;
-        }
+            // Hàm timeAgo
+            function timeAgo(date) {
+                const now = new Date();
+                const posted = new Date(date);
+                const diffInSeconds = Math.floor((now - posted) / 1000);
+                if (diffInSeconds < 60) return "just now";
+                if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+                if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+                return `${Math.floor(diffInSeconds / 86400)} days ago`;
+            }
 
-        // Hàm shareVideo
-        function shareVideo() {
-            const url = window.location.href;
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(url).then(() => {
-                    displayNotification(true, 'Copied', 'Video URL copied to clipboard', 'toastr');
-                }).catch(err => {
-                    console.error('Clipboard error:', err);
+            // Hàm shareVideo
+            function shareVideo() {
+                const url = window.location.href;
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(url).then(() => {
+                        displayNotification(true, 'Copied', 'Video URL copied to clipboard', 'toastr');
+                    }).catch(err => {
+                        console.error('Clipboard error:', err);
+                        prompt('Copy the URL below:', url);
+                        displayNotification(true, 'Prompt', 'Please copy the URL manually', 'toastr');
+                    });
+                } else {
                     prompt('Copy the URL below:', url);
                     displayNotification(true, 'Prompt', 'Please copy the URL manually', 'toastr');
-                });
-            } else {
-                prompt('Copy the URL below:', url);
-                displayNotification(true, 'Prompt', 'Please copy the URL manually', 'toastr');
+                }
             }
-        }
 
-        // Hàm likeDislike
-        function likeDislike(id, action) {
-            let model = {
-                videoId: '@Model.Id',
-                action
-            };
-            if ($('#' + id).hasClass('btn-primary')) {
-                model.like = false;
-            } else {
-                model.like = true;
+            // Hàm likeDislike
+            function likeDislike(id, action) {
+                let model = {
+                    videoId: '@Model.Id',
+                    action
+                };
+                if ($('#' + id).hasClass('btn-primary')) {
+                    model.like = false;
+                } else {
+                    model.like = true;
+                }
+                $.ajax({
+                    url: "/Video/LikeDislikeVideo",
+                    type: "PUT",
+                    data: model,
+                    success: function (data) {
+                        const commands = data.title.split('-');
+                        commands.forEach(c => {
+                            if (c == 'addLike') {
+                                $('#likeBtn').addClass('btn-primary').removeClass('btn-outline-primary');
+                                var $span = $('#likeBtn').find('span');
+                                var currentNumber = parseInt($span.text());
+                                $span.text(currentNumber + 1);
+                                $('#dislikeBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+                            } else if (c == 'addDislike') {
+                                $('#dislikeBtn').addClass('btn-primary').removeClass('btn-outline-primary');
+                                var $span = $('#dislikeBtn').find('span');
+                                var currentNumber = $span.text() ? parseInt($span.text()) : 0;
+                                $span.text(currentNumber + 1);
+                                $('#likeBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+                            } else if (c == 'removeLike') {
+                                $('#likeBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+                                var $span = $('#likeBtn').find('span');
+                                var currentNumber = parseInt($span.text());
+                                $span.text(currentNumber - 1);
+                            } else if (c == 'removeDislike') {
+                                $('#dislikeBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+                                var $span = $('#dislikeBtn').find('span');
+                                var currentNumber = $span.text() ? parseInt($span.text()) : 0;
+                                $span.text(currentNumber - 1);
+                            }
+                        });
+                    },
+                    error: function (xhr) {
+                        console.error('Like/Dislike error:', xhr.statusText);
+                    }
+                });
             }
-            $.ajax({
-                url: "/Video/LikeDislikeVideo",
-                type: "PUT",
-                data: model,
-                success: function (data) {
-                    const commands = data.title.split('-');
-                    commands.forEach(c => {
-                        if (c == 'addLike') {
-                            $('#likeBtn').addClass('btn-primary').removeClass('btn-outline-primary');
-                            var $span = $('#likeBtn').find('span');
-                            var currentNumber = parseInt($span.text());
-                            $span.text(currentNumber + 1);
-                            $('#dislikeBtn').removeClass('btn-primary').addClass('btn-outline-primary');
-                        } else if (c == 'addDislike') {
-                            $('#dislikeBtn').addClass('btn-primary').removeClass('btn-outline-primary');
-                            var $span = $('#dislikeBtn').find('span');
-                            var currentNumber = $span.text() ? parseInt($span.text()) : 0;
-                            $span.text(currentNumber + 1);
-                            $('#likeBtn').removeClass('btn-primary').addClass('btn-outline-primary');
-                        } else if (c == 'removeLike') {
-                            $('#likeBtn').removeClass('btn-primary').addClass('btn-outline-primary');
-                            var $span = $('#likeBtn').find('span');
-                            var currentNumber = parseInt($span.text());
-                            $span.text(currentNumber - 1);
-                        } else if (c == 'removeDislike') {
-                            $('#dislikeBtn').removeClass('btn-primary').addClass('btn-outline-primary');
-                            var $span = $('#dislikeBtn').find('span');
-                            var currentNumber = $span.text() ? parseInt($span.text()) : 0;
-                            $span.text(currentNumber - 1);
-                        }
-                    });
-                },
-                error: function (xhr) {
-                    console.error('Like/Dislike error:', xhr.statusText);
+
+            // Hàm để chuyển form comment sang chế độ Edit
+            function enterEditMode(commentId, content) {
+                const $form = $('#create-comment-form');
+                const $input = $('#textComment');
+                const $btnComment = $('#btnComment');
+                $input.val(content);
+                $form.data('edit-comment-id', commentId);
+                $form.attr('action', '/Video/EditComment');
+                $btnComment.text('Save');
+                $form.data('edit-comment-id', commentId);
+                $('#sectionCommentBtns').fadeIn();
+            }
+
+            // Hàm để thoát chế độ Edit
+            function exitEditMode() {
+                const $form = $('#create-comment-form');
+                const $input = $('#textComment');
+                const $btnComment = $('#btnComment');
+                $input.val('');
+                $form.removeData('edit-comment-id');
+                $form.attr('action', '/Video/CreateComment');
+                $btnComment.text('Comment');
+                $('#sectionCommentBtns').fadeOut();
+            }
+
+            // Khởi tạo Video.js
+            const videoId = '@Model.Id';
+            const player = videojs('player', {
+                controls: true,
+                autoplay: false,
+                preload: 'auto',
+                fluid: true,
+                aspectRatio: '16:9',
+                playbackRates: [0.5, 0.75, 1, 1.5, 2],
+                controlBar: {
+                    volumePanel: { inline: false },
+                    pictureInPictureToggle: true,
+                    fullscreenToggle: true
                 }
             });
-        }
 
-        // Hàm để chuyển form comment sang chế độ Edit
-        function enterEditMode(commentId, content) {
-            const $form = $('#create-comment-form');
-            const $input = $('#textComment');
-            const $btnComment = $('#btnComment');
-            $input.val(content);
-            $form.data('edit-comment-id', commentId);
-            $form.attr('action', '/Video/EditComment'); // Thay đổi action nếu cần
-            $btnComment.text('Save');
-            $form.data('edit-comment-id', commentId);
-            $('#sectionCommentBtns').fadeIn();
-        }
+            // Debug: Kiểm tra player đã khởi tạo
+            console.log('Video.js player initialized:', player);
 
-        // Hàm để thoát chế độ Edit
-        function exitEditMode() {
-            const $form = $('#create-comment-form');
-            const $input = $('#textComment');
-            const $btnComment = $('#btnComment');
-            $input.val('');
-            $form.removeData('edit-comment-id');
-            $form.attr('action', '/Video/CreateComment'); // Khôi phục action gốc
-            $btnComment.text('Comment');
-            $('#sectionCommentBtns').fadeOut();
-        }
+            // Set thời gian bắt đầu từ ProgressSeconds hoặc localStorage
+            player.on('loadedmetadata', () => {
+                const savedProgress = @(Model.ProgressSeconds ?? 0) || parseFloat(localStorage.getItem(`progress_${videoId}`)) || 0;
+                if (savedProgress > 0) {
+                    player.currentTime(savedProgress);
+                    console.log(`Resumed from ${savedProgress} seconds`);
+                } else {
+                    console.log('No saved progress, starting from 0');
+                }
+            });
 
-        $(document).ready(function () {
+            // Lưu tiến trình mỗi 5 giây
+            let lastSavedTime = 0;
+            player.on('timeupdate', () => {
+                const currentTime = Math.floor(player.currentTime());
+                if (Math.abs(currentTime - lastSavedTime) >= 5) {
+                    lastSavedTime = currentTime;
+                    localStorage.setItem(`progress_${videoId}`, currentTime);
+                    $.ajax({
+                        url: '/Video/UpdateProgress',
+                        type: 'POST',
+                        data: { videoId: '@Model.Id', progressSeconds: currentTime },
+                        success: function () { console.log(`Progress saved: ${currentTime}s`); },
+                        error: function (xhr) {
+                            console.error('Update progress error:', xhr.statusText);
+                            console.log('Saved to localStorage as fallback');
+                        }
+                    });
+                }
+            });
+
+            // Lưu tiến trình khi rời trang
+            window.addEventListener('beforeunload', () => {
+                const currentTime = Math.floor(player.currentTime());
+                if (currentTime > 0) {
+                    localStorage.setItem(`progress_${videoId}`, currentTime);
+                    const data = new FormData();
+                    data.append('videoId', '@Model.Id');
+                    data.append('progressSeconds', currentTime);
+                    navigator.sendBeacon('/Video/UpdateProgress', data);
+                    console.log('Sent beacon for progress:', currentTime);
+                }
+            });
+
+            // Xử lý lỗi video
+            player.on('error', function (e) {
+                console.error('Video.js error:', e);
+                console.error('Video source:', player.currentSource());
+                console.error('Media can play:', player.canPlayType(player.currentSource().type));
+                displayNotification(false, 'Video Error', 'Không thể phát video. Kiểm tra định dạng video hoặc trình duyệt.', 'toastr');
+            });
+
+            // Log khi video play
+            player.on('play', () => {
+                console.log('Video is playing');
+            });
+
             // Gọi API AddOrUpdateView khi tải trang
             $.ajax({
                 url: `/Home/AddOrUpdateView?videoId=@Model.Id`,
@@ -358,7 +421,7 @@
                 }
             });
 
-            // Khởi tạo tooltip cho Bootstrap 4
+            // Khởi tạo tooltip cho Bootstrap
             $('[data-toggle="tooltip"]').tooltip();
 
             // Xử lý nút Show More/Show Less
@@ -630,65 +693,6 @@
                         console.error('Delete comment error');
                     }
                 });
-            });
-
-            // Khởi tạo Plyr.js cho video player
-            const player = new Plyr('#player', {
-                controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'settings', 'fullscreen'],
-                quality: { default: 720, options: [360, 720, 1080] }, // Nếu có multi chất lượng, thêm sources tương ứng
-                captions: { active: true },
-                autoplay: false // Không tự play
-            });
-
-          // ✅ THÊM: Set thời gian bắt đầu từ ProgressSeconds
-        player.on('ready', () => {
-            const savedProgress = @(Model.ProgressSeconds ?? 0);
-            if (savedProgress > 0) {
-                player.currentTime = savedProgress;
-                console.log(`Resumed from ${savedProgress} seconds`);
-            }
-        });
-
-                    let lastSavedTime = 0;
-        player.on('timeupdate', () => {
-            const currentTime = Math.floor(player.currentTime);
-
-            // Chỉ update khi thay đổi >= 5 giây
-            if (Math.abs(currentTime - lastSavedTime) >= 5) {
-                lastSavedTime = currentTime;
-
-                $.ajax({
-                    url: '/Video/UpdateProgress',
-                    type: 'POST',
-                    data: {
-                        videoId: '@Model.Id',
-                        progressSeconds: currentTime
-                    },
-                    success: function () {
-                        console.log(`Progress saved: ${currentTime}s`);
-                    },
-                    error: function (xhr) {
-                        console.error('Update progress error:', xhr.statusText);
-                    }
-                });
-            }
-        });
-
-        // ✅ THÊM: Lưu progress khi rời trang
-        window.addEventListener('beforeunload', () => {
-            const currentTime = Math.floor(player.currentTime);
-            if (currentTime > 0) {
-                // Dùng sendBeacon để đảm bảo request được gửi
-                const data = new FormData();
-                data.append('videoId', '@Model.Id');
-                data.append('progressSeconds', currentTime);
-                navigator.sendBeacon('/Video/UpdateProgress', data);
-            }
-        });
-
-            // Xử lý video player lỗi (giữ nguyên nếu cần)
-            player.on('error', function (e) {
-                console.error('Video error:', e);
             });
         });
     </script>

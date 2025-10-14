@@ -54,6 +54,7 @@ namespace Web_Video.Controllers
         }
 
         [HttpPost]
+        [HttpGet] // Thêm để hỗ trợ sendBeacon
         public async Task<IActionResult> UpdateProgress(Guid videoId, float progressSeconds)
         {
             try
