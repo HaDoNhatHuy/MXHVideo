@@ -135,10 +135,10 @@
             const uniqueVideos = Object.values(groupedVideos);
 
             uniqueVideos.forEach(v => {
-                // Thêm header cho group mới
-                if (v.groupName !== currentGroup) {
+                // Thêm header cho group mới (chỉ áp dụng cho history)
+                if (page === 'history' && v.groupName !== currentGroup) {
                     currentGroup = v.groupName;
-                    html += `<div class="col-12"><h6 class="group-header mt-3">${currentGroup}</h6></div>`;
+                    html += `<div class="col-12"><h6 class="group-header mt-3">${currentGroup || 'Unknown Time'}</h6></div>`;
                 }
 
                 // Tính % progress
@@ -147,46 +147,46 @@
                 const progressTime = formatSecondsToTime(v.progress);
 
                 html += `
-            <div class="col-xl-3 col-sm-6 mb-3">
-                <div class="video-card history-video h-100">
-                    <div class="video-card-image">
-                        <a class="video-close" href="#" data-videoview-id="${v.videoViewId}">
-                            <i class="fas fa-times-circle"></i>
-                        </a>
-                        <a class="play-icon" href="/Video/Watch/${v.id}">
-                            <i class="fas fa-play-circle"></i>
-                        </a>
-                        <a href="/Video/Watch/${v.id}">
-                            <img class="img-fluid" src="${v.thumbnail || '/avatarUser/avt-default.jpg'}" alt="${v.title}">
-                        </a>
-                        <div class="time">${v.duration || '0:00'}</div>
-                    </div>
-                    ${progressPercent > 0 ? `
-                    <div class="progress" style="height: 4px;">
-                        <div class="progress-bar bg-danger" role="progressbar" 
-                             style="width: ${progressPercent.toFixed(1)}%;" 
-                             aria-valuenow="${progressPercent}" 
-                             aria-valuemin="0" 
-                             aria-valuemax="100"></div>
-                    </div>
-                    ` : ''}
-                    <div class="video-card-body">
-                        <div class="video-title">
-                            <a href="/Video/Watch/${v.id}" class="text-truncate">${v.title || 'Untitled Video'}</a>
+                    <div class="col-xl-3 col-sm-6 mb-3">
+                        <div class="video-card history-video h-100">
+                            <div class="video-card-image">
+                                <a class="video-close" href="#" data-videoview-id="${v.videoViewId}">
+                                    <i class="fas fa-times-circle"></i>
+                                </a>
+                                <a class="play-icon" href="/Video/Watch/${v.id}">
+                                    <i class="fas fa-play-circle"></i>
+                                </a>
+                                <a href="/Video/Watch/${v.id}">
+                                    <img class="img-fluid" src="${v.thumbnail || '/avatarUser/avt-default.jpg'}" alt="${v.title}">
+                                </a>
+                                <div class="time">${v.duration || '0:00'}</div>
+                            </div>
+                            ${progressPercent > 0 ? `
+                            <div class="progress" style="height: 4px;">
+                                <div class="progress-bar bg-danger" role="progressbar" 
+                                     style="width: ${progressPercent.toFixed(1)}%;" 
+                                     aria-valuenow="${progressPercent}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100"></div>
+                            </div>
+                            ` : ''}
+                            <div class="video-card-body">
+                                <div class="video-title">
+                                    <a href="/Video/Watch/${v.id}" class="text-truncate">${v.title || 'Untitled Video'}</a>
+                                </div>
+                                <div class="video-page text-success">
+                                    ${v.channelName || 'Unknown Channel'} 
+                                    <a title="Verified" data-bs-placement="top" data-bs-toggle="tooltip" href="#">
+                                        <i class="fas fa-check-circle text-success"></i>
+                                    </a>
+                                </div>
+                                <div class="video-view text-truncate">
+                                    ${formatView(v.views || 0)} views &nbsp;
+                                    <i class="fas fa-calendar-alt"></i> ${page === 'liked' ? '' : (v.lastVisitTimeAgo || 'Unknown')}
+                                </div>
+                            </div>
                         </div>
-                        <div class="video-page text-success">
-                            ${v.channelName || 'Unknown Channel'} 
-                            <a title="Verified" data-bs-placement="top" data-bs-toggle="tooltip" href="#">
-                                <i class="fas fa-check-circle text-success"></i>
-                            </a>
-                        </div>
-                        <div class="video-view text-truncate">
-                            ${formatView(v.views || 0)} views &nbsp;
-                            <i class="fas fa-calendar-alt"></i> ${v.lastVisitTimeAgo || 'Unknown'}
-                        </div>
-                    </div>
-                </div>
-            </div>`;
+                    </div>`;
             });
 
             if (!uniqueVideos.length) {
