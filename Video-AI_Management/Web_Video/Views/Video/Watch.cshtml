@@ -351,6 +351,10 @@
 
             // Debug: Kiểm tra player đã khởi tạo
             console.log('Video.js player initialized:', player);
+            // Debug seek event
+            player.on('seeked', () => {
+                console.log('Seeked to:', player.currentTime());
+            });
 
             // Set thời gian bắt đầu từ ProgressSeconds hoặc localStorage
             player.on('loadedmetadata', () => {

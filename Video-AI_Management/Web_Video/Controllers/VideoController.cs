@@ -19,6 +19,7 @@ using Web_Video.ViewModels.Channel;
 using Web_Video.ViewModels.Video;
 using WebVideo.Utility;
 using Xabe.FFmpeg;
+using Microsoft.Net.Http.Headers; // Thêm namespace này
 using static Web_Video.ViewModels.Video.VideoWatchViewModel;
 
 namespace Web_Video.Controllers
@@ -80,7 +81,7 @@ namespace Web_Video.Controllers
                         .FirstOrDefaultAsync();
                 }
 
-                if (videoView != null)
+                if (videoView != null && progressSeconds > 0)
                 {
                     videoView.ProgressSeconds = progressSeconds;
                     videoView.LastVisit = DateTime.UtcNow; // ✅ Cập nhật LastVisit
@@ -191,15 +192,61 @@ namespace Web_Video.Controllers
             await UnitOfWork.CompleteAsync();
             return Json(new { isSuccess = true, title = "Success", message = "Comment deleted successfully" });
         }
+        //public async Task<IActionResult> GetVideoFile(Guid videoId)
+        //{
+        //    var fetchedVideoFile = await UnitOfWork.VideoFileRepo.GetFirstOrDefaultAsync(x => x.VideoId == videoId);
+        //    if (fetchedVideoFile != null)
+        //    {
+        //        return File(fetchedVideoFile.Contents, fetchedVideoFile.ContentType);
+        //    }
+        //    TempData["notification"] = "false;Not Found;Requested video was not found";
+        //    return RedirectToAction("Index", "Home");
+        //}
         public async Task<IActionResult> GetVideoFile(Guid videoId)
         {
-            var fetchedVideoFile = await UnitOfWork.VideoFileRepo.GetFirstOrDefaultAsync(x => x.VideoId == videoId);
-            if (fetchedVideoFile != null)
+            try
             {
-                return File(fetchedVideoFile.Contents, fetchedVideoFile.ContentType);
+                var fetchedVideoFile = await UnitOfWork.VideoFileRepo.GetFirstOrDefaultAsync(x => x.VideoId == videoId);
+                if (fetchedVideoFile == null)
+                {
+                    //_logger.LogWarning($"Video file not found for videoId: {videoId}");
+                    return NotFound($"Video file not found for videoId: {videoId}");
+                }
+
+                var contentType = fetchedVideoFile.ContentType ?? "video/mp4";
+                var bytes = fetchedVideoFile.Contents;
+                var fileLength = bytes.Length;
+
+                var rangeHeader = Request.Headers.Range.FirstOrDefault();
+                if (rangeHeader != null && !string.IsNullOrEmpty(rangeHeader.ToString()))
+                {
+                    var ranges = RangeHeaderValue.Parse(rangeHeader.ToString()).Ranges;
+                    if (ranges != null && ranges.Any())
+                    {
+                        var range = ranges.First();
+                        long from = range.From ?? 0;
+                        long to = range.To ?? fileLength - 1;
+                        long length = to - from + 1;
+
+                        Response.StatusCode = 206; // Partial Content
+                        Response.Headers.Add("Content-Range", $"bytes {from}-{to}/{fileLength}");
+                        Response.Headers.Add("Content-Length", length.ToString());
+
+                        return File(new MemoryStream(bytes, (int)from, (int)length), contentType);
+                    }
+                }
+
+                // Nếu không có range, return toàn bộ
+                Response.Headers.Add("Accept-Ranges", "bytes");
+                Response.Headers.Add("Content-Disposition", "inline");
+                Response.Headers.Add("Content-Length", fileLength.ToString());
+                return File(bytes, contentType);
             }
-            TempData["notification"] = "false;Not Found;Requested video was not found";
-            return RedirectToAction("Index", "Home");
+            catch (Exception ex)
+            {
+                //_logger.LogError(ex, $"Error retrieving video file for videoId: {videoId}");
+                return StatusCode(500, $"Error retrieving video file: {ex.Message}");
+            }
         }
         [HttpPost]
         public async Task<IActionResult> DownloadVideoFile(Guid videoId)
