@@ -119,32 +119,79 @@ namespace Web_Video.Controllers
             });
         }
 
+        //[Authorize(Roles = $"{SD.UserRole}")]
+        //[HttpGet]
+        //public async Task<IActionResult> GetHistory(int pageNumber = 1, int pageSize = 12)
+        //{
+        //    var query = Context.VideoViews
+        //        .Where(x => x.AppUserId == User.GetUserId())
+        //        .Select(x => new
+        //        {
+        //            Id = x.VideoId,
+        //            x.Video.Title,
+        //            x.Video.Thumbnail,
+        //            ChannelName = x.Video.Channel.ChannelName,
+        //            ChannelId = x.Video.Channel.Id,
+        //            LastVisitTimeAgo = SD.TimeAgo(x.LastVisit),
+        //            x.LastVisit,
+        //            Views = x.Video.Views
+        //        });
+        //    var totalItems = await query.CountAsync();
+        //    var items = await query
+        //        .OrderByDescending(x => x.LastVisit)
+        //        .Skip((pageNumber - 1) * pageSize)
+        //        .Take(pageSize)
+        //        .ToListAsync();
+        //    var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+        //    var paginatedResults = new PaginatedResult<object>(items, totalItems, pageNumber, pageSize, totalPages);
+        //    return Json(new ApiResponse(200, result: paginatedResults));
+        //}
         [Authorize(Roles = $"{SD.UserRole}")]
         [HttpGet]
         public async Task<IActionResult> GetHistory(int pageNumber = 1, int pageSize = 12)
         {
             var query = Context.VideoViews
                 .Where(x => x.AppUserId == User.GetUserId())
+                .OrderByDescending(x => x.LastVisit)  // Sắp xếp mới nhất đầu tiên
                 .Select(x => new
                 {
+                    VideoViewId = x.Id,  // Để xóa entry cụ thể
                     Id = x.VideoId,
                     x.Video.Title,
                     x.Video.Thumbnail,
                     ChannelName = x.Video.Channel.ChannelName,
                     ChannelId = x.Video.Channel.Id,
                     LastVisitTimeAgo = SD.TimeAgo(x.LastVisit),
-                    x.LastVisit,
-                    Views = x.Video.Views
+                    LastVisit = x.LastVisit,
+                    GroupName = GetDateGroupName(x.LastVisit),  // Thêm GroupName cho JS
+                    Views = x.Video.Viewers.Select(v => v.NumberOfVisit).Sum(),  // Tổng views
+                    Duration = x.Video.Duration,
+                    Progress = x.ProgressSeconds ?? 0
                 });
-            var totalItems = await query.CountAsync();
-            var items = await query
-                .OrderByDescending(x => x.LastVisit)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
-            var paginatedResults = new PaginatedResult<object>(items, totalItems, pageNumber, pageSize, totalPages);
+
+            // Dùng PaginatedList để tự động tính pagination
+            var paginatedList = await PaginatedList<object>.CreateAsync(query, pageNumber, pageSize);
+
+            // Chuyển sang PaginatedResult để trả JSON
+            var paginatedResults = new PaginatedResult<object>(
+                paginatedList,
+                paginatedList.TotalItemsCount,
+                paginatedList.PageNumber,
+                paginatedList.PageSize,
+                paginatedList.TotalPages
+            );
+
             return Json(new ApiResponse(200, result: paginatedResults));
+        }
+
+        private static string GetDateGroupName(DateTime date)
+        {
+            var today = DateTime.UtcNow.Date;
+            if (date.Date == today) return "Hôm nay";
+            if (date.Date == today.AddDays(-1)) return "Hôm qua";
+            if (date.Date >= today.AddDays(-7)) return "Tuần này";
+            if (date.Date >= today.AddMonths(-1)) return "Tháng này";
+            return date.ToString("MMMM yyyy");
         }
 
         [Authorize(Roles = $"{SD.UserRole}")]
@@ -175,12 +222,27 @@ namespace Web_Video.Controllers
             return Json(new ApiResponse(200, result: paginatedResults));
         }
 
+        //[Authorize(Roles = $"{SD.UserRole}")]
+        //[HttpPost]
+        //public async Task<IActionResult> RemoveHistory(Guid videoId)
+        //{
+        //    var videoView = await Context.VideoViews
+        //        .FirstOrDefaultAsync(x => x.AppUserId == User.GetUserId() && x.VideoId == videoId);
+        //    if (videoView == null)
+        //    {
+        //        return Json(new ApiResponse(404, message: "Video not found in history."));
+        //    }
+
+        //    Context.VideoViews.Remove(videoView);
+        //    await Context.SaveChangesAsync();
+        //    return Json(new ApiResponse(200, message: "Video removed from history."));
+        //}
         [Authorize(Roles = $"{SD.UserRole}")]
         [HttpPost]
-        public async Task<IActionResult> RemoveHistory(Guid videoId)
+        public async Task<IActionResult> RemoveHistory(Guid videoViewId)
         {
             var videoView = await Context.VideoViews
-                .FirstOrDefaultAsync(x => x.AppUserId == User.GetUserId() && x.VideoId == videoId);
+                .FirstOrDefaultAsync(x => x.Id == videoViewId && x.AppUserId == User.GetUserId());
             if (videoView == null)
             {
                 return Json(new ApiResponse(404, message: "Video not found in history."));

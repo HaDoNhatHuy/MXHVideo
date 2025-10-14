@@ -1,7 +1,4 @@
-﻿using Database_Video.DTOs;
-using Database_Video.Entities;
-using Database_Video.IRepo;
-using Database_Video.Pagination;
+﻿using Database_Video.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,11 +12,9 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Web_Video.Extensions;
-using Web_Video.Services.IServices;
 using Web_Video.ViewModels.Channel;
 using Web_Video.ViewModels.Video;
 using WebVideo.Utility;
@@ -56,6 +51,49 @@ namespace Web_Video.Controllers
             }
             TempData["notification"] = "false;Not Found;Requested video was not found";
             return RedirectToAction("Index", "Home");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateProgress(Guid videoId, float progressSeconds)
+        {
+            try
+            {
+                var userId = User.GetUserId();
+
+                // Lấy VideoView mới nhất (chỉ 1 entry duy nhất)
+                var videoView = await Context.VideoViews
+                    .Where(x => x.AppUserId == userId && x.VideoId == videoId)
+                    .OrderByDescending(x => x.LastVisit)
+                    .FirstOrDefaultAsync();
+
+                if (videoView == null)
+                {
+                    // Nếu chưa có → tạo mới
+                    var ip = Request.HttpContext.Connection.RemoteIpAddress?.ToString();
+                    await UnitOfWork.VideoViewRepo.HandleVideoViewAsync(userId, videoId, ip);
+                    await UnitOfWork.CompleteAsync();
+
+                    // Lấy lại sau khi tạo
+                    videoView = await Context.VideoViews
+                        .Where(x => x.AppUserId == userId && x.VideoId == videoId)
+                        .FirstOrDefaultAsync();
+                }
+
+                if (videoView != null)
+                {
+                    videoView.ProgressSeconds = progressSeconds;
+                    videoView.LastVisit = DateTime.UtcNow; // ✅ Cập nhật LastVisit
+                    await Context.SaveChangesAsync();
+
+                    return Json(new ApiResponse(200, message: "Progress updated"));
+                }
+
+                return Json(new ApiResponse(404, message: "Video view not found"));
+            }
+            catch (Exception ex)
+            {
+                return Json(new ApiResponse(500, message: $"Error: {ex.Message}"));
+            }
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -750,7 +788,12 @@ namespace Web_Video.Controllers
                     DislikesCount = x.LikeDislikes.Where(l => l.Liked == false).Count(),
                     VideoContentType = x.VideoFile.ContentType,
                     RecognizedCelebrities = x.RecognizedCelebrities,
-                    CelebrityFramesJson = x.CelebrityFrames ?? "{}", // Sử dụng CelebrityFrames, fallback "{}" nếu null
+                    CelebrityFramesJson = x.CelebrityFrames ?? "{}",
+                    ProgressSeconds = x.Viewers
+                        .Where(v => v.AppUserId == userId)
+                        .OrderByDescending(v => v.LastVisit)
+                        .Select(v => v.ProgressSeconds)
+                        .FirstOrDefault(), // Lấy ProgressSeconds từ VideoView mới nhất
                     CommentVM = new CommentViewModel
                     {
                         PostComment = new CommentPostViewModel

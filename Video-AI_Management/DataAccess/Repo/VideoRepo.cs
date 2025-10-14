@@ -88,7 +88,7 @@ namespace DataAccess.Repo
                     ChannelName = x.Channel.ChannelName,
                     ChannelId = x.Channel.Id,
                     CategoryId = x.Category.Id,
-                    Views = x.Viewers.Count(),
+                    Views = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
                     CreatedAtTimeAgo = SD.TimeAgo(x.UploadDate) // Thêm tính toán thời gian tương đối
                 })
                 .AsQueryable();

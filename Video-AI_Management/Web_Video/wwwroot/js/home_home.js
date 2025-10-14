@@ -121,38 +121,79 @@
     // Render HTML cho video
     function populateVideoContainer($container, videos, template, page) {
         let html = '';
-        videos.forEach(v => {
-            if (template === 'history') {
-                const durationStr = v.duration ? formatDuration(v.duration) : '3:50';
-                const progressTime = v.progress ? Math.floor(v.progress / 100 * (v.duration ? v.duration.TotalSeconds : 230)) : '1:40';
+        if (template === 'history') {
+            let currentGroup = null;
+            const groupedVideos = {}; // ✅ Nhóm video theo VideoId để tránh trùng lặp
+
+            // ✅ Lọc trùng lặp: Chỉ giữ entry mới nhất của mỗi video
+            videos.forEach(v => {
+                if (!groupedVideos[v.id] || new Date(v.lastVisit) > new Date(groupedVideos[v.id].lastVisit)) {
+                    groupedVideos[v.id] = v;
+                }
+            });
+
+            const uniqueVideos = Object.values(groupedVideos);
+
+            uniqueVideos.forEach(v => {
+                // Thêm header cho group mới
+                if (v.groupName !== currentGroup) {
+                    currentGroup = v.groupName;
+                    html += `<div class="col-12"><h6 class="group-header mt-3">${currentGroup}</h6></div>`;
+                }
+
+                // Tính % progress
+                const durationSeconds = parseDurationToSeconds(v.duration || '0:00');
+                const progressPercent = durationSeconds > 0 ? Math.min((v.progress / durationSeconds) * 100, 100) : 0;
+                const progressTime = formatSecondsToTime(v.progress);
+
                 html += `
-                    <div class="col-xl-3 col-sm-6 mb-3">
-                        <div class="video-card history-video h-100">
-                            <div class="video-card-image">
-                                <a class="video-close" href="#" data-video-id="${v.id}"><i class="fas fa-times-circle"></i></a>
-                                <a class="play-icon" href="/Video/Watch/${v.id}"><i class="fas fa-play-circle"></i></a>
-                                <a href="/Video/Watch/${v.id}">
-                                    <img class="img-fluid" src="${v.thumbnail || '/avatarUser/avt-default.jpg'}" alt="Video Thumbnail">
-                                </a>
-                                <div class="time">${durationStr}</div>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar" role="progressbar" style="width: ${v.progress || 0}%;" aria-valuenow="${v.progress || 0}" aria-valuemin="0" aria-valuemax="100">${progressTime}</div>
-                            </div>
-                            <div class="video-card-body">
-                                <div class="video-title">
-                                    <a href="/Video/Watch/${v.id}" class="text-truncate">${v.title || 'Untitled Video'}</a>
-                                </div>
-                                <div class="video-page text-success">
-                                    ${v.channelName || 'Unknown Channel'} <a title="" data-bs-placement="top" data-bs-toggle="tooltip" href="#" data-bs-original-title="Verified"><i class="fas fa-check-circle text-success"></i></a>
-                                </div>
-                                <div class="video-view text-truncate">
-                                    ${formatView(v.views || 0)} &nbsp;<i class="fas fa-calendar-alt"></i> ${page === 'history' ? (v.lastVisitTimeAgo || 'Unknown Time') : (v.createdAtTimeAgo || 'Unknown Time')}
-                                </div>
-                            </div>
+            <div class="col-xl-3 col-sm-6 mb-3">
+                <div class="video-card history-video h-100">
+                    <div class="video-card-image">
+                        <a class="video-close" href="#" data-videoview-id="${v.videoViewId}">
+                            <i class="fas fa-times-circle"></i>
+                        </a>
+                        <a class="play-icon" href="/Video/Watch/${v.id}">
+                            <i class="fas fa-play-circle"></i>
+                        </a>
+                        <a href="/Video/Watch/${v.id}">
+                            <img class="img-fluid" src="${v.thumbnail || '/avatarUser/avt-default.jpg'}" alt="${v.title}">
+                        </a>
+                        <div class="time">${v.duration || '0:00'}</div>
+                    </div>
+                    ${progressPercent > 0 ? `
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-danger" role="progressbar" 
+                             style="width: ${progressPercent.toFixed(1)}%;" 
+                             aria-valuenow="${progressPercent}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100"></div>
+                    </div>
+                    ` : ''}
+                    <div class="video-card-body">
+                        <div class="video-title">
+                            <a href="/Video/Watch/${v.id}" class="text-truncate">${v.title || 'Untitled Video'}</a>
                         </div>
-                    </div>`;
-            } else {
+                        <div class="video-page text-success">
+                            ${v.channelName || 'Unknown Channel'} 
+                            <a title="Verified" data-bs-placement="top" data-bs-toggle="tooltip" href="#">
+                                <i class="fas fa-check-circle text-success"></i>
+                            </a>
+                        </div>
+                        <div class="video-view text-truncate">
+                            ${formatView(v.views || 0)} views &nbsp;
+                            <i class="fas fa-calendar-alt"></i> ${v.lastVisitTimeAgo || 'Unknown'}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+            });
+
+            if (!uniqueVideos.length) {
+                html = `<div class="col-12 text-center p-3">Không có lịch sử xem nào.</div>`;
+            }
+        } else {
+            videos.forEach(v => {
                 const durationStr = v.duration ? formatDuration(v.duration) : '3:50';
                 html += `
                     <div class="col-xl-3 col-sm-6 mb-3">
@@ -172,41 +213,85 @@
                                     ${v.channelName || 'Unknown Channel'} <a title="" data-bs-placement="top" data-bs-toggle="tooltip" href="#" data-bs-original-title="Verified"><i class="fas fa-check-circle text-success"></i></a>
                                 </div>
                                 <div class="video-view text-truncate">
-                                    ${formatView(v.views || 0)} &nbsp;<i class="fas fa-calendar-alt"></i> ${v.createdAtTimeAgo || 'Unknown Time'} <!-- Sử dụng createdAtTimeAgo -->
+                                    ${formatView(v.views || 0)} &nbsp;<i class="fas fa-calendar-alt"></i> ${v.createdAtTimeAgo || 'Unknown Time'}
                                 </div>
                             </div>
                         </div>
                     </div>`;
+            });
+            if (!videos.length) {
+                html = `<div class="col-12 text-center p-3">Không có ${page === 'liked' ? 'video đã thích' : 'video'} nào.</div>`;
             }
-        });
+        }
         $container.append(html);
 
         // Thêm sự kiện xóa cho history và liked
         if (template === 'history') {
             $container.find('.video-close').on('click', function (e) {
                 e.preventDefault();
-                const videoId = $(this).data('video-id');
-                const url = page === 'history' ? `/Home/RemoveHistory?videoId=${videoId}` : `/Home/RemoveLike?videoId=${videoId}`;
+                const videoViewId = $(this).data('videoview-id');
                 $.ajax({
-                    url: url,
+                    url: `/Home/RemoveHistory?videoViewId=${videoViewId}`,
                     type: 'POST',
                     success: function () {
                         $(this).closest('.col-xl-3').remove();
+                        // Kiểm tra nếu container rỗng
+                        if ($container.find('.video-card').length === 0) {
+                            $container.append('<div class="col-12 text-center p-3">Không có lịch sử xem nào.</div>');
+                        }
                     }.bind(this),
                     error: function () {
-                        alert(`Không thể xóa ${page === 'history' ? 'lịch sử' : 'thích'}.`);
+                        alert('Không thể xóa lịch sử.');
+                    }
+                });
+            });
+        } else if (page === 'liked') {
+            $container.find('.video-close').on('click', function (e) {
+                e.preventDefault();
+                const videoId = $(this).data('video-id');
+                $.ajax({
+                    url: `/Home/RemoveLike?videoId=${videoId}`,
+                    type: 'POST',
+                    success: function () {
+                        $(this).closest('.col-xl-3').remove();
+                        if ($container.find('.video-card').length === 0) {
+                            $container.append('<div class="col-12 text-center p-3">Không có video đã thích nào.</div>');
+                        }
+                    }.bind(this),
+                    error: function () {
+                        alert('Không thể xóa thích.');
                     }
                 });
             });
         }
     }
 
-    // Hàm format duration từ TimeSpan
+    // Hàm format duration từ TimeSpan hoặc string
+    function parseDurationToSeconds(duration) {
+        if (typeof duration === 'string') {
+            const [min, sec] = duration.split(':').map(Number);
+            return (min * 60) + sec;
+        }
+        return Math.floor(duration.TotalSeconds || 0);
+    }
+
+    function formatSecondsToTime(seconds) {
+        const min = Math.floor(seconds / 60);
+        const sec = Math.floor(seconds % 60);
+        return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+    }
+
     function formatDuration(duration) {
-        const totalSeconds = Math.floor(duration.TotalSeconds);
+        const totalSeconds = typeof duration === 'string' ? parseDurationToSeconds(duration) : Math.floor(duration.TotalSeconds || 0);
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    }
+
+    function formatView(views) {
+        if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M views`;
+        if (views >= 1000) return `${(views / 1000).toFixed(1)}K views`;
+        return `${views} views`;
     }
 
     // Sự kiện UI cho Index
@@ -261,7 +346,7 @@
 
     // Gọi load lần đầu cho trang hiện tại
     $(document).ready(function () {
-        const currentPage = $('body').data('page'); // Được set trong ViewData["CurrentPage"]
+        const currentPage = $('body').data('page');
         if (currentPage && state[currentPage.toLowerCase()]) {
             window.resetAndLoad(currentPage.toLowerCase());
         }

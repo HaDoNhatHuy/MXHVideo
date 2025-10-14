@@ -8,6 +8,7 @@ namespace Web_Video.ViewModels.Video
         public Guid Id { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
+        public string Thumbnail { get; set; }
         public Guid ChannelId { get; set; }
         public string ChannelName { get; set; }
         public string ChannelAvatar { get; set; }
@@ -21,6 +22,7 @@ namespace Web_Video.ViewModels.Video
         public int ViewersCount { get; set; }
         public int SubscribersCount { get; set; }
         public CommentViewModel CommentVM { get; set; } = new();
+        public float? ProgressSeconds { get; set; } // Thêm trường ProgressSeconds
         public string VideoContentType { get; set; } // Lưu ContentType của video
         public string RecognizedCelebrities { get; set; }
         public string CelebrityFramesJson { get; set; } // JSON thô từ DB

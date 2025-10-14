@@ -29,35 +29,85 @@ namespace DataAccess.Repo
                 BaseAddress = new Uri("https://api.ip2location.io")
             };
         }
+        //public async Task HandleVideoViewAsync(string userId, Guid videoId, string ipAddress)
+        //{
+        //    var fetchedVideoView = await _context.VideoViews
+        //        .Where(x => x.AppUserId == userId && x.VideoId == videoId)
+        //        .OrderByDescending(x => x.LastVisit)
+        //        .FirstOrDefaultAsync();
+        //    if (fetchedVideoView == null)
+        //    {
+        //        await AddVideoViewAsync(userId, videoId, ipAddress);
+        //    }
+        //    else
+        //    {
+        //        DateTime now = DateTime.UtcNow;
+        //        DateTime oneHourAfterLastVisit = fetchedVideoView.LastVisit.AddHours(1);
+        //        if (now > oneHourAfterLastVisit && now.Date == fetchedVideoView.LastVisit.Date)
+        //        {
+        //            // Last visit was more than one hour ago and still in the same day (today)
+        //            fetchedVideoView.LastVisit = DateTime.UtcNow;
+        //            fetchedVideoView.NumberOfVisit++;
+        //        }
+        //        if (fetchedVideoView.LastVisit.Date < now.Date)
+        //        {
+        //            // Last visit was yesterday or more than one day ago
+        //            await AddVideoViewAsync(userId, videoId, ipAddress);
+        //        }
+        //    }
+        //}
         public async Task HandleVideoViewAsync(string userId, Guid videoId, string ipAddress)
         {
-            var fetchedVideoView = await _context.VideoViews
+            // Lấy tất cả VideoView của user với video này
+            var existingViews = await _context.VideoViews
                 .Where(x => x.AppUserId == userId && x.VideoId == videoId)
-                .OrderByDescending(x => x.LastVisit)
-                .FirstOrDefaultAsync();
-            if (fetchedVideoView == null)
+                .ToListAsync();
+
+            DateTime now = DateTime.UtcNow;
+
+            if (!existingViews.Any())
             {
+                // Chưa có lịch sử → Tạo mới
                 await AddVideoViewAsync(userId, videoId, ipAddress);
             }
             else
             {
-                DateTime now = DateTime.UtcNow;
-                DateTime oneHourAfterLastVisit = fetchedVideoView.LastVisit.AddHours(1);
-                if (now > oneHourAfterLastVisit && now.Date == fetchedVideoView.LastVisit.Date)
+                // Đã có lịch sử → Chỉ giữ 1 entry duy nhất cho mỗi video
+                var latestView = existingViews.OrderByDescending(x => x.LastVisit).First();
+
+                // Xóa các entry cũ (nếu có nhiều hơn 1)
+                if (existingViews.Count > 1)
                 {
-                    // Last visit was more than one hour ago and still in the same day (today)
-                    fetchedVideoView.LastVisit = DateTime.UtcNow;
-                    fetchedVideoView.NumberOfVisit++;
+                    var oldEntries = existingViews.Where(x => x.Id != latestView.Id).ToList();
+                    _context.VideoViews.RemoveRange(oldEntries);
                 }
-                if (fetchedVideoView.LastVisit.Date < now.Date)
-                {
-                    // Last visit was yesterday or more than one day ago
-                    await AddVideoViewAsync(userId, videoId, ipAddress);
-                }
+
+                // Cập nhật entry hiện tại
+                latestView.LastVisit = now;
+                latestView.IpAddress = ipAddress;
+                latestView.NumberOfVisit++; // Tăng số lần xem
+
+                await _context.SaveChangesAsync();
             }
         }
 
         #region Private Methods
+        //private async Task AddVideoViewAsync(string userId, Guid videoId, string ipAddress)
+        //{
+        //    var ip2LocationResult = await GetIP2LocationResultAsync(ipAddress);
+        //    var videoViewToAdd = new VideoView
+        //    {
+        //        Id = Guid.NewGuid(),
+        //        AppUserId = userId,
+        //        VideoId = videoId,
+        //        IpAddress = ipAddress,
+        //        Country = ip2LocationResult.Country_Name,
+        //        City = ip2LocationResult.City_Name,
+        //        PostalCode = ip2LocationResult.Zip_Code,
+        //        Is_Proxy = ip2LocationResult.Is_Proxy
+        //    };
+        //    Add(videoViewToAdd);
+        //}
         private async Task AddVideoViewAsync(string userId, Guid videoId, string ipAddress)
         {
             var ip2LocationResult = await GetIP2LocationResultAsync(ipAddress);
@@ -70,11 +120,13 @@ namespace DataAccess.Repo
                 Country = ip2LocationResult.Country_Name,
                 City = ip2LocationResult.City_Name,
                 PostalCode = ip2LocationResult.Zip_Code,
-                Is_Proxy = ip2LocationResult.Is_Proxy
+                Is_Proxy = ip2LocationResult.Is_Proxy,
+                ProgressSeconds = 0,
+                LastVisit = DateTime.UtcNow,
+                NumberOfVisit = 1
             };
-            Add(videoViewToAdd);
+            _context.VideoViews.Add(videoViewToAdd);
         }
-
         private async Task<IP2LocationResultDto> GetIP2LocationResultAsync(string ipAddress)
         {
             try

@@ -163,18 +163,64 @@
             padding: 5px 12px;
         }
         /* Đảm bảo các card trong cùng hàng có chiều cao đồng đều /
-        .row {
-        display: flex;
-        flex-wrap: wrap;
-        margin-right: -15px;
-        margin-left: -15px;
-        align-items: stretch; / Căn chỉnh chiều cao đồng đều */
+                .row {
+                display: flex;
+                flex-wrap: wrap;
+                margin-right: -15px;
+                margin-left: -15px;
+                align-items: stretch; / Căn chỉnh chiều cao đồng đều */
         }
 
         .col-xl-3, .col-sm-6 {
             padding-right: 15px;
             padding-left: 15px;
             display: flex;
+        }
+        /* ✅ Progress bar cho video đã xem */
+        .video-card .progress {
+            height: 4px;
+            margin: 0;
+            border-radius: 0;
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .video-card .progress-bar {
+            background-color: #ff0000; /* Màu đỏ như YouTube */
+        }
+
+        /* ✅ Nút xóa history */
+        .video-close {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: all 0.3s;
+        }
+
+        .video-card:hover .video-close {
+            display: flex;
+        }
+
+        .video-close:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.1);
+        }
+
+        /* ✅ Group header */
+        .group-header {
+            font-size: 16px;
+            font-weight: 600;
+            color: #030303;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e5e5;
         }
     </style>
 }
