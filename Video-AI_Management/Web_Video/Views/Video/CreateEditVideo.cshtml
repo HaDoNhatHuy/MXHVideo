@@ -9,9 +9,9 @@
     <link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.css" rel="stylesheet">
     <style>
         /* body {
-            font-family: 'Roboto', Arial, sans-serif;
-            background-color: #f9f9f9;
-        } */
+                    font-family: 'Roboto', Arial, sans-serif;
+                    background-color: #f9f9f9;
+                } */
 
         .upload-container {
             max-width: 100%;
@@ -61,16 +61,43 @@
                 padding: 3px;
             }
 
-        .preview-image {
-            max-height: 200px;
-            overflow: hidden;
+        /* Đảm bảo khung preview hiển thị rõ ràng */
+        #previewImage {
+            width: 100%;
+            max-width: 300px;
+            min-height: 150px;
+            border: 2px dashed #e0e0e0;
             border-radius: 8px;
+            overflow: hidden;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f9f9f9;
+            position: relative;
         }
 
-            .preview-image img {
+            #previewImage img {
+                width: 100%;
+                height: auto;
                 object-fit: cover;
+                display: block;
+                border-radius: 8px;
             }
+
+            /* Placeholder khi chưa có ảnh */
+            #previewImage:empty::before {
+                content: "No image selected";
+                color: #606060;
+                font-size: 14px;
+                text-align: center;
+                padding: 10px;
+            }
+
+        /* Đảm bảo container cha không che khuất */
+        .col-lg-2 {
+            min-width: 200px; /* Đảm bảo đủ không gian cho preview */
+        }
 
         #progressContainer {
             margin-top: 15px;
@@ -1211,40 +1238,99 @@
     <partial name="_ValidationScriptsPartial" />
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.js"></script>
     <script>
-                $(document).ready(function () {
-            $('#Description').summernote();
-            console.log('Summernote initialized');
+        // Kiểm tra jQuery có load không
+        if (typeof $ === 'undefined') {
+            console.error('jQuery is not loaded! Please check _Layout.cshtml for jQuery inclusion.');
+        }
 
-            // Test hiển thị progress bar ngay khi load trang (để debug)
+        $(document).ready(function () {
+            // Kiểm tra Summernote
+            try {
+                $('#Description').summernote();
+                console.log('Summernote initialized');
+            } catch (e) {
+                console.error('Summernote initialization failed:', e);
+            }
+
+            // Debug progress container
             console.log('Progress container exists:', $('#progressContainer').length);
             console.log('Progress container display:', $('#progressContainer').css('display'));
+            console.log('Preview container exists:', $('#previewImage').length);
+            console.log('Image upload input exists:', $('#imageUpload').length);
         });
 
         $(function () {
             const videoId = $('#videoId').val();
+            console.log('Video ID:', videoId);
+
             if (videoId && videoId !== "00000000-0000-0000-0000-000000000000") {
                 $('#videoUpload').prop("disabled", true);
                 const url = $('#imageUrl').val();
-                $('#previewImage').append(`<img src="${url}" class="card-img-top rounded preview-image" />`);
-                console.log('Edit mode: Video upload disabled, image preview loaded');
+                console.log('Edit mode: Image URL from Model.ImageUrl:', url);
+
+                if (url) {
+                    const img = $('<img>', {
+                        src: url,
+                        alt: 'Thumbnail Preview',
+                        css: { width: '100%', height: 'auto', display: 'block' }
+                    });
+                    $('#previewImage').empty().append(img);
+                    console.log('Edit mode: Image appended to #previewImage');
+
+                    img.on('error', function () {
+                        console.error('Edit mode: Failed to load image from URL:', url);
+                        $('#previewImage').empty().append('<p class="text-danger">Failed to load image</p>');
+                    });
+                    img.on('load', function () {
+                        console.log('Edit mode: Image loaded successfully');
+                    });
+                } else {
+                    console.warn('Edit mode: No image URL provided');
+                    $('#previewImage').empty().append('<p class="text-warning">No thumbnail available</p>');
+                }
+            } else {
+                console.log('Create mode: Waiting for image upload');
             }
         });
 
-        $('#imageUpload').on('change', function () {
-            if (this.files && this.files[0]) {
+        $('#imageUpload').on('change', function (e) {
+            console.log('Image upload change event triggered');
+            const file = this.files && this.files[0];
+            if (file) {
+                console.log('Selected file:', file.name, 'Type:', file.type, 'Size:', file.size);
                 $('#previewImage').empty();
-                var reader = new FileReader();
+                const reader = new FileReader();
                 reader.onload = function (event) {
-                    $('#previewImage').append(`<img src="${event.target.result}" class="card-img-top rounded preview-image" />`);
-                    console.log('Image preview updated');
-                }
-                reader.readAsDataURL(this.files[0]);
+                    const img = $('<img>', {
+                        src: event.target.result,
+                        alt: 'Image Preview',
+                        css: { width: '100%', height: 'auto', display: 'block' }
+                    });
+                    $('#previewImage').append(img);
+                    console.log('Image preview updated, data URL length:', event.target.result.length);
+
+                    img.on('error', function () {
+                        console.error('Failed to load image preview for file:', file.name);
+                        $('#previewImage').empty().append('<p class="text-danger">Invalid image file</p>');
+                    });
+                    img.on('load', function () {
+                        console.log('Image preview loaded successfully');
+                    });
+                };
+                reader.onerror = function (error) {
+                    console.error('FileReader error:', error);
+                    $('#previewImage').empty().append('<p class="text-danger">Error reading image file</p>');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                console.warn('No file selected');
+                $('#previewImage').empty().append('<p class="text-warning">No image selected</p>');
             }
         });
 
         let xhr;
 
-                $('#videoAddEditForm').on('submit', function (e) {
+        $('#videoAddEditForm').on('submit', function (e) {
             e.preventDefault();
             console.log('=== FORM SUBMITTED ===');
 
@@ -1282,18 +1368,13 @@
             xhr.upload.onprogress = function (event) {
                 if (event.lengthComputable) {
                     const percentComplete = Math.round((event.loaded / event.total) * 100);
-
-                    // Thêm class animating để có hiệu ứng shimmer
                     if (!progressBar.hasClass('animating')) {
                         progressBar.addClass('animating');
                     }
-
-                    // Cập nhật progress bar
                     progressBar.css('width', percentComplete + '%');
                     $('#progressPercentage').text(percentComplete + '%');
                     $('#progressLoaded').text(formatBytes(event.loaded));
                     $('#progressTotal').text(formatBytes(event.total));
-
                     console.log(`Upload progress: ${percentComplete}% (${formatBytes(event.loaded)} / ${formatBytes(event.total)})`);
                 }
             };
@@ -1301,11 +1382,7 @@
             // Khi upload xong, bắt đầu nhận diện khuôn mặt
             xhr.upload.onloadend = function () {
                 console.log('Upload complete, starting face recognition...');
-
-                // Xóa animation shimmer
                 progressBar.removeClass('animating');
-
-                // Ẩn progress, hiện face recognition
                 progressContainer.hide();
                 uploadMessage.hide();
                 recognitionLoading.show();
@@ -1316,13 +1393,11 @@
             xhr.onload = function () {
                 console.log('=== XHR COMPLETE ===');
                 console.log('Status:', xhr.status);
-
                 recognitionLoading.hide();
 
                 if (xhr.status === 200) {
                     try {
                         const contentType = xhr.getResponseHeader('Content-Type');
-
                         if (contentType && contentType.includes('application/json')) {
                             const response = JSON.parse(xhr.responseText);
                             if (response.redirectUrl) {
@@ -1371,11 +1446,9 @@
         $('#cancelUpload').on('click', function (e) {
             e.preventDefault();
             console.log('Upload cancelled by user');
-
             if (xhr) {
                 xhr.abort();
             }
-
             $('#progressContainer').hide();
             $('#uploadMessage').hide();
             $('#recognitionLoading').hide();
@@ -1389,29 +1462,6 @@
         });
 
         // Format bytes helper function
-        function formatBytes(bytes) {
-            if (bytes === 0) return '0 KB';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-
-        // Hủy upload
-        $('#cancelUpload').on('click', function (e) {
-            e.preventDefault();
-            console.log('Upload cancelled by user');
-            if (xhr) {
-                xhr.abort();
-            }
-            $('#progressContainer').hide();
-            $('#uploadMessage').hide();
-            $('#recognitionLoading').hide();
-            $('#resultContainer').html('<p class="text-warning"><i class="fas fa-times-circle"></i> Upload đã bị hủy.</p>');
-            $('.btn-save').prop('disabled', false).text('Save');
-        });
-
-        // Format bytes
         function formatBytes(bytes) {
             if (bytes === 0) return '0 KB';
             const k = 1024;

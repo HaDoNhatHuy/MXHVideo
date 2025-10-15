@@ -64,8 +64,7 @@ namespace Web_Video.Controllers
                         ChannelName = v.Channel != null ? v.Channel.ChannelName : "Unknown Channel",
                         ChannelId = v.ChannelId ?? Guid.Empty,
                         CategoryId = v.CategoryId ?? Guid.Empty,
-                        Views = v.Viewers != null ? v.Viewers.Count() : 0,
-                        CreatedAtTimeAgo = SD.TimeAgo(v.UploadDate),
+                        Views = v.Viewers != null ? v.Viewers.Sum(vv => vv.NumberOfVisit) : 0, // ✅ Sửa thành Sum(NumberOfVisit)                        CreatedAtTimeAgo = SD.TimeAgo(v.UploadDate),
                         CreatedAt = v.UploadDate,
                         Duration = v.Duration ?? "0:00"
                     });

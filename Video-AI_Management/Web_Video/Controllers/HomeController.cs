@@ -209,7 +209,7 @@ namespace Web_Video.Controllers
                     ChannelId = x.Video.Channel.Id,
                     CreatedAtTimeAgo = SD.TimeAgo(x.Video.UploadDate),
                     x.Video.UploadDate,
-                    Views = x.Video.Views
+                    Views = x.Video.Viewers.Select(v => v.NumberOfVisit).Sum(),  // Tổng views
                 });
             var totalItems = await query.CountAsync();
             var items = await query
@@ -269,7 +269,45 @@ namespace Web_Video.Controllers
             return Json(new ApiResponse(200, message: "Video removed from liked videos."));
         }
 
-        [Authorize(Roles = $"{SD.UserRole}")]
+        //[Authorize(Roles = $"{SD.UserRole}")]
+        //[HttpPost]
+        //public async Task<IActionResult> AddOrUpdateView(string videoId)
+        //{
+        //    if (!Guid.TryParse(videoId, out var videoGuid))
+        //    {
+        //        return Json(new ApiResponse(400, message: "Invalid video ID."));
+        //    }
+
+        //    var videoView = await Context.VideoViews
+        //        .FirstOrDefaultAsync(x => x.AppUserId == User.GetUserId() && x.VideoId == videoGuid);
+
+        //    if (videoView == null)
+        //    {
+        //        videoView = new VideoView
+        //        {
+        //            AppUserId = User.GetUserId(),
+        //            VideoId = videoGuid,
+        //            LastVisit = DateTime.UtcNow,
+        //            NumberOfVisit = 1,
+        //            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+        //        };
+        //        Context.VideoViews.Add(videoView);
+        //    }
+        //    else
+        //    {
+        //        videoView.LastVisit = DateTime.UtcNow;
+        //        videoView.NumberOfVisit += 1;
+        //    }
+
+        //    var video = await Context.Videos.FirstOrDefaultAsync(x => x.Id == videoGuid);
+        //    if (video != null)
+        //    {
+        //        video.Views = (video.Views ?? 0) + 1;
+        //    }
+
+        //    await Context.SaveChangesAsync();
+        //    return Json(new ApiResponse(200, message: "View recorded successfully."));
+        //}
         [HttpPost]
         public async Task<IActionResult> AddOrUpdateView(string videoId)
         {
@@ -281,31 +319,44 @@ namespace Web_Video.Controllers
             var videoView = await Context.VideoViews
                 .FirstOrDefaultAsync(x => x.AppUserId == User.GetUserId() && x.VideoId == videoGuid);
 
+            var now = DateTime.UtcNow;
+            bool increasedVisit = false;
             if (videoView == null)
             {
                 videoView = new VideoView
                 {
                     AppUserId = User.GetUserId(),
                     VideoId = videoGuid,
-                    LastVisit = DateTime.UtcNow,
+                    LastVisit = now,
                     NumberOfVisit = 1,
                     IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
                 };
                 Context.VideoViews.Add(videoView);
+                increasedVisit = true;
             }
             else
             {
-                videoView.LastVisit = DateTime.UtcNow;
-                videoView.NumberOfVisit += 1;
-            }
-
-            var video = await Context.Videos.FirstOrDefaultAsync(x => x.Id == videoGuid);
-            if (video != null)
-            {
-                video.Views = (video.Views ?? 0) + 1;
+                if (now > videoView.LastVisit.AddHours(1)) // ✅ Giới hạn tăng 1 lần/giờ
+                {
+                    videoView.NumberOfVisit += 1;
+                    increasedVisit = true;
+                }
+                videoView.LastVisit = now;
+                videoView.IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
             }
 
             await Context.SaveChangesAsync();
+
+            if (increasedVisit)
+            {
+                var video = await Context.Videos.FirstOrDefaultAsync(x => x.Id == videoGuid);
+                if (video != null)
+                {
+                    video.Views = Context.VideoViews.Where(vv => vv.VideoId == videoGuid).Sum(vv => vv.NumberOfVisit); // ✅ Đồng bộ với tổng
+                }
+                await Context.SaveChangesAsync();
+            }
+
             return Json(new ApiResponse(200, message: "View recorded successfully."));
         }
         #endregion

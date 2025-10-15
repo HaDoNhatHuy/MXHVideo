@@ -273,7 +273,23 @@ namespace Web_Video.Controllers
 
                 if (channel == null)
                 {
-                    return NotFound(new { message = "Channel not found." });
+                    return Json(new
+                    {
+                        statusCode = 200,
+                        result = new
+                        {
+                            totalViews = 0,
+                            subscribers = 0,
+                            likes = 0,
+                            comments = 0,
+                            viewsChange = 0,
+                            subscribersChange = 0,
+                            likesChange = 0,
+                            commentsChange = 0,
+                            viewsOverTime = new { Labels = new string[0], Data = new int[0] },
+                            trafficSources = new { Labels = new string[0], Data = new int[0] }
+                        }
+                    });
                 }
 
                 DateTime startDate;
@@ -425,6 +441,37 @@ namespace Web_Video.Controllers
             }
         }
 
+        //[HttpGet]
+        //public async Task<IActionResult> GetTotalViews()
+        //{
+        //    try
+        //    {
+        //        var userId = User.GetUserId();
+        //        if (string.IsNullOrEmpty(userId))
+        //        {
+        //            return Unauthorized(new { statusCode = 401, message = "User not authenticated." });
+        //        }
+
+        //        var channel = await _context.Channels
+        //            .Include(c => c.Videos)
+        //            .Include(c => c.Subscribers)
+        //            .FirstOrDefaultAsync(c => c.AppUserId == userId);
+
+        //        if (channel == null)
+        //        {
+        //            return NotFound(new { statusCode = 404, message = "Channel not found." });
+        //        }
+
+        //        var totalViews = channel.Videos.Sum(v => v.Views ?? 0);
+        //        var subscribers = channel.Subscribers.Count;
+
+        //        return Json(new { statusCode = 200, totalViews, subscribers });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new { statusCode = 500, message = $"Error in GetTotalViews: {ex.Message}" });
+        //    }
+        //}
         [HttpGet]
         public async Task<IActionResult> GetTotalViews()
         {
@@ -433,7 +480,7 @@ namespace Web_Video.Controllers
                 var userId = User.GetUserId();
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return Unauthorized(new { statusCode = 401, message = "User not authenticated." });
+                    return Json(new { statusCode = 401, message = "User not authenticated." });
                 }
 
                 var channel = await _context.Channels
@@ -441,19 +488,19 @@ namespace Web_Video.Controllers
                     .Include(c => c.Subscribers)
                     .FirstOrDefaultAsync(c => c.AppUserId == userId);
 
-                if (channel == null)
+                int totalViews = 0;
+                int subscribers = 0;
+                if (channel != null)
                 {
-                    return NotFound(new { statusCode = 404, message = "Channel not found." });
+                    totalViews = channel.Videos.Sum(v => v.Views ?? 0);
+                    subscribers = channel.Subscribers.Count;
                 }
-
-                var totalViews = channel.Videos.Sum(v => v.Views ?? 0);
-                var subscribers = channel.Subscribers.Count;
 
                 return Json(new { statusCode = 200, totalViews, subscribers });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { statusCode = 500, message = $"Error in GetTotalViews: {ex.Message}" });
+                return Json(new { statusCode = 500, message = $"Error: {ex.Message}" });
             }
         }
     }

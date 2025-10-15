@@ -606,26 +606,75 @@ namespace Web_Video.Controllers
         //    }
         //}
 
+        //[HttpDelete]
+        //public async Task<IActionResult> DeleteVideo(Guid id)
+        //{
+        //    var video = await Context.Videos
+        //        .Where(x => x.Id == id && x.Channel.AppUserId == User.GetUserId())
+        //        .Select(x => new
+        //        {
+        //            x.Id,
+        //            x.Thumbnail,
+        //            x.Title
+        //        }).FirstOrDefaultAsync();
+        //    //var video = await UnitOfWork.VideoRepo.GetFirstOrDefaultAsync(x => x.Id == id && x.Channel.AppUserId == User.GetUserId());
+        //    if (video != null)
+        //    {
+        //        PhotoService.DeletePhotoLocally(video.Thumbnail);
+        //        await UnitOfWork.VideoRepo.RemoveVideoAsync(video.Id);
+        //        await UnitOfWork.CompleteAsync();
+        //        return Json(new ApiResponse(200, "Deleted", "Your video of " + video.Title + " has been deleted"));
+        //    }
+        //    return Json(new ApiResponse(404, message: "The requested video was not found"));
+        //}
         [HttpDelete]
         public async Task<IActionResult> DeleteVideo(Guid id)
         {
-            var video = await Context.Videos
-                .Where(x => x.Id == id && x.Channel.AppUserId == User.GetUserId())
-                .Select(x => new
-                {
-                    x.Id,
-                    x.Thumbnail,
-                    x.Title
-                }).FirstOrDefaultAsync();
-            //var video = await UnitOfWork.VideoRepo.GetFirstOrDefaultAsync(x => x.Id == id && x.Channel.AppUserId == User.GetUserId());
-            if (video != null)
+            try
             {
+                var video = await Context.Videos
+                    .Include(x => x.Comments)
+                    .Include(x => x.LikeDislikes)
+                    .Include(x => x.Viewers)
+                    .Include(x => x.RecognizeCelebrities)
+                    .Where(x => x.Id == id && x.Channel.AppUserId == User.GetUserId())
+                    .Select(x => new
+                    {
+                        x.Id,
+                        x.Thumbnail,
+                        x.Title,
+                        x.Comments,
+                        x.LikeDislikes,
+                        x.Viewers,
+                        x.RecognizeCelebrities
+                    }).FirstOrDefaultAsync();
+
+                if (video == null)
+                {
+                    return Json(new ApiResponse(404, message: "The requested video was not found"));
+                }
+
+                // Xóa các bản ghi liên quan
+                Context.Comments.RemoveRange(video.Comments);
+                Context.LikeDislikes.RemoveRange(video.LikeDislikes);
+                Context.VideoViews.RemoveRange(video.Viewers);
+                Context.RecognizeCelebrities.RemoveRange(video.RecognizeCelebrities);
+
+                // Xóa thumbnail
                 PhotoService.DeletePhotoLocally(video.Thumbnail);
+
+                // Xóa video
                 await UnitOfWork.VideoRepo.RemoveVideoAsync(video.Id);
                 await UnitOfWork.CompleteAsync();
-                return Json(new ApiResponse(200, "Deleted", "Your video of " + video.Title + " has been deleted"));
+
+                return Json(new ApiResponse(200, "Deleted", "Your video '" + video.Title + "' has been deleted"));
             }
-            return Json(new ApiResponse(404, message: "The requested video was not found"));
+            catch (Exception ex)
+            {
+                // Log lỗi để debug
+                Console.WriteLine($"Error deleting video: {ex.Message}\n{ex.StackTrace}");
+                return Json(new ApiResponse(500, message: $"Error deleting video: {ex.Message}"));
+            }
         }
         #endregion
 

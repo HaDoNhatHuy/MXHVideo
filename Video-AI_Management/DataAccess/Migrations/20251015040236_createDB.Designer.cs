@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20251005135346_AddDurationToVideo")]
-    partial class AddDurationToVideo
+    [Migration("20251015040236_createDB")]
+    partial class createDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -418,8 +418,14 @@ namespace DataAccess.Migrations
                     b.Property<string>("PostalCode")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<float?>("ProgressSeconds")
+                        .HasColumnType("real");
+
                     b.Property<Guid>("VideoId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ViewDate")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 

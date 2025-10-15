@@ -82,6 +82,7 @@ namespace DataAccess.Repo
                 {
                     Id = x.Id,
                     Thumbnail = x.Thumbnail,
+                    Duration = x.Duration ?? "0:00", // Thêm Duration
                     Title = x.Title,
                     Description = x.Description,
                     CreatedAt = x.UploadDate,

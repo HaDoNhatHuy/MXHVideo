@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Web_Video.Services.IServices;
 using WebVideo.Utility;
+using Xabe.FFmpeg;
 
 namespace Web_Video.Seed
 {
@@ -89,6 +90,7 @@ namespace Web_Video.Seed
 
                 // adding some categories into the database
                 var animals = new Category { Id = Guid.Parse("AAB1C154-6338-41B0-981B-C1CC5465D770"), CategoryName = "Animal" };
+                var music = new Category { Id = @Guid.Parse("F12B613B-5719-4FCE-83FF-E7B08ECE172B"), CategoryName = "Music" };
                 var food = new Category { Id = Guid.Parse("32780986-DAFB-4641-9E1F-FEA1257EB057"), CategoryName = "Food" };
                 var game = new Category { Id = Guid.Parse("DD488F44-3BCE-4D02-998B-DF48B22B7AED"), CategoryName = "Game" };
                 var nature = new Category { Id = Guid.Parse("463ECBAA-14A4-4D72-AAEC-27551A546241"), CategoryName = "Nature" };
@@ -127,7 +129,9 @@ namespace Web_Video.Seed
 
                     IFormFile imageFile = ConvertToFile(imageFiles[i]);
                     IFormFile videoFile = ConvertToFile(videoFiles[i]);
-
+                    // Tính thời lượng video
+                    string videoPath = videoFiles[i].FullName; // Đường dẫn file video
+                    string duration = await GetVideoDuration(videoPath); // Gọi hàm GetVideoDuration
                     //var videoToAdd = new Video
                     //{
                     //    Id = Guid.NewGuid(),
@@ -154,6 +158,7 @@ namespace Web_Video.Seed
                         Thumbnail = photoService.UploadPhotoLocally(imageFile),
                         ChannelId = (i % 2 == 0) ? johnChannel.Id : peterChannel.Id,
                         UploadDate = SD.GetRandomDate(new DateTime(2015, 1, 1), DateTime.UtcNow, i),
+                        Duration = duration // Gán thời lượng video
                     };
 
                     videoToAdd.VideoFile = new VideoFile
@@ -191,6 +196,20 @@ namespace Web_Video.Seed
             await file.CopyToAsync(ms);
             contents = ms.ToArray();
             return contents;
+        }
+        private static async Task<string> GetVideoDuration(string videoPath)
+        {
+            try
+            {
+                Xabe.FFmpeg.FFmpeg.SetExecutablesPath(@"C:\FFmpeg\ffmpeg\bin");
+                var mediaInfo = await FFmpeg.GetMediaInfo(videoPath);
+                var duration = mediaInfo.Duration;
+                return duration.ToString(@"mm\:ss");
+            }
+            catch
+            {
+                return "0:00"; // Fallback nếu lỗi
+            }
         }
         #endregion
     }

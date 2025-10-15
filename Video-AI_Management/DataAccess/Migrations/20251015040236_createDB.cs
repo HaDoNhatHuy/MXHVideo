@@ -206,6 +206,7 @@ namespace DataAccess.Migrations
                     ChannelName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     About = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ChannelPicture = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    BannerPicture = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     AppUserId = table.Column<string>(type: "nvarchar(450)", nullable: true)
                 },
@@ -253,6 +254,7 @@ namespace DataAccess.Migrations
                     VideoUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Thumbnail = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UploadDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Duration = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Views = table.Column<int>(type: "int", nullable: true),
                     CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ChannelId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
@@ -387,7 +389,9 @@ namespace DataAccess.Migrations
                     PostalCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Country = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Is_Proxy = table.Column<bool>(type: "bit", nullable: true),
-                    LastVisit = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    ProgressSeconds = table.Column<float>(type: "real", nullable: true),
+                    LastVisit = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ViewDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {

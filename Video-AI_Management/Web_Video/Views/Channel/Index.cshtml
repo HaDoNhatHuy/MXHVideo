@@ -282,8 +282,32 @@ else
     <partial name="_ValidationScriptsPartial" />
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <!-- Nếu dùng SweetAlert, thêm dòng này -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> -->
 
     <script>
+        // Hàm hiển thị thông báo
+        function displayNotification(isSuccess, title, message, type) {
+            alert(`${title}: ${message}`);
+            // Nếu dùng SweetAlert (uncomment nếu đã include):
+            /*
+            Swal.fire({
+                icon: isSuccess ? 'success' : 'error',
+                title: title,
+                text: message,
+                confirmButtonText: 'OK'
+            });
+            */
+        }
+
+        // Hàm confirmation để xử lý confirm dialog
+        async function confirmation(message) {
+            return new Promise((resolve) => {
+                const result = window.confirm(message);
+                resolve(result);
+            });
+        }
+
         let pageNumber = 1;
         let pageSize = 10; // Số video mỗi lần tải
         let sortBy = '';
@@ -437,6 +461,7 @@ else
 
             if (videos.length > 0) {
                 videos.forEach((v) => {
+                    console.log('Video ID:', v.id); // Thêm log để debug
                     videoItems += '<div class="video-card">';
                     videoItems += '<div class="video-thumbnail-wrapper">';
                     videoItems += `<img src="${v.thumbnail || '/images/default-thumbnail.jpg'}" alt="${v.title}" class="video-thumbnail">`;
@@ -472,8 +497,13 @@ else
                 url: "/Channel/GetTotalViews",
                 type: "GET",
                 success: function (data) {
-                    $('#totalViewsAbout').text(data.totalViews.toLocaleString());
-                    $('#subscribersAbout').text(data.subscribers.toLocaleString());
+                    if (data.statusCode === 200) {
+                        $('#totalViewsAbout').text(data.totalViews.toLocaleString());
+                        $('#subscribersAbout').text(data.subscribers.toLocaleString());
+                    } else {
+                        $('#totalViewsAbout').text('0');
+                        $('#subscribersAbout').text('0');
+                    }
                 },
                 error: function () {
                     $('#totalViewsAbout').text('0');
@@ -490,24 +520,45 @@ else
                 type: "GET",
                 data: { timeFilter: timeFilter },
                 success: function (data) {
-                    $('#totalViews').text(data.totalViews.toLocaleString());
-                    $('#subscribers').text(data.subscribers.toLocaleString());
-                    $('#likes').text(data.likes.toLocaleString());
-                    $('#comments').text(data.comments.toLocaleString());
-                    $('#viewsChange').text(`+${data.viewsChange || 0}% so với tháng trước`);
-                    $('#subscribersChange').text(`+${data.subscribersChange || 0}% so với tháng trước`);
-                    $('#likesChange').text(`+${data.likesChange || 0}% so với tháng trước`);
-                    $('#commentsChange').text(`+${data.commentsChange || 0}% so với tháng trước`);
+                    if (data.statusCode !== 200) {
+                        console.error('API error:', data.message);
+                        $('#totalViews').text('0');
+                        $('#subscribers').text('0');
+                        $('#likes').text('0');
+                        $('#comments').text('0');
+                        $('#viewsChange').text('+0% so với tháng trước');
+                        $('#subscribersChange').text('+0% so với tháng trước');
+                        $('#likesChange').text('+0% so với tháng trước');
+                        $('#commentsChange').text('+0% so với tháng trước');
+                        return;
+                    }
 
+                    $('#totalViews').text(data.result.totalViews.toLocaleString());
+                    $('#subscribers').text(data.result.subscribers.toLocaleString());
+                    $('#likes').text(data.result.likes.toLocaleString());
+                    $('#comments').text(data.result.comments.toLocaleString());
+                    $('#viewsChange').text(`+${data.result.viewsChange || 0}% so với tháng trước`);
+                    $('#subscribersChange').text(`+${data.result.subscribersChange || 0}% so với tháng trước`);
+                    $('#likesChange').text(`+${data.result.likesChange || 0}% so với tháng trước`);
+                    $('#commentsChange').text(`+${data.result.commentsChange || 0}% so với tháng trước`);
+
+                    // Hủy chart cũ nếu tồn tại
                     if (viewsChart) viewsChart.destroy();
+                    if (trafficChart) trafficChart.destroy();
+
+                    // Đảm bảo dữ liệu chart hợp lệ
+                    const viewsOverTime = data.result.viewsOverTime || { Labels: [], Data: [] };
+                    const trafficSources = data.result.trafficSources || { Labels: [], Data: [] };
+
+                    // Tạo chart Views Over Time
                     const viewsCtx = document.getElementById('viewsChart').getContext('2d');
                     viewsChart = new Chart(viewsCtx, {
                         type: 'line',
                         data: {
-                            labels: data.viewsOverTime.labels,
+                            labels: viewsOverTime.Labels,
                             datasets: [{
                                 label: 'Lượt xem',
-                                data: data.viewsOverTime.data,
+                                data: viewsOverTime.Data,
                                 borderColor: '#3ea6ff',
                                 backgroundColor: 'rgba(62, 166, 255, 0.1)',
                                 fill: true,
@@ -545,14 +596,14 @@ else
                         }
                     });
 
-                    if (trafficChart) trafficChart.destroy();
+                    // Tạo chart Traffic Sources
                     const trafficCtx = document.getElementById('trafficSourcesChart').getContext('2d');
                     trafficChart = new Chart(trafficCtx, {
                         type: 'doughnut',
                         data: {
-                            labels: data.trafficSources.labels,
+                            labels: trafficSources.Labels,
                             datasets: [{
-                                data: data.trafficSources.data,
+                                data: trafficSources.Data,
                                 backgroundColor: [
                                     '#3ea6ff',
                                     '#ff6b6b',
@@ -581,7 +632,8 @@ else
                         }
                     });
                 },
-                error: function () {
+                error: function (xhr) {
+                    console.error('AJAX error:', xhr.responseText);
                     $('#totalViews').text('0');
                     $('#subscribers').text('0');
                     $('#likes').text('0');
@@ -615,14 +667,18 @@ else
                     url: "/Video/DeleteVideo/" + videoId,
                     type: "DELETE",
                     success: function (data) {
-                        displayNotification(data.isSuccess, data.title, data.message, 'modal');
-                        pageNumber = 1;
-                        hasMoreVideos = true;
-                        $('#videosGrid').empty();
-                        getVideos();
+                        if (data.statusCode === 200) {
+                            displayNotification(data.isSuccess, data.title, data.message, 'modal');
+                            pageNumber = 1;
+                            hasMoreVideos = true;
+                            $('#videosGrid').empty();
+                            getVideos();
+                        } else {
+                            displayNotification(false, "Lỗi", data.message || "Đã xảy ra lỗi khi xóa video.", 'modal');
+                        }
                     },
                     error: function (xhr) {
-                        displayNotification(false, "Lỗi", "Đã xảy ra lỗi khi xóa video.", 'modal');
+                        displayNotification(false, "Lỗi", xhr.responseJSON?.message || "Đã xảy ra lỗi khi xóa video.", 'modal');
                     },
                     complete: function () {
                         $loadingSpinner.hide();
