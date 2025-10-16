@@ -103,6 +103,7 @@ namespace Web_Video.Seed
                 context.Categories.Add(nature);
                 context.Categories.Add(news);
                 context.Categories.Add(sport);
+                context.Categories.Add(music);
 
                 await context.SaveChangesAsync();
 
