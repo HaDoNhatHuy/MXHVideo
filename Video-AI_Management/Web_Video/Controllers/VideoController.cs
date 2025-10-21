@@ -291,7 +291,7 @@ namespace Web_Video.Controllers
                 toReturn.Title = fetchedVideo.Title;
                 toReturn.Description = fetchedVideo.Description;
                 toReturn.CategoryId = fetchedVideo.CategoryId;
-                toReturn.ImageUrl = fetchedVideo.Thumbnail;
+                toReturn.ImageUrl = fetchedVideo.Thumbnail.Replace("\\", "/");
             }
 
             toReturn.CategoryDropdown = await GetCategoryDropdownAsync();

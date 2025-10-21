@@ -1,0 +1,314 @@
+﻿@model Web_Video.ViewModels.Playlist.PlaylistWatchViewModel
+
+@{
+    ViewData["Title"] = "Xem danh sách phát: " + Model.PlaylistInfo.Name;
+    ViewData["CurrentPage"] = "Playlists";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid" style="background-color: #f9f9f9; min-height: 100vh; padding: 24px 0;">
+    <div class="row" style="max-width: 1920px; margin: 0 auto;">
+        <!-- Video Player Section -->
+        <div class="col-lg-8 col-md-12" style="padding: 0 24px;">
+            @if (Model.Items.Any())
+            {
+                var firstItem = Model.Items.OrderBy(i => i.OrderIndex).First();
+                <div class="video-player-container">
+                    <div class="video-wrapper">
+                        <video id="mainVideo" controls style="width: 100%; background: #000; border-radius: 12px;">
+                            <source src="@Url.Content("~/videos/" + firstItem.VideoId + ".mp4")" type="video/mp4">
+                        </video>
+                    </div>
+
+                    <!-- Video Info -->
+                    <div class="video-info-section" style="margin-top: 12px;">
+                        <h1 class="video-title" style="font-size: 20px; font-weight: 500; color: #0f0f0f; line-height: 28px; margin-bottom: 12px;">
+                            @firstItem.Title
+                        </h1>
+
+                        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap: 12px;">
+                            <div class="channel-info d-flex align-items-center" style="gap: 12px;">
+                                <div class="channel-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600;">
+                                    @firstItem.ChannelName.Substring(0, 1).ToUpper()
+                                </div>
+                                <div>
+                                    <div style="font-size: 14px; font-weight: 500; color: #0f0f0f;">@firstItem.ChannelName</div>
+                                    <div style="font-size: 12px; color: #606060;">Thời lượng: @firstItem.Duration</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert" style="background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; color: #606060;">
+                    <i class="fas fa-info-circle"></i> Danh sách phát này chưa có video nào.
+                </div>
+            }
+        </div>
+
+        <!-- Playlist Sidebar -->
+        <div class="col-lg-4 col-md-12" style="padding: 0 24px;">
+            <div class="playlist-sidebar" style="background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e5e5;">
+                <!-- Playlist Header -->
+                <div class="playlist-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; color: #fff;">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h2 style="font-size: 18px; font-weight: 600; margin: 0;">@Model.PlaylistInfo.Name</h2>
+                        <button class="btn-icon-delete" onclick="deletePlaylist('@Model.PlaylistInfo.Id.ToString()', '@Model.PlaylistInfo.Name')"
+                                style="background: rgba(255,255,255,0.2); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; transition: all 0.2s;"
+                                onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                                onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div style="font-size: 13px; opacity: 0.9;">
+                        <i class="fas fa-list"></i> @Model.PlaylistInfo.VideoCount video
+                    </div>
+                </div>
+
+                <!-- Video List -->
+                <div class="playlist-videos" style="max-height: 600px; overflow-y: auto;">
+                    @{
+                        int index = 1;
+                    }
+                    @foreach (var item in Model.Items.OrderBy(i => i.OrderIndex))
+                    {
+                        <div class="playlist-video-item" data-video-id="@item.VideoId"
+                             style="display: flex; padding: 12px 16px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s; position: relative;"
+                             onmouseover="this.style.background='#f9f9f9'; this.querySelector('.video-actions').style.opacity='1';"
+                             onmouseout="this.style.background='#fff'; this.querySelector('.video-actions').style.opacity='0';">
+
+                            <!-- Video Index -->
+                            <div class="video-index" style="min-width: 30px; font-size: 14px; color: #606060; font-weight: 500; padding-top: 4px;">
+                                @index
+                            </div>
+
+                            <!-- Thumbnail -->
+                            <div class="video-thumbnail" style="position: relative; min-width: 120px; width: 120px; height: 68px; margin: 0 12px; border-radius: 8px; overflow: hidden;">
+                                <img src="@item.Thumbnail" alt="@item.Title" style="width: 100%; height: 100%; object-fit: cover;">
+                                <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.8); color: #fff; padding: 2px 4px; border-radius: 2px; font-size: 11px; font-weight: 500;">
+                                    @item.Duration
+                                </div>
+                            </div>
+
+                            <!-- Video Info -->
+                            <div class="video-details" style="flex: 1; min-width: 0;">
+                                <a href="/Video/Watch/@item.VideoId" style="text-decoration: none;">
+                                    <h3 style="font-size: 14px; font-weight: 500; color: #0f0f0f; margin: 0 0 4px 0; line-height: 20px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                        @item.Title
+                                    </h3>
+                                </a>
+                                <p style="font-size: 12px; color: #606060; margin: 0;">@item.ChannelName</p>
+                            </div>
+
+                            <!-- Actions (visible on hover) -->
+                            <div class="video-actions" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); opacity: 0; transition: opacity 0.2s;">
+                                <button class="btn-remove-video" onclick="event.stopPropagation(); removeVideoFromPlaylist('@Model.PlaylistInfo.Id.ToString()', '@item.VideoId.ToString()', '@item.Title')"
+                                        style="background: #fff; border: 1px solid #e5e5e5; color: #606060; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; transition: all 0.2s;"
+                                        onmouseover="this.style.background='#ff0000'; this.style.color='#fff'; this.style.borderColor='#ff0000';"
+                                        onmouseout="this.style.background='#fff'; this.style.color='#606060'; this.style.borderColor='#e5e5e5';">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        index++;
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Css {
+    <style>
+        /* Video Player Styles */
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+            .video-wrapper video {
+                aspect-ratio: 16/9;
+                outline: none;
+            }
+
+        /* Playlist Sidebar Scrollbar */
+        .playlist-videos::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .playlist-videos::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .playlist-videos::-webkit-scrollbar-thumb {
+            background: #d0d0d0;
+            border-radius: 4px;
+        }
+
+            .playlist-videos::-webkit-scrollbar-thumb:hover {
+                background: #b0b0b0;
+            }
+
+        /* Active Video Highlight */
+        .playlist-video-item.active {
+            background: #f0f0ff !important;
+            border-left: 3px solid #667eea !important;
+        }
+
+            .playlist-video-item.active .video-index {
+                color: #667eea !important;
+                font-weight: 600 !important;
+            }
+
+        /* Responsive */
+        @@media (max-width: 991px) {
+            .playlist-sidebar {
+                margin-top: 24px;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .video-title {
+                font-size: 16px !important;
+                line-height: 24px !important;
+            }
+
+            .playlist-header {
+                padding: 16px !important;
+            }
+
+                .playlist-header h2 {
+                    font-size: 16px !important;
+                }
+
+            .playlist-video-item {
+                padding: 8px 12px !important;
+            }
+
+            .video-thumbnail {
+                min-width: 100px !important;
+                width: 100px !important;
+                height: 56px !important;
+            }
+
+            .video-details h3 {
+                font-size: 13px !important;
+            }
+        }
+
+        /* Button Hover Effects */
+        .btn-icon-delete:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-remove-video:hover i {
+            animation: shake 0.3s;
+        }
+
+        @@keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-2px);
+            }
+
+            75% {
+                transform: translateX(2px);
+            }
+        }
+
+        /* Loading State */
+        .video-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+            z-index: -1;
+        }
+
+        /* Link Hover */
+        .video-details a:hover h3 {
+            color: #667eea;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Logic điều hướng video nếu cần
+        });
+
+        // Thay thế hàm removeVideoFromPlaylist
+        function removeVideoFromPlaylist(playlistId, videoId, videoTitle) {
+            if (confirm(`Bạn có chắc muốn xóa video "${videoTitle}" khỏi danh sách phát?`)) {
+                // Thêm loading indicator
+                const videoItem = event.target.closest('.playlist-video-item');
+                videoItem.style.opacity = '0.5';
+
+                $.ajax({
+                    url: '/Playlist/RemoveVideoFromPlaylist',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ playlistId: playlistId, videoId: videoId }),
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.isSuccess) {
+                            // Smooth remove animation
+                            videoItem.style.transition = 'all 0.3s';
+                            videoItem.style.transform = 'translateX(100%)';
+                            setTimeout(() => location.reload(), 300);
+                        } else {
+                            alert(response.message);
+                            videoItem.style.opacity = '1';
+                        }
+                    },
+                    error: function() {
+                        alert('Lỗi khi xóa video.');
+                        videoItem.style.opacity = '1';
+                    }
+                });
+            }
+        }
+
+        // Xóa toàn bộ playlist
+        function deletePlaylist(playlistId, playlistName) {
+            if (confirm(`Bạn có chắc muốn xóa danh sách phát "${playlistName}"? Hành động này không thể hoàn tác.`)) {
+                // Đảm bảo playlistId là GUID hợp lệ
+                console.log('Playlist ID:', playlistId); // Debug để kiểm tra giá trị
+                $.ajax({
+                    url: '/Playlist/DeletePlaylist',
+                    type: 'POST',
+                    data: { id: playlistId }, // Đảm bảo key 'id' khớp với tham số trong action
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.isSuccess) {
+                            window.location.href = '/Playlist/Index'; // Quay lại trang danh sách playlist
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error:', error); // Debug lỗi
+                        alert('Lỗi khi xóa danh sách phát.');
+                    }
+                });
+            }
+        }
+    </script>
+}

@@ -1,0 +1,172 @@
+﻿@model IEnumerable<Web_Video.ViewModels.Playlist.PlaylistDisplayViewModel>
+
+@{
+    ViewData["Title"] = "Danh sách phát của bạn";
+    ViewData["CurrentPage"] = "Playlists";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid" style="padding: 24px 96px; background-color: #cba088;">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex align-items-center mb-4">
+                <i class="fas fa-list-ul" style="font-size: 24px; color: #fff; margin-right: 16px;"></i>
+                <h5 style="color: #fff; margin: 0; font-weight: 500; font-size: 20px;">Danh sách phát của bạn</h5>
+            </div>
+        </div>
+        <div id="playlistsContainer" class="row w-100">
+            <div class="col-12 text-center p-5" id="loadingIndicator">
+                <i class="fas fa-spinner fa-spin fa-2x" style="color: #aaa;"></i>
+                <p style="color: #aaa; margin-top: 16px;">Đang tải danh sách phát...</p>
+            </div>
+        </div>
+    </div>
+</div>
+@section Css{
+    <style>
+        .playlist-card {
+            transition: transform 0.2s;
+        }
+
+            .playlist-card:hover {
+                transform: translateY(-4px);
+            }
+
+        .playlist-thumbnail {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+
+        .playlist-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.6));
+            border-radius: 12px;
+        }
+
+        .playlist-count {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .playlist-hover-info {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            text-align: center;
+            color: #fff;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+            .playlist-hover-info i {
+                font-size: 48px;
+                margin-bottom: 8px;
+            }
+
+        .playlist-thumbnail:hover .playlist-hover-info {
+            opacity: 1;
+        }
+
+        .playlist-title a:hover {
+            color: #fff !important;
+        }
+
+        .view-playlist-btn:hover {
+            color: #fff !important;
+        }
+
+        #loadingIndicator {
+            background-color: transparent;
+        }
+    </style>
+}
+@section Scripts {
+    <script>
+            $(document).ready(function() {
+                loadUserPlaylists();
+            });
+
+            function loadUserPlaylists() {
+                const container = $('#playlistsContainer');
+                const loading = $('#loadingIndicator');
+                loading.show();
+                container.empty();
+
+                $.ajax({
+                    url: "/Playlist/GetUserPlaylists",
+                    type: "GET",
+                    success: function (data) {
+                        loading.hide();
+                            if (data.isSuccess && data.result.length > 0) {
+            let html = '';
+            data.result.forEach(p => {
+                const videoCountText = p.videoCount === 1 ? '1 video' : `${p.videoCount} videos`;
+                const thumbnailUrl = p.firstVideoThumbnail || '/img/default-thumbnail.jpg';
+
+                html += `
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-4">
+                        <div class="playlist-card" style="cursor: pointer;">
+                            <div class="playlist-thumbnail" onclick="location.href='/Playlist/WatchPlaylist/${p.id}'">
+                                <img src="${thumbnailUrl}" alt="${p.name}" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 12px;">
+                                <div class="playlist-overlay">
+                                    <div class="playlist-count">
+                                        <i class="fas fa-list"></i> ${p.videoCount}
+                                    </div>
+                                    <div class="playlist-hover-info">
+                                        <i class="fas fa-play"></i>
+                                        <span>PHÁT TẤT CẢ</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="playlist-info" style="padding: 12px 0;">
+                                <h3 class="playlist-title">
+                                    <a href="/Playlist/WatchPlaylist/${p.id}" style="color: #fff; text-decoration: none; font-size: 14px; font-weight: 500; line-height: 20px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                        ${p.name}
+                                    </a>
+                                </h3>
+                                <div class="playlist-meta" style="color: #aaa; font-size: 12px; margin-top: 4px;">
+                                    <span>${videoCountText}</span>
+                                    <span style="margin: 0 4px;">•</span>
+                                    <span>${p.createdAtTimeAgo}</span>
+                                </div>
+                                <a href="/Playlist/WatchPlaylist/${p.id}" class="view-playlist-btn" style="color: #aaa; font-size: 12px; margin-top: 8px; display: inline-block; text-decoration: none;">
+                                    XEM TOÀN BỘ DANH SÁCH PHÁT
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.html(html);
+        } else {
+            container.html(`
+                <div class="col-12 text-center p-5">
+                    <i class="fas fa-list-ul" style="font-size: 48px; color: #717171; margin-bottom: 16px;"></i>
+                    <p style="color: #aaa; font-size: 14px;">Bạn chưa có danh sách phát nào.</p>
+                </div>
+            `);
+        }
+                    },
+                    error: function () {
+                        loading.hide();
+                        container.html('<div class="col-12 text-center p-3 text-danger">Lỗi khi tải danh sách phát.</div>');
+                    }
+                });
+            }
+    </script>
+}

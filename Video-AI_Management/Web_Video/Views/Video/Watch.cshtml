@@ -53,7 +53,9 @@
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
                             <div class="dropdown-menu dropdown-menu-right">
-                                <a class="dropdown-item" href="#"><i class="fas fa-fw fa-plus"></i> Add to Playlist</a>
+                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#addToPlaylistModal" onclick="loadUserPlaylistsForModal('@Model.Id')">
+                                    <i class="fas fa-fw fa-plus"></i> Add to Playlist
+                                </a>
                                 <a class="dropdown-item" href="#"><i class="fas fa-fw fa-flag"></i> Report</a>
                             </div>
                         </div>
@@ -111,8 +113,8 @@
                         @if (!string.IsNullOrEmpty(Model.RecognizedCelebrities))
                         {
                             var celebrities = Model.RecognizedCelebrities
-                                .Replace("Đã nhận diện: ", "")
-                                .Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+                            .Replace("Đã nhận diện: ", "")
+                            .Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
                             foreach (var celebrity in celebrities)
                             {
                                 <span><a href="#">@celebrity</a></span>
@@ -200,6 +202,36 @@
     </div>
 </div>
 
+<!-- Playlist Modal -->
+<div class="modal fade" id="addToPlaylistModal" tabindex="-1" role="dialog" aria-labelledby="addToPlaylistModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addToPlaylistModalLabel">Lưu vào danh sách phát...</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="playlistListContainer">
+                    <!-- Danh sách playlist sẽ được tải bằng JS -->
+                    <div class="text-center p-3" id="playlistLoading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                    <div id="playlistList"></div> <!-- Thêm div này để hiển thị danh sách -->
+                </div>
+
+                <hr class="my-3">
+
+                <!-- Form tạo Playlist mới -->
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-plus mr-3"></i>
+                    <input type="text" class="form-control mr-2" id="newPlaylistName" placeholder="Nhập tên danh sách phát mới" required>
+                    <button class="btn btn-danger btn-sm" id="btnCreateNewPlaylist">Tạo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Css {
     <link href="/css/video-watch.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://vjs.zencdn.net/8.6.0/video-js.css" />
@@ -210,6 +242,7 @@
             width: 100%;
             height: auto;
         }
+
         .vjs-big-play-button {
             margin: auto;
         }
@@ -276,6 +309,18 @@
             margin: 5px 0;
             color: #666;
         }
+
+        .modal-content {
+            border-radius: 8px;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
     </style>
 }
 
@@ -304,6 +349,100 @@
                 if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
                 return `${Math.floor(diffInSeconds / 86400)} days ago`;
             }
+
+           // Hàm loadUserPlaylistsForModal
+            window.loadUserPlaylistsForModal = function (videoId) {
+                $('#playlistLoading').show();
+                $('#playlistList').empty();
+
+                $.ajax({
+                    url: '/Playlist/GetUserPlaylistsSummary?videoId=' + videoId,
+                    type: 'GET',
+                    success: function (response) {
+                        console.log('API Response (GetUserPlaylistsSummary):', response);
+                        if (response.isSuccess && response.result) {
+                            let html = '<ul class="list-group">';
+                            response.result.forEach(playlist => {
+                                html += `
+                                    <li class="list-group-item">
+                                        <input type="checkbox" id="playlist-${playlist.id}"
+                                               ${playlist.isChecked ? 'checked' : ''}
+                                               data-playlist-id="${playlist.id}"
+                                               onchange="togglePlaylist('${videoId}', '${playlist.id}', this.checked)">
+                                        <label for="playlist-${playlist.id}" style="margin-left: 10px;">${playlist.name}</label>
+                                    </li>
+                                `;
+                            });
+                            html += '</ul>';
+                            $('#playlistList').html(html);
+                        } else {
+                            $('#playlistList').html('<p>Không có danh sách phát nào.</p>');
+                        }
+                        $('#playlistLoading').hide();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('API Error (GetUserPlaylistsSummary):', error, xhr.status, xhr.responseText);
+                        $('#playlistList').html('<p>Lỗi khi tải danh sách phát.</p>');
+                        $('#playlistLoading').hide();
+                    }
+                });
+            };
+
+            // Hàm togglePlaylist
+            window.togglePlaylist = function (videoId, playlistId, isChecked) {
+                const data = { PlaylistId: playlistId, VideoId: videoId };
+                console.log('Sending Toggle Request:', JSON.stringify(data));
+                $.ajax({
+                    url: '/Playlist/ToggleVideoInPlaylist',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        console.log('Toggle Response:', response);
+                        if (response.isSuccess) {
+                            displayNotification(true, 'Thành công', response.message, 'toastr');
+                        } else {
+                            alert(response.message);
+                            $('#playlist-' + playlistId).prop('checked', !isChecked);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Toggle Error:', error, xhr.status, xhr.responseText);
+                        alert('Lỗi khi cập nhật danh sách phát.');
+                        $('#playlist-' + playlistId).prop('checked', !isChecked);
+                    }
+                });
+            };
+
+            $('#btnCreateNewPlaylist').on('click', function () {
+            const playlistName = $('#newPlaylistName').val().trim();
+            if (playlistName) {
+                $.ajax({
+                    url: '/Playlist/CreatePlaylist',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ Name: playlistName }),
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.isSuccess) {
+                            $('#newPlaylistName').val(''); // Reset input
+                            loadUserPlaylistsForModal('@Model.Id'); // Tải lại danh sách
+                            displayNotification(true, 'Thành công', 'Đã tạo danh sách phát mới.', 'toastr');
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function () {
+                        alert('Lỗi khi tạo danh sách phát.');
+                    }
+                });
+            }
+        });
 
             // Hàm shareVideo
             function shareVideo() {
@@ -370,7 +509,6 @@
                                 if (currentNumber > 0) $span.text(currentNumber - 1);
                             }
                         });
-                        // displayNotification(true, 'Success', `Video ${action}d successfully`, 'toastr');
                     },
                     error: function (xhr) {
                         console.error('Like/Dislike error:', xhr.statusText);
@@ -388,7 +526,7 @@
                 likeDislike('dislikeBtn', 'dislike');
             });
 
-            // Hàm để chuyển form comment sang chế độ Edit
+            // Hàm enterEditMode và exitEditMode
             function enterEditMode(commentId, content) {
                 const $form = $('#create-comment-form');
                 const $input = $('#textComment');
@@ -397,11 +535,9 @@
                 $form.data('edit-comment-id', commentId);
                 $form.attr('action', '/Video/EditComment');
                 $btnComment.text('Save');
-                $form.data('edit-comment-id', commentId);
                 $('#sectionCommentBtns').fadeIn();
             }
 
-            // Hàm để thoát chế độ Edit
             function exitEditMode() {
                 const $form = $('#create-comment-form');
                 const $input = $('#textComment');
@@ -531,28 +667,28 @@
                 $('#showMoreBtn').hide();
             }
 
-        // Xử lý carousel khung hình
-        function moveCarousel(direction) {
-            const carousel = document.getElementById('carouselContent');
-            const cards = carousel.getElementsByClassName('frame-card');
-            if (cards.length === 0) return;
-            const cardWidth = cards[0].offsetWidth + 10;
-            const currentScroll = carousel.scrollLeft;
-            const maxScroll = (cards.length - Math.floor(carousel.offsetWidth / cardWidth)) * cardWidth;
-            let newScroll = currentScroll + (direction * cardWidth);
-            if (newScroll < 0) newScroll = 0;
-            if (newScroll > maxScroll) newScroll = maxScroll;
-            carousel.scrollTo({ left: newScroll, behavior: 'smooth' });
-        }
+            // Xử lý carousel khung hình
+            function moveCarousel(direction) {
+                const carousel = document.getElementById('carouselContent');
+                const cards = carousel.getElementsByClassName('frame-card');
+                if (cards.length === 0) return;
+                const cardWidth = cards[0].offsetWidth + 10;
+                const currentScroll = carousel.scrollLeft;
+                const maxScroll = (cards.length - Math.floor(carousel.offsetWidth / cardWidth)) * cardWidth;
+                let newScroll = currentScroll + (direction * cardWidth);
+                if (newScroll < 0) newScroll = 0;
+                if (newScroll > maxScroll) newScroll = maxScroll;
+                carousel.scrollTo({ left: newScroll, behavior: 'smooth' });
+            }
 
-        // Gắn sự kiện click cho nút prev/next
-        $('#prevBtn').on('click', function () {
-            moveCarousel(-1);
-        });
+            // Gắn sự kiện click cho nút prev/next
+            $('#prevBtn').on('click', function () {
+                moveCarousel(-1);
+            });
 
-        $('#nextBtn').on('click', function () {
-            moveCarousel(1);
-        });
+            $('#nextBtn').on('click', function () {
+                moveCarousel(1);
+            });
 
             // Xử lý Subscribe
             $('#subscribeBtn').on('click', function () {
@@ -796,6 +932,19 @@
                     }
                 });
             });
+
+            // Fix WAI-ARIA issue: Handle modal close to remove focus trap
+            $('.modal').on('shown.bs.modal', function () {
+                $(this).find('.close').attr('tabindex', '0').focus();
+            }).on('hidden.bs.modal', function () {
+                $(this).find('.close').removeAttr('tabindex');
+            });
+
+            $('#addToPlaylistModal').on('hidden.bs.modal', function () {
+            $(this).removeAttr('aria-hidden');  // Hoặc dùng inert nếu browser hỗ trợ
+            // Hoặc focus về button mở modal
+            $('[data-target="#addToPlaylistModal"]').focus();
+        });
         });
     </script>
 }

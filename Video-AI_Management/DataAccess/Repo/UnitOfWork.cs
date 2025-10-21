@@ -27,6 +27,8 @@ namespace DataAccess.Repo
         public ICommentRepo CommentRepo => new CommentRepo(_context);
         public IVideoViewRepo VideoViewRepo => new VideoViewRepo(_context,_config);
         public ICelebrityRepo CelebrityRepo => new CelebrityRepo(_context);
+        public IPlaylistRepo PlaylistRepo => new PlaylistRepo(_context);
+        public IPlaylistItemRepo PlaylistItemRepo => new PlaylistItemRepo(_context); // THÊM MỚI
 
         public async Task<bool> CompleteAsync()
         {

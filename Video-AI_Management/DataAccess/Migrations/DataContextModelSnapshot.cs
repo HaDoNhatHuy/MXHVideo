@@ -274,6 +274,57 @@ namespace DataAccess.Migrations
                     b.ToTable("LikeDislike");
                 });
 
+            modelBuilder.Entity("Database_Video.Entities.Playlist", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AppUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Privacy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId");
+
+                    b.ToTable("Playlist");
+                });
+
+            modelBuilder.Entity("Database_Video.Entities.PlaylistItem", b =>
+                {
+                    b.Property<Guid>("PlaylistId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("VideoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AddedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("int");
+
+                    b.HasKey("PlaylistId", "VideoId");
+
+                    b.HasIndex("VideoId");
+
+                    b.ToTable("PlaylistItem");
+                });
+
             modelBuilder.Entity("Database_Video.Entities.RecognizeCelebrities", b =>
                 {
                     b.Property<Guid?>("CelebrityId")
@@ -595,6 +646,36 @@ namespace DataAccess.Migrations
                     b.Navigation("Video");
                 });
 
+            modelBuilder.Entity("Database_Video.Entities.Playlist", b =>
+                {
+                    b.HasOne("Database_Video.Entities.AppUser", "AppUser")
+                        .WithMany()
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+                });
+
+            modelBuilder.Entity("Database_Video.Entities.PlaylistItem", b =>
+                {
+                    b.HasOne("Database_Video.Entities.Playlist", "Playlist")
+                        .WithMany("PlaylistItems")
+                        .HasForeignKey("PlaylistId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Database_Video.Entities.Video", "Video")
+                        .WithMany()
+                        .HasForeignKey("VideoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Playlist");
+
+                    b.Navigation("Video");
+                });
+
             modelBuilder.Entity("Database_Video.Entities.RecognizeCelebrities", b =>
                 {
                     b.HasOne("Database_Video.Entities.Celebrity", "Celebrity")
@@ -757,6 +838,11 @@ namespace DataAccess.Migrations
                     b.Navigation("Subscribers");
 
                     b.Navigation("Videos");
+                });
+
+            modelBuilder.Entity("Database_Video.Entities.Playlist", b =>
+                {
+                    b.Navigation("PlaylistItems");
                 });
 
             modelBuilder.Entity("Database_Video.Entities.Video", b =>

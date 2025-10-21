@@ -15,6 +15,8 @@ namespace Database_Video.IRepo
         ICommentRepo CommentRepo { get; }
         IVideoViewRepo VideoViewRepo { get; }
         ICelebrityRepo CelebrityRepo { get; }
+        IPlaylistRepo PlaylistRepo { get; }
+        IPlaylistItemRepo PlaylistItemRepo { get; } // THÊM MỚI
         Task<bool> CompleteAsync();
     }
 }
