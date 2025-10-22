@@ -1,0 +1,97 @@
+﻿@model Web_Video.ViewModels.Video.VideoWatchViewModel
+@using WebVideo.Utility
+@using Web_Video.ViewModels.Playlist
+
+<style>
+    /* Styling cho playlist list */
+    .video-card-list.active-playlist-item {
+        background-color: #f0f0f0; /* Nền highlight */
+        border-left: 3px solid #ff0000; /* Đường viền đỏ bên trái */
+        padding-left: 7px; /* bù đắp cho border */
+    }
+
+    .video-card-list {
+        margin-bottom: 5px; /* Giảm khoảng cách giữa các item */
+    }
+
+    .order-index {
+        font-weight: 700;
+        margin-right: 5px;
+        color: #606060;
+    }
+
+    .playlist-header-actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        align-items: center;
+    }
+
+        .playlist-header-actions h6 {
+            margin: 0;
+        }
+
+    .video-card-list .video-card-body {
+        padding: 5px 10px;
+    }
+    /* Chỉnh kích thước thumbnail nhỏ hơn trong playlist */
+    .video-card-list .video-card-image {
+        width: 120px; /* Kích thước cố định cho thumbnail */
+        height: 67px; /* 16:9 ratio */
+        flex-shrink: 0;
+    }
+</style>
+
+<div class="col-md-12">
+    <!-- Tiêu đề Playlist -->
+    <div class="main-title">
+        <h6>@Model.CurrentPlaylistName (@Model.CurrentPlaylistItems.Count videos)</h6>
+    </div>
+
+    <!-- Các nút hành động Playlist -->
+    <div class="playlist-header-actions">
+        <a href="#" class="btn btn-sm btn-danger rounded-pill">
+            <i class="fas fa-play"></i> Phát tất cả
+        </a>
+        @if (Model.CurrentPlaylistId.HasValue)
+        {
+            <a href="@Url.Action("FullList", "Playlist", new { id = Model.CurrentPlaylistId.Value })" class="btn btn-sm btn-outline-secondary rounded-pill">
+                <i class="fas fa-list"></i> Toàn bộ danh sách
+            </a>
+        }
+    </div>
+</div>
+
+@foreach (var item in Model.CurrentPlaylistItems.OrderBy(i => i.OrderIndex))
+{
+    // Kiểm tra xem video này có phải là video đang xem không
+    var isActive = item.VideoId == Model.Id ? "active-playlist-item" : "";
+    var playlistId = Model.CurrentPlaylistId.HasValue ? Model.CurrentPlaylistId.Value : Guid.Empty;
+
+    <div class="col-md-12">
+        <div class="video-card video-card-list @isActive">
+            <div class="video-card-image">
+                <a class="play-icon" href="@Url.Action("Watch", "Video", new { id = item.VideoId, playlistId = playlistId })">
+                    <i class="fas fa-play-circle"></i>
+                </a>
+                <a href="@Url.Action("Watch", "Video", new { id = item.VideoId, playlistId = playlistId })">
+                    <img class="img-fluid" src="@item.Thumbnail" alt="@item.Title">
+                </a>
+                <div class="time">@item.Duration</div>
+            </div>
+            <div class="video-card-body">
+                <div class="video-title">
+                    <a href="@Url.Action("Watch", "Video", new { id = item.VideoId, playlistId = playlistId })">
+                        <span class="order-index">@item.OrderIndex.</span> @item.Title
+                    </a>
+                </div>
+                <div class="video-page text-success">
+                    @item.ChannelName
+                </div>
+                <div class="video-view">
+                    <i class="fas fa-calendar-alt"></i> @SD.TimeAgo(item.CreatedAt)
+                </div>
+            </div>
+        </div>
+    </div>
+}

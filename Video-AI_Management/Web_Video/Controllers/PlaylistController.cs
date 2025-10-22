@@ -4,6 +4,7 @@ using Database_Video.IRepo;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,7 @@ using System.Threading.Tasks;
 using Web_Video.Extensions;
 using Web_Video.ViewModels.Channel;
 using Web_Video.ViewModels.Playlist;
+using Web_Video.ViewModels.Video;
 using WebVideo.Utility;
 
 namespace Web_Video.Controllers
@@ -37,15 +39,64 @@ namespace Web_Video.Controllers
 
         // Trang xem một Playlist cụ thể
         [HttpGet]
-        public async Task<IActionResult> WatchPlaylist(Guid id)
+        public async Task<IActionResult> WatchPlaylist(Guid id) // id là PlaylistId
         {
-            var userId = User.GetUserId();
+            var userId = User.GetUserId(); // Lấy ID người dùng hiện tại [8]
 
+            // Lấy thông tin Playlist và các VideoItems bên trong
             var playlist = await Context.Playlists
                 .Include(p => p.PlaylistItems)
                 .ThenInclude(pi => pi.Video)
+                .Where(p => p.Id == id && p.AppUserId == userId) // Kiểm tra quyền sở hữu [1, 2]
+                .FirstOrDefaultAsync();
+
+            if (playlist == null)
+            {
+                // Thông báo nếu không tìm thấy hoặc không có quyền truy cập
+                TempData["notification"] = "false;Not Found;Playlist không tồn tại hoặc bạn không có quyền truy cập"; // [2]
+                return RedirectToAction("Index");
+            }
+
+            // 1. Lấy video đầu tiên trong playlist theo OrderIndex
+            var firstVideoItem = playlist.PlaylistItems
+                                    .OrderBy(pi => pi.OrderIndex) // Sắp xếp theo thứ tự [3]
+                                    .FirstOrDefault();
+
+            if (firstVideoItem == null)
+            {
+                // Thông báo nếu playlist rỗng
+                TempData["notification"] = "false;Not Found;Playlist này chưa có video nào.";
+                return RedirectToAction("Index");
+            }
+
+            // 2. CHUYỂN HƯỚNG SANG VideoController.Watch
+            // Truyền ID của video đầu tiên (id) và ID của playlist (playlistId)
+            return RedirectToAction(
+                "Watch",
+                "Video",
+                new
+                {
+                    id = firstVideoItem.VideoId,    // ID của video cần xem
+                    playlistId = id                 // ID của playlist (dùng để load Partial View)
+                });
+        }
+
+        // Trang xem full list video in playlist (grid view)
+        [HttpGet]
+        public async Task<IActionResult> FullList(Guid id)
+        {
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                TempData["notification"] = "false;Error;Không xác thực được người dùng";
+                return RedirectToAction("Index");
+            }
+
+            var playlist = await _context.Playlists
+                .Include(p => p.PlaylistItems)
+                .ThenInclude(pi => pi.Video)
                 .ThenInclude(v => v.Channel)
-                .Where(p => p.Id == id && p.AppUserId == userId) // Chỉ xem playlist của mình (cần thêm logic Public/Private nếu muốn người khác xem)
+                .Where(p => p.Id == id && p.AppUserId == userId)
                 .FirstOrDefaultAsync();
 
             if (playlist == null)
@@ -61,8 +112,7 @@ namespace Web_Video.Controllers
                     Id = playlist.Id,
                     Name = playlist.Name,
                     VideoCount = playlist.PlaylistItems.Count,
-                    CreatedAtTimeAgo = SD.TimeAgo(playlist.CreatedDate),
-                    FirstVideoThumbnail = playlist.PlaylistItems.OrderBy(pi => pi.OrderIndex).FirstOrDefault()?.Video.Thumbnail
+                    CreatedAtTimeAgo = SD.TimeAgo(playlist.CreatedDate)
                 },
                 Items = playlist.PlaylistItems
                     .OrderBy(pi => pi.OrderIndex)
@@ -70,10 +120,11 @@ namespace Web_Video.Controllers
                     {
                         VideoId = pi.VideoId,
                         Title = pi.Video.Title,
-                        Thumbnail = pi.Video.Thumbnail,
+                        Thumbnail = pi.Video.Thumbnail ?? "/default-thumbnail.jpg",
                         ChannelName = pi.Video.Channel.ChannelName,
                         Duration = pi.Video.Duration ?? "0:00",
-                        OrderIndex = pi.OrderIndex
+                        OrderIndex = pi.OrderIndex,
+                        CreatedAt = pi.Video.UploadDate
                     }).ToList()
             };
 
@@ -92,18 +143,23 @@ namespace Web_Video.Controllers
             }
 
             var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new ApiResponse(401, message: "Không xác thực được người dùng."));
+            }
+
             var newPlaylist = new Playlist
             {
-                Id = Guid.NewGuid(), // Fix: Set Id để tránh Guid.Empty
+                Id = Guid.NewGuid(),
                 Name = model.Name.Trim(),
                 AppUserId = userId,
-                Description = "", // Có thể thêm mô tả sau
+                Description = "",
                 CreatedDate = DateTime.UtcNow,
-                Privacy = 0 // Default Public
+                Privacy = 0
             };
 
-            UnitOfWork.PlaylistRepo.Add(newPlaylist);
-            await UnitOfWork.CompleteAsync();
+            _unitOfWork.PlaylistRepo.Add(newPlaylist);
+            await _unitOfWork.CompleteAsync();
 
             return Json(new ApiResponse(201, "Created", "Đã tạo danh sách phát thành công.", new { id = newPlaylist.Id, name = newPlaylist.Name }));
         }
@@ -113,8 +169,12 @@ namespace Web_Video.Controllers
         public async Task<IActionResult> GetUserPlaylists()
         {
             var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new ApiResponse(401, message: "Không xác thực được người dùng."));
+            }
 
-            var playlists = await Context.Playlists
+            var playlists = await _context.Playlists
                 .Where(p => p.AppUserId == userId)
                 .OrderByDescending(p => p.CreatedDate)
                 .Select(p => new PlaylistDisplayViewModel
@@ -123,11 +183,10 @@ namespace Web_Video.Controllers
                     Name = p.Name,
                     CreatedAtTimeAgo = SD.TimeAgo(p.CreatedDate),
                     VideoCount = p.PlaylistItems.Count(),
-                    // Lấy thumbnail của video đầu tiên
                     FirstVideoThumbnail = p.PlaylistItems
                         .OrderBy(pi => pi.OrderIndex)
                         .Select(pi => pi.Video.Thumbnail)
-                        .FirstOrDefault()
+                        .FirstOrDefault() ?? "/default-thumbnail.jpg"
                 }).ToListAsync();
 
             return Json(new ApiResponse(200, result: playlists));
@@ -135,13 +194,21 @@ namespace Web_Video.Controllers
 
         // API thêm hoặc xóa video khỏi Playlist
         [HttpPost]
-        [ValidateAntiForgeryToken] // Thêm để bảo vệ API
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleVideoInPlaylist([FromBody] AddRemoveVideoToPlaylistViewModel model)
         {
-            var userId = User.GetUserId();
+            if (!ModelState.IsValid)
+            {
+                return Json(new ApiResponse(400, message: "Dữ liệu không hợp lệ."));
+            }
 
-            // 1. Kiểm tra Playlist tồn tại và thuộc về User
-            var playlist = await UnitOfWork.PlaylistRepo.GetFirstOrDefaultAsync(p =>
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new ApiResponse(401, message: "Không xác thực được người dùng."));
+            }
+
+            var playlist = await _unitOfWork.PlaylistRepo.GetFirstOrDefaultAsync(p =>
                 p.Id == model.PlaylistId && p.AppUserId == userId,
                 includeProperties: "PlaylistItems");
 
@@ -150,68 +217,75 @@ namespace Web_Video.Controllers
                 return Json(new ApiResponse(404, message: "Không tìm thấy Playlist."));
             }
 
-            // 2. Kiểm tra Video tồn tại
-            var videoExists = await UnitOfWork.VideoRepo.AnyAsync(v => v.Id == model.VideoId);
+            var videoExists = await _unitOfWork.VideoRepo.AnyAsync(v => v.Id == model.VideoId);
             if (!videoExists)
             {
                 return Json(new ApiResponse(404, message: "Không tìm thấy Video."));
             }
 
-            // 3. Kiểm tra sự tồn tại của PlaylistItem
-            var playlistItem = await UnitOfWork.PlaylistItemRepo.GetByKeysAsync(model.PlaylistId, model.VideoId);
+            var playlistItem = await _unitOfWork.PlaylistItemRepo.GetByKeysAsync(model.PlaylistId, model.VideoId);
 
             if (playlistItem == null)
             {
-                // THÊM MỚI: Video chưa có trong Playlist
                 int nextOrderIndex = playlist.PlaylistItems.Any()
                     ? playlist.PlaylistItems.Max(pi => pi.OrderIndex) + 1
                     : 1;
 
                 var newPlaylistItem = new PlaylistItem(model.PlaylistId, model.VideoId, nextOrderIndex);
-                UnitOfWork.PlaylistItemRepo.Add(newPlaylistItem);
-                await UnitOfWork.CompleteAsync();
+                _unitOfWork.PlaylistItemRepo.Add(newPlaylistItem);
+                await _unitOfWork.CompleteAsync();
 
                 return Json(new ApiResponse(200, "Added", $"Đã thêm video vào Playlist '{playlist.Name}'."));
             }
             else
             {
-                // XÓA: Video đã có trong Playlist
-                UnitOfWork.PlaylistItemRepo.Remove(playlistItem);
-                await UnitOfWork.CompleteAsync();
-
-                // Cập nhật lại OrderIndex cho các video còn lại (tùy chọn)
-                // Logic này phức tạp và có thể bỏ qua nếu chấp nhận lỗ hổng về thứ tự.
+                _unitOfWork.PlaylistItemRepo.Remove(playlistItem);
+                await _unitOfWork.CompleteAsync();
 
                 return Json(new ApiResponse(200, "Removed", $"Đã xóa video khỏi Playlist '{playlist.Name}'."));
             }
         }
 
-        // API để lấy danh sách các Playlist (để hiển thị trong modal "Add to Playlist")
+        // API lấy danh sách Playlist cho modal
         [HttpGet]
         public async Task<IActionResult> GetUserPlaylistsSummary(Guid videoId)
         {
             var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new ApiResponse(401, message: "Không xác thực được người dùng."));
+            }
 
-            var playlists = await Context.Playlists
+            var playlists = await _context.Playlists
                 .Where(p => p.AppUserId == userId)
                 .OrderByDescending(p => p.CreatedDate)
                 .Select(p => new
                 {
                     Id = p.Id,
                     Name = p.Name,
-                    // Kiểm tra xem videoId đã có trong playlist này chưa
                     IsChecked = p.PlaylistItems.Any(pi => pi.VideoId == videoId)
                 }).ToListAsync();
 
             return Json(new ApiResponse(200, result: playlists));
         }
+
+        // API xóa video khỏi playlist
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveVideoFromPlaylist([FromBody] AddRemoveVideoToPlaylistViewModel model)
         {
-            var userId = User.GetUserId();
+            if (!ModelState.IsValid)
+            {
+                return Json(new ApiResponse(400, message: "Dữ liệu không hợp lệ."));
+            }
 
-            // Kiểm tra Playlist tồn tại và thuộc về User
-            var playlist = await UnitOfWork.PlaylistRepo.GetFirstOrDefaultAsync(p =>
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new ApiResponse(401, message: "Không xác thực được người dùng."));
+            }
+
+            var playlist = await _unitOfWork.PlaylistRepo.GetFirstOrDefaultAsync(p =>
                 p.Id == model.PlaylistId && p.AppUserId == userId,
                 includeProperties: "PlaylistItems");
 
@@ -220,19 +294,17 @@ namespace Web_Video.Controllers
                 return Json(new ApiResponse(404, message: "Không tìm thấy Playlist."));
             }
 
-            // Kiểm tra PlaylistItem tồn tại
-            var playlistItem = await UnitOfWork.PlaylistItemRepo.GetByKeysAsync(model.PlaylistId, model.VideoId);
+            var playlistItem = await _unitOfWork.PlaylistItemRepo.GetByKeysAsync(model.PlaylistId, model.VideoId);
             if (playlistItem == null)
             {
                 return Json(new ApiResponse(400, message: "Video không tồn tại trong Playlist."));
             }
 
-            // Xóa PlaylistItem
-            UnitOfWork.PlaylistItemRepo.Remove(playlistItem);
-            await UnitOfWork.CompleteAsync();
+            _unitOfWork.PlaylistItemRepo.Remove(playlistItem);
+            await _unitOfWork.CompleteAsync();
 
-            // (Tùy chọn) Cập nhật lại OrderIndex cho các video còn lại
-            var remainingItems = await Context.PlaylistItems
+            // Update OrderIndex for remaining items
+            var remainingItems = await _context.PlaylistItems
                 .Where(pi => pi.PlaylistId == model.PlaylistId)
                 .OrderBy(pi => pi.OrderIndex)
                 .ToListAsync();
@@ -240,17 +312,25 @@ namespace Web_Video.Controllers
             {
                 remainingItems[i].OrderIndex = i + 1;
             }
-            await UnitOfWork.CompleteAsync();
+            await _unitOfWork.CompleteAsync();
 
             return Json(new ApiResponse(200, "Removed", $"Đã xóa video khỏi Playlist '{playlist.Name}'."));
         }
+
+        // API xóa playlist
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeletePlaylist(Guid id)
         {
             var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new ApiResponse(401, message: "Không xác thực được người dùng."));
+            }
 
-            // Kiểm tra Playlist tồn tại và thuộc về User
-            var playlist = await UnitOfWork.PlaylistRepo.GetFirstOrDefaultAsync(p =>
+            Console.WriteLine($"Delete attempt: Id={id}, UserId={userId}");  // Log debug
+
+            var playlist = await _unitOfWork.PlaylistRepo.GetFirstOrDefaultAsync(p =>
                 p.Id == id && p.AppUserId == userId);
 
             if (playlist == null)
@@ -258,15 +338,15 @@ namespace Web_Video.Controllers
                 return Json(new ApiResponse(404, message: "Không tìm thấy Playlist."));
             }
 
-            // Xóa tất cả PlaylistItems liên quan trước
-            var playlistItems = await Context.PlaylistItems
+            // Xóa PlaylistItems trước
+            var playlistItems = await _context.PlaylistItems
                 .Where(pi => pi.PlaylistId == id)
                 .ToListAsync();
-            Context.PlaylistItems.RemoveRange(playlistItems);
+            _context.PlaylistItems.RemoveRange(playlistItems);
 
             // Xóa Playlist
-            UnitOfWork.PlaylistRepo.Remove(playlist);
-            await UnitOfWork.CompleteAsync();
+            _unitOfWork.PlaylistRepo.Remove(playlist);
+            await _unitOfWork.CompleteAsync();
 
             return Json(new ApiResponse(200, "Deleted", $"Đã xóa Playlist '{playlist.Name}'."));
         }

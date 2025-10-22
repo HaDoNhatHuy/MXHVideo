@@ -34,10 +34,10 @@ namespace Web_Video.Controllers
             _httpClientFactory = httpClientFactory;
         }
         [HttpGet]
-        public async Task<IActionResult> Watch(Guid id)
+        public async Task<IActionResult> Watch(Guid id, Guid? playlistId = null)
         {
             // Sử dụng phương thức hiệu quả với projections
-            var toReturn = await GetVideoWatch_VMWithProjections(id);
+            var toReturn = await GetVideoWatch_VMWithProjections(id, playlistId); // <=== TRUYỀN playlistId
 
             if (toReturn != null)
             {
@@ -861,7 +861,7 @@ namespace Web_Video.Controllers
             }
             return null;
         }
-        private async Task<VideoWatchViewModel> GetVideoWatch_VMWithProjections(Guid id)
+        private async Task<VideoWatchViewModel> GetVideoWatch_VMWithProjections(Guid id, Guid? playlistId) // THAY ĐỔI: Thêm Guid? playlistId
         {
             string userId = User.GetUserId();
             var toReturn = await Context.Videos
@@ -912,6 +912,49 @@ namespace Web_Video.Controllers
                             })
                     }
                 }).FirstOrDefaultAsync();
+
+            if (toReturn == null) return null;
+
+            // PHẦN MỚI: Xử lý Playlist
+            if (playlistId.HasValue && playlistId.Value != Guid.Empty)
+            {
+                var playlist = await Context.Playlists
+                    .Include(p => p.PlaylistItems)
+                    .ThenInclude(pi => pi.Video)
+                    .ThenInclude(v => v.Channel)
+                    .Include(p => p.PlaylistItems)
+                    .ThenInclude(pi => pi.Video)
+                    .ThenInclude(v => v.Category) // Cần Category để lấy CategoryName trong DTO
+                    .Where(p => p.Id == playlistId.Value)
+                    .FirstOrDefaultAsync(p => p.AppUserId == userId || p.Privacy == 0); // Giả sử chỉ lấy Public hoặc của mình
+
+                if (playlist != null)
+                {
+                    // Gán thông tin Playlist vào ViewModel
+                    toReturn.CurrentPlaylistId = playlist.Id;
+                    toReturn.CurrentPlaylistName = playlist.Name;
+
+                    // Lấy danh sách video trong playlist và ánh xạ sang PlaylistItemDto
+                    toReturn.CurrentPlaylistItems = playlist.PlaylistItems
+                        .OrderBy(pi => pi.OrderIndex)
+                        .Select(pi => new Web_Video.ViewModels.Playlist.PlaylistItemDto
+                        {
+                            VideoId = pi.VideoId,
+                            Title = pi.Video.Title,
+                            Thumbnail = pi.Video.Thumbnail,
+                            ChannelId = pi.Video.ChannelId ?? Guid.Empty,
+                            ChannelName = pi.Video.Channel.ChannelName,
+                            Duration = pi.Video.Duration ?? "0:00",
+                            OrderIndex = pi.OrderIndex,
+                            Description = pi.Video.Description,
+                            CategoryName = pi.Video.Category.CategoryName,
+                            RecognizedCelebrities = pi.Video.RecognizedCelebrities,
+                            CelebrityFramesJson = pi.Video.CelebrityFrames ?? "{}",
+                            CreatedAt = pi.Video.UploadDate
+                        })
+                        .ToList();
+                }
+            }
 
             if (toReturn != null && !string.IsNullOrEmpty(toReturn.CelebrityFramesJson) && toReturn.CelebrityFramesJson != "{}")
             {
@@ -970,6 +1013,7 @@ namespace Web_Video.Controllers
                         Title = x.Title,
                         Thumbnail = x.Thumbnail,
                         ChannelName = x.Channel.ChannelName,
+                        Duration = x.Duration,
                         ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
                         CreatedAt = x.UploadDate
                     })
@@ -988,6 +1032,7 @@ namespace Web_Video.Controllers
                     Title = x.Title,
                     Thumbnail = x.Thumbnail,
                     ChannelName = x.Channel.ChannelName,
+                    Duration = x.Duration,
                     ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
                     CreatedAt = x.UploadDate
                 })
@@ -1005,6 +1050,7 @@ namespace Web_Video.Controllers
                     Title = x.Title,
                     Thumbnail = x.Thumbnail,
                     ChannelName = x.Channel.ChannelName,
+                    Duration = x.Duration,
                     ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
                     CreatedAt = x.UploadDate
                 })
@@ -1025,6 +1071,7 @@ namespace Web_Video.Controllers
                         Title = x.Title,
                         Thumbnail = x.Thumbnail,
                         ChannelName = x.Channel.ChannelName,
+                        Duration = x.Duration,
                         ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
                         CreatedAt = x.UploadDate
                     })
@@ -1046,6 +1093,7 @@ namespace Web_Video.Controllers
                         Title = x.Title,
                         Thumbnail = x.Thumbnail,
                         ChannelName = x.Channel.ChannelName,
+                        Duration = x.Duration,
                         ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
                         CreatedAt = x.UploadDate
                     })

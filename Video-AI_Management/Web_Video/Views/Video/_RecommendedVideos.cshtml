@@ -1,0 +1,37 @@
+﻿@model List<Web_Video.ViewModels.Video.VideoWatchViewModel.RecommendedVideoViewModel>
+@using Web_Video.Extensions
+
+<div class="row">
+    <div class="col-md-12">
+        @foreach (var video in Model)
+        {
+            <div class="video-card video-card-list">
+                <div class="video-card-image">
+                    <a class="play-icon" href="@Url.Action("Watch", "Video", new { id = video.Id })"><i class="fas fa-play-circle"></i></a>
+                    <a href="@Url.Action("Watch", "Video", new { id = video.Id })"><img class="img-fluid" src="@(video.Thumbnail ?? "/default-thumbnail.jpg")" alt="@video.Title"></a>
+                    <div class="time">@video.Duration</div>
+                </div>
+                <div class="video-card-body">
+                    <div class="btn-group float-right right-action">
+                        <a href="#" class="right-action-link text-gray" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right">
+                            <a class="dropdown-item" href="#" onclick="loadUserPlaylistsForModal('@video.Id')"><i class="fas fa-fw fa-plus"></i> Add to Playlist</a>
+                            <a class="dropdown-item" href="#"><i class="fas fa-fw fa-flag"></i> Report</a>
+                        </div>
+                    </div>
+                    <div class="video-title">
+                        <a href="@Url.Action("Watch", "Video", new { id = video.Id })">@video.Title</a>
+                    </div>
+                    <div class="video-page text-success">
+                        @video.ChannelName <a title="" data-placement="top" data-toggle="tooltip" href="#" data-original-title="Verified"><i class="fas fa-check-circle text-success"></i></a>
+                    </div>
+                    <div class="video-view">
+                        @SD.FormatView(video.ViewersCount) views &nbsp;<i class="fas fa-calendar-alt"></i> @SD.TimeAgo(video.CreatedAt)
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,35 @@
+﻿@model Web_Video.ViewModels.Playlist.PlaylistWatchViewModel
+
+@{
+    ViewData["Title"] = "Toàn bộ danh sách phát: " + Model.PlaylistInfo.Name;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid" style="background-color: #fff; padding: 24px 0;">
+    <div class="row" style="max-width: 1280px; margin: 0 auto;">
+        <div class="col-12">
+            <h1 style="font-size: 24px; font-weight: 400; color: #030303; margin-bottom: 16px;">@Model.PlaylistInfo.Name</h1>
+            <p style="font-size: 14px; color: #606060;">@Model.PlaylistInfo.VideoCount video • @Model.PlaylistInfo.CreatedAtTimeAgo</p>
+        </div>
+        <div class="row">
+            @foreach (var item in Model.Items)
+            {
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="video-card" style="cursor: pointer;" onclick="location.href='/Video/Watch/@item.VideoId'">
+                        <img src="@(item.Thumbnail ?? "/default-thumbnail.jpg")" alt="@item.Title" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px;">
+                        <h3 style="font-size: 14px; font-weight: 400; color: #030303; margin: 8px 0 4px; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@item.Title</h3>
+                        <p style="font-size: 13px; color: #606060; margin: 0;">@item.ChannelName • @item.Duration</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Css {
+    <style>
+        .video-card:hover {
+            opacity: 0.9;
+        }
+    </style>
+}

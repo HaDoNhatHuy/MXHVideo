@@ -134,19 +134,11 @@
                                 </div>
                             </div>
                             <div class="playlist-info" style="padding: 12px 0;">
-                                <h3 class="playlist-title">
-                                    <a href="/Playlist/WatchPlaylist/${p.id}" style="color: #fff; text-decoration: none; font-size: 14px; font-weight: 500; line-height: 20px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                        ${p.name}
-                                    </a>
+                                <h3 class="playlist-title" style="font-size: 16px; font-weight: 500; color: #030303; margin: 0 0 4px 0;"> 
+                                    <a href="/Playlist/WatchPlaylist/${p.id}" style="text-decoration: none; color: inherit;">${p.name}</a>
                                 </h3>
-                                <div class="playlist-meta" style="color: #aaa; font-size: 12px; margin-top: 4px;">
-                                    <span>${videoCountText}</span>
-                                    <span style="margin: 0 4px;">•</span>
-                                    <span>${p.createdAtTimeAgo}</span>
-                                </div>
-                                <a href="/Playlist/WatchPlaylist/${p.id}" class="view-playlist-btn" style="color: #aaa; font-size: 12px; margin-top: 8px; display: inline-block; text-decoration: none;">
-                                    XEM TOÀN BỘ DANH SÁCH PHÁT
-                                </a>
+                                <p style="font-size: 13px; color: #606060; margin: 0;">${videoCountText} • ${p.createdAtTimeAgo}</p>
+                                <button class="btn btn-outline-secondary btn-sm mt-2" onclick="location.href='/Playlist/FullList/${p.id}'">Xem toàn bộ danh sách</button>
                             </div>
                         </div>
                     </div>

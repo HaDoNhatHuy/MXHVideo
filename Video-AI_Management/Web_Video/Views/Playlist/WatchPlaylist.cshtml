@@ -1,314 +1,1257 @@
 ﻿@model Web_Video.ViewModels.Playlist.PlaylistWatchViewModel
+@using Web_Video.Extensions
+@using Web_Video.ViewModels.Video
 
 @{
     ViewData["Title"] = "Xem danh sách phát: " + Model.PlaylistInfo.Name;
     ViewData["CurrentPage"] = "Playlists";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var firstItem = Model.Items.Any() ? Model.Items.OrderBy(i => i.OrderIndex).First() : null;
 }
 
-<div class="container-fluid" style="background-color: #f9f9f9; min-height: 100vh; padding: 24px 0;">
-    <div class="row" style="max-width: 1920px; margin: 0 auto;">
-        <!-- Video Player Section -->
-        <div class="col-lg-8 col-md-12" style="padding: 0 24px;">
-            @if (Model.Items.Any())
-            {
-                var firstItem = Model.Items.OrderBy(i => i.OrderIndex).First();
-                <div class="video-player-container">
-                    <div class="video-wrapper">
-                        <video id="mainVideo" controls style="width: 100%; background: #000; border-radius: 12px;">
-                            <source src="@Url.Content("~/videos/" + firstItem.VideoId + ".mp4")" type="video/mp4">
+<div class="video-block section-padding" style="background: #fff;">
+    <div class="row">
+        <!-- Left: Video main -->
+        <div class="col-md-8">
+            <div class="single-video-left">
+                @if (firstItem != null)
+                {
+                    <!-- Video Player -->
+                    <div class="single-video">
+                        <video id="player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" playsinline data-poster="@firstItem.Thumbnail">
+                            <source src="/Video/GetVideoFile?videoId=@firstItem.VideoId" type="video/mp4" />
+                            <p class="vjs-no-js">
+                                To view this video please enable JavaScript, and consider upgrading to a web browser that
+                                <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                            </p>
                         </video>
                     </div>
-
-                    <!-- Video Info -->
-                    <div class="video-info-section" style="margin-top: 12px;">
-                        <h1 class="video-title" style="font-size: 20px; font-weight: 500; color: #0f0f0f; line-height: 28px; margin-bottom: 12px;">
-                            @firstItem.Title
-                        </h1>
-
-                        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap: 12px;">
-                            <div class="channel-info d-flex align-items-center" style="gap: 12px;">
-                                <div class="channel-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600;">
-                                    @firstItem.ChannelName.Substring(0, 1).ToUpper()
-                                </div>
-                                <div>
-                                    <div style="font-size: 14px; font-weight: 500; color: #0f0f0f;">@firstItem.ChannelName</div>
-                                    <div style="font-size: 12px; color: #606060;">Thời lượng: @firstItem.Duration</div>
+                    <!-- Title and views -->
+                    <div class="single-video-title box mb-3">
+                        <h2 id="currentVideoTitle"><a href="#">@firstItem.Title</a></h2>
+                        <p id="currentViewCount" class="mb-0"><i class="fas fa-eye"></i> 0 views</p>
+                    </div>
+                    <!-- Channel and actions -->
+                    <div class="single-video-author box mb-3">
+                        <div class="float-right" id="actionsSection">
+                            @if (User.GetUserChannelId() != firstItem.ChannelId.ToString())
+                            {
+                                <button id="subscribeBtn" class="btn btn-danger">Subscribe <strong>0</strong></button>
+                            }
+                            <button class="btn btn-outline-primary" id="likeBtn" onclick="likeDislike('likeBtn', 'like', '@firstItem.VideoId')">
+                                <i class="fas fa-thumbs-up"></i> <span>0</span>
+                            </button>
+                            <button class="btn btn-outline-primary" id="dislikeBtn" onclick="likeDislike('dislikeBtn', 'dislike', '@firstItem.VideoId')">
+                                <i class="fas fa-thumbs-down"></i> <span>0</span>
+                            </button>
+                            <button class="btn btn-outline-primary" id="shareBtn" onclick="shareVideo('@firstItem.VideoId')">
+                                <i class="fas fa-share"></i> Share
+                            </button>
+                            <form method="post" style="display: inline;">
+                                <button asp-action="DownloadVideoFile" asp-route-videoId="@firstItem.VideoId" type="submit" class="btn btn-outline-primary" id="downloadBtn">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                            </form>
+                            <div class="btn-group">
+                                <button class="btn btn-outline-primary" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right">
+                                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#addToPlaylistModal" onclick="loadUserPlaylistsForModal('@firstItem.VideoId')">
+                                        <i class="fas fa-fw fa-plus"></i> Add to Playlist
+                                    </a>
+                                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-flag"></i> Report</a>
                                 </div>
                             </div>
                         </div>
+                        <img class="img-fluid" src="@firstItem.ChannelAvatar" alt="@firstItem.ChannelName Avatar" id="currentChannelAvatar">
+                        <p id="currentChannelName">
+                            <a href="@Url.Action("Channel", "Member", new { id = firstItem.ChannelId })"><strong>@firstItem.ChannelName</strong></a>
+                            <span title="" data-placement="top" data-toggle="tooltip" data-original-title="Verified"><i class="fas fa-check-circle text-success"></i></span>
+                        </p>
+                        <small id="currentPublishDate">Published on @SD.TimeAgo(firstItem.CreatedAt)</small>
                     </div>
-                </div>
-            }
-            else
-            {
-                <div class="alert" style="background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; color: #606060;">
-                    <i class="fas fa-info-circle"></i> Danh sách phát này chưa có video nào.
-                </div>
-            }
-        </div>
-
-        <!-- Playlist Sidebar -->
-        <div class="col-lg-4 col-md-12" style="padding: 0 24px;">
-            <div class="playlist-sidebar" style="background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e5e5;">
-                <!-- Playlist Header -->
-                <div class="playlist-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; color: #fff;">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <h2 style="font-size: 18px; font-weight: 600; margin: 0;">@Model.PlaylistInfo.Name</h2>
-                        <button class="btn-icon-delete" onclick="deletePlaylist('@Model.PlaylistInfo.Id.ToString()', '@Model.PlaylistInfo.Name')"
-                                style="background: rgba(255,255,255,0.2); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; transition: all 0.2s;"
-                                onmouseover="this.style.background='rgba(255,255,255,0.3)'"
-                                onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                    <div style="font-size: 13px; opacity: 0.9;">
-                        <i class="fas fa-list"></i> @Model.PlaylistInfo.VideoCount video
-                    </div>
-                </div>
-
-                <!-- Video List -->
-                <div class="playlist-videos" style="max-height: 600px; overflow-y: auto;">
-                    @{
-                        int index = 1;
-                    }
-                    @foreach (var item in Model.Items.OrderBy(i => i.OrderIndex))
-                    {
-                        <div class="playlist-video-item" data-video-id="@item.VideoId"
-                             style="display: flex; padding: 12px 16px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s; position: relative;"
-                             onmouseover="this.style.background='#f9f9f9'; this.querySelector('.video-actions').style.opacity='1';"
-                             onmouseout="this.style.background='#fff'; this.querySelector('.video-actions').style.opacity='0';">
-
-                            <!-- Video Index -->
-                            <div class="video-index" style="min-width: 30px; font-size: 14px; color: #606060; font-weight: 500; padding-top: 4px;">
-                                @index
+                    <!-- Info content -->
+                    <div class="single-video-info-content box mb-3">
+                        @if (!string.IsNullOrEmpty(firstItem.RecognizedCelebrities))
+                        {
+                            <h6 id="currentCast">Cast:</h6>
+                            <p>@firstItem.RecognizedCelebrities.Replace("Đã nhận diện: ", "")</p>
+                        }
+                        <h6>Category:</h6>
+                        <p id="currentCategory">@firstItem.CategoryName</p>
+                        <h6>About:</h6>
+                        <div class="description-content" id="descriptionContent">
+                            <p>@Html.Raw(firstItem.Description)</p>
+                        </div>
+                        @if (!string.IsNullOrEmpty(firstItem.CelebrityFramesJson) && firstItem.CelebrityFramesJson != "{}")
+                        {
+                            <h6>Frames:</h6>
+                            <div class="frame-carousel" id="currentFrames">
+                                <button class="carousel-btn prev" id="prevBtn"><i class="fas fa-chevron-left"></i></button>
+                                <div class="carousel-content" id="carouselContent">
+                                    @foreach (var celebEntry in firstItem.CelebrityFrames.OrderBy(x => x.Value.First().Time))
+                                    {
+                                        var celebName = celebEntry.Key;
+                                        foreach (var frame in celebEntry.Value)
+                                        {
+                                            <div class="frame-card">
+                                                <img src="data:image/jpeg;base64,@frame.FrameImage" alt="@celebName at @frame.Time seconds" class="frame-image" />
+                                                @{
+                                                    var ts = TimeSpan.FromSeconds(frame.Time);
+                                                }
+                                                <p class="frame-time">@ts.ToString(@"mm\:ss")</p>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                                <button class="carousel-btn next" id="nextBtn"><i class="fas fa-chevron-right"></i></button>
                             </div>
-
-                            <!-- Thumbnail -->
-                            <div class="video-thumbnail" style="position: relative; min-width: 120px; width: 120px; height: 68px; margin: 0 12px; border-radius: 8px; overflow: hidden;">
-                                <img src="@item.Thumbnail" alt="@item.Title" style="width: 100%; height: 100%; object-fit: cover;">
-                                <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.8); color: #fff; padding: 2px 4px; border-radius: 2px; font-size: 11px; font-weight: 500;">
-                                    @item.Duration
+                        }
+                        else
+                        {
+                            <p class="no-duration">No celebrity frame information available.</p>
+                        }
+                        <h6>Tags:</h6>
+                        <p class="tags mb-0" id="currentTags">
+                            @if (!string.IsNullOrEmpty(firstItem.RecognizedCelebrities))
+                            {
+                                var celebrities = firstItem.RecognizedCelebrities.Replace("Đã nhận diện: ", "").Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+                                foreach (var celebrity in celebrities)
+                                {
+                                    <span><a href="#">@celebrity</a></span>
+                                }
+                            }
+                            else
+                            {
+                                <span><a href="#">General</a></span>
+                            }
+                        </p>
+                        <button class="btn btn-link show-more-btn" id="showMoreBtn">Show more</button>
+                    </div>
+                    <!-- Comments -->
+                    <div class="comments-section box mb-3" id="commentsSection">
+                        <partial name="~/Views/Video/_CommentPartial.cshtml" model="Model.CommentVM" />
+                    </div>
+                    <!-- Recommended -->
+                    <div class="recommended-section" id="recommendedSection">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="main-title">
+                                    <h6>Up Next</h6>
                                 </div>
                             </div>
-
-                            <!-- Video Info -->
-                            <div class="video-details" style="flex: 1; min-width: 0;">
-                                <a href="/Video/Watch/@item.VideoId" style="text-decoration: none;">
-                                    <h3 style="font-size: 14px; font-weight: 500; color: #0f0f0f; margin: 0 0 4px 0; line-height: 20px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                        @item.Title
-                                    </h3>
-                                </a>
-                                <p style="font-size: 12px; color: #606060; margin: 0;">@item.ChannelName</p>
+                            <div class="col-md-12">
+                                <partial name="~/Views/Video/_RecommendedVideos.cshtml" model="Model.RecommendedVideos" />
                             </div>
-
-                            <!-- Actions (visible on hover) -->
-                            <div class="video-actions" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); opacity: 0; transition: opacity 0.2s;">
-                                <button class="btn-remove-video" onclick="event.stopPropagation(); removeVideoFromPlaylist('@Model.PlaylistInfo.Id.ToString()', '@item.VideoId.ToString()', '@item.Title')"
-                                        style="background: #fff; border: 1px solid #e5e5e5; color: #606060; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; transition: all 0.2s;"
-                                        onmouseover="this.style.background='#ff0000'; this.style.color='#fff'; this.style.borderColor='#ff0000';"
-                                        onmouseout="this.style.background='#fff'; this.style.color='#606060'; this.style.borderColor='#e5e5e5';">
-                                    <i class="fas fa-times"></i>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert" style="background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; color: #606060;">
+                        <i class="fas fa-info-circle"></i> Danh sách phát này chưa có video nào.
+                    </div>
+                }
+            </div>
+        </div>
+        <!-- Right: Playlist sidebar -->
+        <div class="col-md-4">
+            <div class="single-video-right">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="main-title">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <h6>@Model.PlaylistInfo.Name (@Model.PlaylistInfo.VideoCount videos)</h6>
+                                <button class="btn btn-outline-danger btn-sm" onclick="deletePlaylist('@Model.PlaylistInfo.Id', '@Model.PlaylistInfo.Name')">
+                                    <i class="fas fa-trash"></i>
                                 </button>
                             </div>
                         </div>
-                        index++;
-                    }
+                    </div>
+                    <div class="col-md-12">
+                        <div class="playlist-videos" style="max-height: 600px; overflow-y: auto;">
+                            @{
+                                int index = 1;
+                            }
+                            @foreach (var item in Model.Items.OrderBy(i => i.OrderIndex))
+                            {
+                                var activeClass = index == 1 ? "active" : "";
+                                <div class="video-card video-card-list @activeClass" data-video-id="@item.VideoId" data-title="@item.Title" data-channel="@item.ChannelName" data-channel-id="@item.ChannelId" data-channel-avatar="@item.ChannelAvatar" data-duration="@item.Duration" data-description="@item.Description" data-category="@item.CategoryName" data-celebs="@item.RecognizedCelebrities" data-frames-json="@item.CelebrityFramesJson" data-created-at="@item.CreatedAt.ToString("o")"
+                                     onclick="switchVideo(this)">
+                                    <div class="video-card-image">
+                                        <a class="play-icon"><i class="fas fa-play-circle"></i></a>
+                                        <img class="img-fluid" src="@(item.Thumbnail ?? "/default-thumbnail.jpg")" alt="@item.Title">
+                                        <div class="time">@item.Duration</div>
+                                    </div>
+                                    <div class="video-card-body">
+                                        <div class="btn-group float-right right-action">
+                                            <a href="#" class="right-action-link text-gray" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
+                                            </a>
+                                            <div class="dropdown-menu dropdown-menu-right">
+                                                <a class="dropdown-item" onclick="event.stopPropagation(); removeVideoFromPlaylist('@Model.PlaylistInfo.Id', '@item.VideoId', '@item.Title')"><i class="fas fa-fw fa-trash"></i> Remove</a>
+                                            </div>
+                                        </div>
+                                        <div class="video-title">
+                                            <a href="#">@item.Title</a>
+                                        </div>
+                                        <div class="video-page text-success">
+                                            @item.ChannelName <a title="" data-placement="top" data-toggle="tooltip" href="#" data-original-title="Verified"><i class="fas fa-check-circle text-success"></i></a>
+                                        </div>
+                                        <div class="video-view">
+                                            <i class="fas fa-calendar-alt"></i> @SD.TimeAgo(item.CreatedAt)
+                                        </div>
+                                    </div>
+                                </div>
+                                index++;
+                            }
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Playlist Modal -->
+<div class="modal fade" id="addToPlaylistModal" tabindex="-1" role="dialog" aria-labelledby="addToPlaylistModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addToPlaylistModalLabel">Lưu vào danh sách phát...</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="playlistListContainer">
+                    <div class="text-center p-3" id="playlistLoading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                    <div id="playlistList"></div>
+                </div>
+                <hr class="my-3">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-plus mr-3"></i>
+                    <input type="text" class="form-control mr-2" id="newPlaylistName" placeholder="Nhập tên danh sách phát mới" required>
+                    <button class="btn btn-danger btn-sm" id="btnCreateNewPlaylist">Tạo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Css {
+    <link href="/css/video-watch.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://vjs.zencdn.net/8.6.0/video-js.css" />
     <style>
-        /* Video Player Styles */
-        .video-wrapper {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 16/9;
-            background: #000;
-            border-radius: 12px;
+        .video-js {
+            border-radius: 4px;
             overflow: hidden;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            width: 100%;
+            height: auto;
         }
 
-            .video-wrapper video {
-                aspect-ratio: 16/9;
-                outline: none;
+        .vjs-big-play-button {
+            margin: auto;
+        }
+
+        .frame-carousel {
+            position: relative;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 10;
+            transition: background 0.3s;
+        }
+
+            .carousel-btn:hover {
+                background: rgba(0, 0, 0, 0.8);
             }
 
-        /* Playlist Sidebar Scrollbar */
-        .playlist-videos::-webkit-scrollbar {
-            width: 8px;
+            .carousel-btn.prev {
+                left: 10px;
+            }
+
+            .carousel-btn.next {
+                right: 10px;
+            }
+
+        .carousel-content {
+            display: flex;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            padding: 0 50px;
+            gap: 10px;
         }
 
-        .playlist-videos::-webkit-scrollbar-track {
-            background: #f1f1f1;
+        .frame-card {
+            flex: 0 0 auto;
+            min-width: 150px;
+            text-align: center;
         }
 
-        .playlist-videos::-webkit-scrollbar-thumb {
-            background: #d0d0d0;
+        .frame-image {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
             border-radius: 4px;
         }
 
-            .playlist-videos::-webkit-scrollbar-thumb:hover {
-                background: #b0b0b0;
-            }
-
-        /* Active Video Highlight */
-        .playlist-video-item.active {
-            background: #f0f0ff !important;
-            border-left: 3px solid #667eea !important;
+        .frame-time {
+            font-size: 12px;
+            margin: 5px 0;
+            color: #666;
         }
 
-            .playlist-video-item.active .video-index {
-                color: #667eea !important;
-                font-weight: 600 !important;
-            }
-
-        /* Responsive */
-        @@media (max-width: 991px) {
-            .playlist-sidebar {
-                margin-top: 24px;
-            }
+        .modal-content {
+            border-radius: 8px;
         }
 
-        @@media (max-width: 768px) {
-            .video-title {
-                font-size: 16px !important;
-                line-height: 24px !important;
-            }
-
-            .playlist-header {
-                padding: 16px !important;
-            }
-
-                .playlist-header h2 {
-                    font-size: 16px !important;
-                }
-
-            .playlist-video-item {
-                padding: 8px 12px !important;
-            }
-
-            .video-thumbnail {
-                min-width: 100px !important;
-                width: 100px !important;
-                height: 56px !important;
-            }
-
-            .video-details h3 {
-                font-size: 13px !important;
-            }
+        .modal-header {
+            border-bottom: 1px solid #e5e5e5;
         }
 
-        /* Button Hover Effects */
-        .btn-icon-delete:hover {
-            transform: scale(1.05);
+        .modal-body {
+            padding: 20px;
         }
 
-        .btn-remove-video:hover i {
-            animation: shake 0.3s;
+        .video-card-list.active {
+            background: #f0f0f0;
         }
 
-        @@keyframes shake {
-            0%, 100% {
-                transform: translateX(0);
-            }
-
-            25% {
-                transform: translateX(-2px);
-            }
-
-            75% {
-                transform: translateX(2px);
-            }
+        .box {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 16px;
         }
 
-        /* Loading State */
-        .video-wrapper::before {
-            content: '';
+        .single-video-title h2 {
+            font-size: 18px;
+            font-weight: 400;
+            color: #030303;
+        }
+
+        .single-video-author {
+            display: flex;
+            align-items: center;
+        }
+
+            .single-video-author img {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                margin-right: 10px;
+            }
+
+            .single-video-author p {
+                font-size: 14px;
+                margin: 0;
+            }
+
+            .single-video-author small {
+                font-size: 12px;
+                color: #606060;
+            }
+
+        .description-content {
+            max-height: 50px;
+            overflow: hidden;
+            transition: max-height 0.3s;
+        }
+
+            .description-content.expanded {
+                max-height: none;
+            }
+
+        .video-card-list {
+            display: flex;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .video-card-image {
+            position: relative;
+            flex: 0 0 120px;
+        }
+
+            .video-card-image img {
+                width: 100%;
+                height: 68px;
+                object-fit: cover;
+                border-radius: 4px;
+            }
+
+        .video-card-body {
+            flex: 1;
+            padding-left: 10px;
+        }
+
+        .video-title a {
+            font-size: 14px;
+            color: #030303;
+            text-decoration: none;
+        }
+
+        .video-page {
+            font-size: 12px;
+            color: #606060;
+        }
+
+        .video-view {
+            font-size: 12px;
+            color: #606060;
+        }
+
+        .time {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: #000;
-            z-index: -1;
+            bottom: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 2px 4px;
+            font-size: 12px;
+            border-radius: 2px;
         }
 
-        /* Link Hover */
-        .video-details a:hover h3 {
-            color: #667eea;
+        .play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 24px;
+            opacity: 0.7;
         }
+
+            .play-icon:hover {
+                opacity: 1;
+            }
     </style>
 }
 
 @section Scripts {
+    <script src="~/js/site.js"></script>
+    <script src="https://vjs.zencdn.net/8.6.0/video.min.js"></script>
     <script>
-        $(document).ready(function() {
-            // Logic điều hướng video nếu cần
-        });
+        $(document).ready(function () {
+            // Khởi tạo Video.js
+            let player = videojs('player', {
+                controls: true,
+                autoplay: true,
+                preload: 'auto',
+                fluid: true,
+                aspectRatio: '16:9',
+                playbackRates: [0.5, 0.75, 1, 1.5, 2],
+                controlBar: {
+                    volumePanel: { inline: false },
+                    pictureInPictureToggle: true,
+                    fullscreenToggle: true
+                }
+            });
 
-        // Thay thế hàm removeVideoFromPlaylist
-        function removeVideoFromPlaylist(playlistId, videoId, videoTitle) {
-            if (confirm(`Bạn có chắc muốn xóa video "${videoTitle}" khỏi danh sách phát?`)) {
-                // Thêm loading indicator
-                const videoItem = event.target.closest('.playlist-video-item');
-                videoItem.style.opacity = '0.5';
+            // Hàm displayNotification
+            function displayNotification(isSuccess, title, message, type) {
+                if (typeof toastr !== "undefined") {
+                    if (isSuccess) toastr.success(message, title);
+                    else toastr.error(message, title);
+                } else {
+                    alert(`${title}: ${message}`);
+                }
+            }
 
+            // Hàm timeAgo
+            function timeAgo(date) {
+                const now = new Date();
+                const posted = new Date(date);
+                const diffInSeconds = Math.floor((now - posted) / 1000);
+                if (diffInSeconds < 60) return "just now";
+                if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+                if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+                return `${Math.floor(diffInSeconds / 86400)} days ago`;
+            }
+
+            // Hàm switch video
+            function switchVideo(element) {
+                const $el = $(element);
+                const videoId = $el.data('video-id');
+                const title = $el.data('title');
+                const channel = $el.data('channel');
+                const channelId = $el.data('channel-id');
+                const channelAvatar = $el.data('channel-avatar');
+                const duration = $el.data('duration');
+                const description = $el.data('description');
+                const category = $el.data('category');
+                const celebs = $el.data('celebs');
+                const framesJson = $el.data('frames-json');
+                const createdAt = $el.data('created-at');
+
+                // Update active state
+                $('.video-card-list').removeClass('active');
+                $el.addClass('active');
+
+                // Update player
+                player.src({ src: `/Video/GetVideoFile?videoId=${videoId}`, type: 'video/mp4' });
+                player.poster($el.find('img').attr('src'));
+                player.load();
+                player.play();
+
+                // Update video info
+                $('#currentVideoTitle').html(`<a href="#">${title}</a>`);
+                $('#currentChannelName').html(`<a href="/Member/Channel/${channelId}"><strong>${channel}</strong></a> <span title="" data-placement="top" data-toggle="tooltip" data-original-title="Verified"><i class="fas fa-check-circle text-success"></i></span>`);
+                $('#currentChannelAvatar').attr('src', channelAvatar);
+                $('#currentPublishDate').text(`Published on ${timeAgo(createdAt)}`);
+                $('#currentCategory').text(category);
+                $('#descriptionContent').html(`<p>${description}</p>`);
+                if (celebs) {
+                    $('#currentCast').show().next('p').text(celebs.replace('Đã nhận diện: ', ''));
+                } else {
+                    $('#currentCast').hide().next('p').hide();
+                }
+
+                // Update frames
+                if (framesJson && framesJson !== '{}') {
+                    try {
+                        const frames = JSON.parse(framesJson);
+                        let framesHtml = '';
+                        Object.keys(frames).sort((a, b) => frames[a][0].Time - frames[b][0].Time).forEach(celeb => {
+                            frames[celeb].forEach(frame => {
+                                const ts = new Date(frame.Time * 1000).toISOString().substr(14, 5);
+                                framesHtml += `
+                                    <div class="frame-card">
+                                        <img src="data:image/jpeg;base64,${frame.FrameImage}" alt="${celeb} at ${frame.Time} seconds" class="frame-image" />
+                                        <p class="frame-time">${ts}</p>
+                                    </div>`;
+                            });
+                        });
+                        $('#carouselContent').html(framesHtml);
+                        $('#currentFrames').show();
+                        $('.no-duration').hide();
+                    } catch (e) {
+                        console.error('Parse frames JSON error:', e);
+                        $('#carouselContent').empty();
+                        $('#currentFrames').hide();
+                        $('.no-duration').show();
+                    }
+                } else {
+                    $('#carouselContent').empty();
+                    $('#currentFrames').hide();
+                    $('.no-duration').show();
+                }
+
+                // Update tags
+                const tagsHtml = celebs ? celebs.replace('Đã nhận diện: ', '').split(', ').map(c => `<span><a href="#">${c}</a></span>`).join(' ') : '<span><a href="#">General</a></span>';
+                $('#currentTags').html(tagsHtml);
+
+                // Update comments
+                $('#commentsSection').html(`<partial name="~/Views/Video/_CommentPartial.cshtml" model="new Web_Video.ViewModels.Video.CommentViewModel { PostComment = new Web_Video.ViewModels.Video.CommentPostViewModel { VideoId = '${videoId}' } }" />`);
                 $.ajax({
-                    url: '/Playlist/RemoveVideoFromPlaylist',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ playlistId: playlistId, videoId: videoId }),
-                    headers: {
-                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    success: function(response) {
-                        if (response.isSuccess) {
-                            // Smooth remove animation
-                            videoItem.style.transition = 'all 0.3s';
-                            videoItem.style.transform = 'translateX(100%)';
-                            setTimeout(() => location.reload(), 300);
-                        } else {
-                            alert(response.message);
+                    url: '/Video/GetCommentsByPage',
+                    type: 'GET',
+                    data: { videoId: videoId, page: 1, pageSize: 5 },
+                    success: function (data) {
+                        if (data.isSuccess && data.comments) {
+                            const commentsList = $('#comments-list');
+                            commentsList.empty();
+                            data.comments.forEach(comment => {
+                                const isOwner = comment.appUserId === '@User.GetUserId()';
+                                const commentHtml = `
+                                    <div class="comment-item" id="comment-${comment.id}">
+                                        <img src="/avatarUser/avt-default.jpg" alt="User Avatar" />
+                                        <div class="comment-content">
+                                            <div class="comment-header">
+                                                <span class="comment-author">${comment.fromName}</span>
+                                                <span class="comment-time">${timeAgo(comment.postedAt)}${comment.isEdited ? '<span class="edited-label">(edited)</span>' : ''}</span>
+                                            </div>
+                                            <p class="comment-text">${comment.content}</p>
+                                            ${isOwner ? `
+                                                <div class="comment-actions-wrapper">
+                                                    <button class="btn btn-more-actions" data-comment-id="${comment.id}">
+                                                        <i class="fa fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <div class="comment-actions-menu" id="actions-menu-${comment.id}" style="display: none;">
+                                                        <button class="btn btn-edit-comment" data-comment-id="${comment.id}">Edit</button>
+                                                        <button class="btn btn-delete-comment" data-comment-id="${comment.id}" data-video-id="${videoId}">Delete</button>
+                                                    </div>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    </div>`;
+                                commentsList.append(commentHtml);
+                            });
+                            $('.comments-header').text(`${data.comments.length} ${data.comments.length > 1 ? 'Comments' : 'Comment'}`);
+                            $('#loadMoreComments').show();
+                        }
+                    }
+                });
+
+                // Update recommended
+                $.ajax({
+                    url: '/Video/GetRecommendedVideos',
+                    type: 'GET',
+                    data: { videoId: videoId },
+                    success: function (data) {
+                        if (data.isSuccess && data.result) {
+                            let recommendedHtml = '';
+                            data.result.forEach(video => {
+                                recommendedHtml += `
+                                    <div class="video-card video-card-list">
+                                        <div class="video-card-image">
+                                            <a class="play-icon" href="/Video/Watch/${video.id}"><i class="fas fa-play-circle"></i></a>
+                                            <a href="/Video/Watch/${video.id}"><img class="img-fluid" src="${video.thumbnail || '/default-thumbnail.jpg'}" alt="${video.title}"></a>
+                                            <div class="time">${video.duration}</div>
+                                        </div>
+                                        <div class="video-card-body">
+                                            <div class="btn-group float-right right-action">
+                                                <a href="#" class="right-action-link text-gray" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
+                                                </a>
+                                                <div class="dropdown-menu dropdown-menu-right">
+                                                    <a class="dropdown-item" href="#" onclick="loadUserPlaylistsForModal('${video.id}')"><i class="fas fa-fw fa-plus"></i> Add to Playlist</a>
+                                                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-flag"></i> Report</a>
+                                                </div>
+                                            </div>
+                                            <div class="video-title">
+                                                <a href="/Video/Watch/${video.id}">${video.title}</a>
+                                            </div>
+                                            <div class="video-page text-success">
+                                                ${video.channelName} <a title="" data-placement="top" data-toggle="tooltip" href="#" data-original-title="Verified"><i class="fas fa-check-circle text-success"></i></a>
+                                            </div>
+                                            <div class="video-view">
+                                                ${video.viewersCount} views &nbsp;<i class="fas fa-calendar-alt"></i> ${timeAgo(video.createdAt)}
+                                            </div>
+                                        </div>
+                                    </div>`;
+                            });
+                            $('#recommendedSection .col-md-12:last').html(recommendedHtml);
+                        }
+                    }
+                });
+
+                // Update like/dislike/subscribe state
+                $.ajax({
+                    url: '/Video/GetVideoStats',
+                    type: 'GET',
+                    data: { videoId: videoId },
+                    success: function (data) {
+                        if (data.isSuccess) {
+                            $('#likeBtn').toggleClass('btn-primary', data.isLiked).toggleClass('btn-outline-primary', !data.isLiked)
+                                .find('span').text(data.likesCount);
+                            $('#dislikeBtn').toggleClass('btn-primary', data.isDisliked).toggleClass('btn-outline-primary', !data.isDisliked)
+                                .find('span').text(data.dislikesCount || '');
+                            $('#subscribeBtn').toggleClass('btn-danger', !data.isSubscribed).toggleClass('btn-secondary subscribed', data.isSubscribed)
+                                .html(`${data.isSubscribed ? 'Subscribed' : 'Subscribe'} <strong>${data.subscribersCount}</strong>`);
+                            $('#currentViewCount').html(`<i class="fas fa-eye"></i> ${data.viewersCount} views`);
+                        }
+                    }
+                });
+
+                // Reset progress tracking
+                viewRecorded = false;
+                watchStartTime = new Date();
+                lastSavedTime = 0;
+            }
+
+            // Autoplay next video
+            let viewRecorded = false;
+            let watchStartTime = new Date();
+            let lastSavedTime = 0;
+            player.on('ended', function () {
+                const currentItem = $('.video-card-list.active');
+                const nextItem = currentItem.next('.video-card-list');
+                if (nextItem.length > 0) {
+                    switchVideo(nextItem[0]);
+                }
+            });
+
+            // Progress tracking
+            player.on('timeupdate', function () {
+                const currentTime = Math.floor(player.currentTime());
+                const watchDuration = (new Date() - watchStartTime) / 1000;
+                const videoId = $('.video-card-list.active').data('video-id');
+                if (watchDuration >= 10 && !viewRecorded) {
+                    $.ajax({
+                        url: `/Home/AddOrUpdateView?videoId=${videoId}`,
+                        type: 'POST',
+                        success: function () {
+                            console.log('View recorded after 10s watch time');
+                            viewRecorded = true;
+                        }
+                    });
+                }
+                if (Math.abs(currentTime - lastSavedTime) >= 5) {
+                    lastSavedTime = currentTime;
+                    localStorage.setItem(`progress_${videoId}`, currentTime);
+                    $.ajax({
+                        url: '/Video/UpdateProgress',
+                        type: 'POST',
+                        data: { videoId: videoId, progressSeconds: currentTime },
+                        success: function () { console.log(`Progress saved: ${currentTime}s`); }
+                    });
+                }
+            });
+
+            // Save progress on unload
+            window.addEventListener('beforeunload', () => {
+                const currentTime = Math.floor(player.currentTime());
+                const videoId = $('.video-card-list.active').data('video-id');
+                if (currentTime > 0) {
+                    localStorage.setItem(`progress_${videoId}`, currentTime);
+                    const data = new FormData();
+                    data.append('videoId', videoId);
+                    data.append('progressSeconds', currentTime);
+                    navigator.sendBeacon('/Video/UpdateProgress', data);
+                }
+            });
+
+            // Load initial progress
+            player.on('loadedmetadata', () => {
+                const videoId = $('.video-card-list.active').data('video-id');
+                const savedProgress = parseFloat(localStorage.getItem(`progress_${videoId}`)) || 0;
+                if (savedProgress > 0) {
+                    player.currentTime(savedProgress);
+                    console.log(`Resumed from ${savedProgress} seconds`);
+                }
+            });
+
+            // Hàm removeVideoFromPlaylist
+            function removeVideoFromPlaylist(playlistId, videoId, videoTitle) {
+                if (confirm(`Bạn có chắc muốn xóa video "${videoTitle}" khỏi danh sách phát?`)) {
+                    const videoItem = event.target.closest('.video-card-list');
+                    videoItem.style.opacity = '0.5';
+                    $.ajax({
+                        url: '/Playlist/RemoveVideoFromPlaylist',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ playlistId: playlistId, videoId: videoId }),
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (response) {
+                            if (response.isSuccess) {
+                                videoItem.style.transition = 'all 0.3s';
+                                videoItem.style.transform = 'translateX(100%)';
+                                setTimeout(() => {
+                                    videoItem.remove();
+                                    const countText = $('.main-title h6').text();
+                                    const currentCount = parseInt(countText.match(/\d+/)[0]) - 1;
+                                    $('.main-title h6').text(`${Model.PlaylistInfo.Name} (${currentCount} videos)`);
+                                    if ($('.video-card-list').length === 0) {
+                                        $('.single-video-left').html(`
+                                            <div class="alert" style="background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; color: #606060;">
+                                                <i class="fas fa-info-circle"></i> Danh sách phát này chưa có video nào.
+                                            </div>
+                                        `);
+                                        $('.recommended-section').empty();
+                                        player.dispose();
+                                    } else if ($('.video-card-list.active').length === 0) {
+                                        switchVideo($('.video-card-list').first()[0]);
+                                    }
+                                }, 300);
+                                displayNotification(true, 'Thành công', `Đã xóa "${videoTitle}" khỏi danh sách phát`, 'toastr');
+                            } else {
+                                alert(response.message);
+                                videoItem.style.opacity = '1';
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error('Remove video error:', xhr.status, xhr.responseText);
+                            alert('Lỗi khi xóa video.');
                             videoItem.style.opacity = '1';
                         }
+                    });
+                }
+            }
+
+            // Hàm deletePlaylist
+            function deletePlaylist(playlistId, playlistName) {
+                if (confirm(`Bạn có chắc muốn xóa danh sách phát "${playlistName}"? Hành động này không thể hoàn tác.`)) {
+                    $.ajax({
+                        url: '/Playlist/DeletePlaylist',
+                        type: 'POST',
+                        data: { id: playlistId },
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (response) {
+                            if (response.isSuccess) {
+                                window.location.href = '/Playlist/Index';
+                            } else {
+                                alert(response.message);
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error('Delete playlist error:', xhr.status, xhr.responseText);
+                            alert('Lỗi khi xóa danh sách phát.');
+                        }
+                    });
+                }
+            }
+
+            // Hàm shareVideo
+            function shareVideo(videoId) {
+                const url = `/Video/Watch/${videoId}`;
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(url).then(() => {
+                        displayNotification(true, 'Copied', 'Video URL copied to clipboard', 'toastr');
+                    }).catch(err => {
+                        console.error('Clipboard error:', err);
+                        prompt('Copy the URL below:', url);
+                        displayNotification(true, 'Prompt', 'Please copy the URL manually', 'toastr');
+                    });
+                } else {
+                    prompt('Copy the URL below:', url);
+                    displayNotification(true, 'Prompt', 'Please copy the URL manually', 'toastr');
+                }
+            }
+
+            // Hàm likeDislike
+            function likeDislike(id, action, videoId) {
+                let model = { videoId: videoId, action };
+                if ($('#' + id).hasClass('btn-primary')) {
+                    model.like = false;
+                } else {
+                    model.like = true;
+                }
+                $.ajax({
+                    url: "/Video/LikeDislikeVideo",
+                    type: "PUT",
+                    data: model,
+                    success: function (data) {
+                        const commands = data.title.split('-');
+                        commands.forEach(c => {
+                            if (c == 'addLike') {
+                                $('#likeBtn').addClass('btn-primary').removeClass('btn-outline-primary');
+                                var $span = $('#likeBtn').find('span');
+                                var currentNumber = parseInt($span.text()) || 0;
+                                $span.text(currentNumber + 1);
+                                $('#dislikeBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+                                var $dislikeSpan = $('#dislikeBtn').find('span');
+                                var dislikeNumber = $dislikeSpan.text() ? parseInt($dislikeSpan.text()) : 0;
+                                if (dislikeNumber > 0) $dislikeSpan.text(dislikeNumber - 1);
+                            } else if (c == 'addDislike') {
+                                $('#dislikeBtn').addClass('btn-primary').removeClass('btn-outline-primary');
+                                var $span = $('#dislikeBtn').find('span');
+                                var currentNumber = $span.text() ? parseInt($span.text()) : 0;
+                                $span.text(currentNumber + 1);
+                                $('#likeBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+                                var $likeSpan = $('#likeBtn').find('span');
+                                var likeNumber = parseInt($likeSpan.text()) || 0;
+                                if (likeNumber > 0) $likeSpan.text(likeNumber - 1);
+                            } else if (c == 'removeLike') {
+                                $('#likeBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+                                var $span = $('#likeBtn').find('span');
+                                var currentNumber = parseInt($span.text()) || 0;
+                                if (currentNumber > 0) $span.text(currentNumber - 1);
+                            } else if (c == 'removeDislike') {
+                                $('#dislikeBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+                                var $span = $('#dislikeBtn').find('span');
+                                var currentNumber = $span.text() ? parseInt($span.text()) : 0;
+                                if (currentNumber > 0) $span.text(currentNumber - 1);
+                            }
+                        });
                     },
-                    error: function() {
-                        alert('Lỗi khi xóa video.');
-                        videoItem.style.opacity = '1';
+                    error: function (xhr) {
+                        console.error('Like/Dislike error:', xhr.statusText);
+                        displayNotification(false, 'Error', `Failed to ${action}: ${xhr.statusText}`, 'toastr');
                     }
                 });
             }
-        }
 
-        // Xóa toàn bộ playlist
-        function deletePlaylist(playlistId, playlistName) {
-            if (confirm(`Bạn có chắc muốn xóa danh sách phát "${playlistName}"? Hành động này không thể hoàn tác.`)) {
-                // Đảm bảo playlistId là GUID hợp lệ
-                console.log('Playlist ID:', playlistId); // Debug để kiểm tra giá trị
+            // Comment handling
+            $('#textComment').on('input', function () {
+                var text = $(this).val().trim();
+                if (text.length > 0) {
+                    $('#sectionCommentBtns').fadeIn();
+                } else {
+                    $('#sectionCommentBtns').fadeOut();
+                }
+            });
+
+            $('#btnCancel').on('click', function () {
+                exitEditMode();
+            });
+
+            function enterEditMode(commentId, content) {
+                const $form = $('#create-comment-form');
+                const $input = $('#textComment');
+                const $btnComment = $('#btnComment');
+                $input.val(content);
+                $form.data('edit-comment-id', commentId);
+                $form.attr('action', '/Video/EditComment');
+                $btnComment.text('Save');
+                $('#sectionCommentBtns').fadeIn();
+            }
+
+            function exitEditMode() {
+                const $form = $('#create-comment-form');
+                const $input = $('#textComment');
+                const $btnComment = $('#btnComment');
+                $input.val('');
+                $form.removeData('edit-comment-id');
+                $form.attr('action', '/Video/CreateComment');
+                $btnComment.text('Comment');
+                $('#sectionCommentBtns').fadeOut();
+            }
+
+            $('#create-comment-form').on('submit', function (event) {
+                event.preventDefault();
+                const content = $('#textComment').val().trim();
+                const videoId = $('input[name="PostComment.VideoId"]').val();
+                const token = $('input[name="__RequestVerificationToken"]').val();
+                const commentId = $(this).data('edit-comment-id');
+
+                if (commentId) {
+                    const data = { commentId: commentId, videoId: videoId, content: content, __RequestVerificationToken: token };
+                    $.ajax({
+                        url: '/Video/EditComment',
+                        type: 'POST',
+                        data: data,
+                        success: function (data) {
+                            if (data.isSuccess) {
+                                const commentText = $(`#comment-${commentId} .comment-text`);
+                                commentText.text(content);
+                                const commentTime = $(`#comment-${commentId} .comment-time`);
+                                if (!commentTime.find('.edited-label').length) {
+                                    commentTime.append('<span class="edited-label">(edited)</span>');
+                                }
+                                exitEditMode();
+                            } else {
+                                console.error('Edit comment failed:', data.message);
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error('Edit comment error:', xhr.statusText);
+                        }
+                    });
+                } else {
+                    const data = { PostComment: { VideoId: videoId, Content: content }, __RequestVerificationToken: token };
+                    $.ajax({
+                        url: '/Video/CreateComment',
+                        type: 'POST',
+                        data: data,
+                        success: function (data) {
+                            if (data.isSuccess) {
+                                const newComment = data.comment;
+                                const isOwner = newComment.appUserId === '@User.GetUserId()';
+                                const commentHtml = `
+                                    <div class="comment-item" id="comment-${newComment.id}">
+                                        <img src="/avatarUser/avt-default.jpg" alt="User Avatar" />
+                                        <div class="comment-content">
+                                            <div class="comment-header">
+                                                <span class="comment-author">${newComment.fromName}</span>
+                                                <span class="comment-time">${timeAgo(newComment.postedAt)}</span>
+                                            </div>
+                                            <p class="comment-text">${newComment.content}</p>
+                                            ${isOwner ? `
+                                                <div class="comment-actions-wrapper">
+                                                    <button class="btn btn-more-actions" data-comment-id="${newComment.id}">
+                                                        <i class="fa fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <div class="comment-actions-menu" id="actions-menu-${newComment.id}" style="display: none;">
+                                                        <button class="btn btn-edit-comment" data-comment-id="${newComment.id}">Edit</button>
+                                                        <button class="btn btn-delete-comment" data-comment-id="${newComment.id}" data-video-id="${videoId}">Delete</button>
+                                                    </div>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    </div>`;
+                                $('#comments-list').prepend(commentHtml);
+                                const commentItems = $('.comment-item');
+                                if (commentItems.length > 5) {
+                                    commentItems.slice(5).remove();
+                                }
+                                const commentCount = commentItems.length;
+                                $('.comments-header').text(`${commentCount} ${commentCount > 1 ? 'Comments' : 'Comment'}`);
+                                $('#loadMoreComments').show();
+                                $('#textComment').val('');
+                                $('#sectionCommentBtns').fadeOut();
+                            } else {
+                                console.error('Create comment failed:', data.message);
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error('Create comment error:', xhr.statusText);
+                        }
+                    });
+                }
+            });
+
+            let currentPage = 1;
+            const commentsPerPage = 5;
+            function loadMoreComments() {
+                const videoId = $('.video-card-list.active').data('video-id');
                 $.ajax({
-                    url: '/Playlist/DeletePlaylist',
+                    url: '/Video/GetCommentsByPage',
+                    type: 'GET',
+                    data: { videoId: videoId, page: currentPage + 1, pageSize: commentsPerPage },
+                    success: function (data) {
+                        if (data.isSuccess && data.comments && data.comments.length > 0) {
+                            currentPage++;
+                            const commentsList = $('#comments-list');
+                            data.comments.forEach(comment => {
+                                const isOwner = comment.appUserId === '@User.GetUserId()';
+                                const commentHtml = `
+                                    <div class="comment-item" id="comment-${comment.id}">
+                                        <img src="/avatarUser/avt-default.jpg" alt="User Avatar" />
+                                        <div class="comment-content">
+                                            <div class="comment-header">
+                                                <span class="comment-author">${comment.fromName}</span>
+                                                <span class="comment-time">${timeAgo(comment.postedAt)}${comment.isEdited ? '<span class="edited-label">(edited)</span>' : ''}</span>
+                                            </div>
+                                            <p class="comment-text">${comment.content}</p>
+                                            ${isOwner ? `
+                                                <div class="comment-actions-wrapper">
+                                                    <button class="btn btn-more-actions" data-comment-id="${comment.id}">
+                                                        <i class="fa fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <div class="comment-actions-menu" id="actions-menu-${comment.id}" style="display: none;">
+                                                        <button class="btn btn-edit-comment" data-comment-id="${comment.id}">Edit</button>
+                                                        <button class="btn btn-delete-comment" data-comment-id="${comment.id}" data-video-id="${videoId}">Delete</button>
+                                                    </div>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    </div>`;
+                                commentsList.append(commentHtml);
+                            });
+                            if (data.comments.length < commentsPerPage) {
+                                $('#loadMoreComments').hide();
+                            }
+                        } else {
+                            $('#loadMoreComments').hide();
+                        }
+                    },
+                    error: function () {
+                        console.error('Load more comments error');
+                    }
+                });
+            }
+
+            $('#loadMoreComments').on('click', loadMoreComments);
+
+            $(document).on('click', '.btn-more-actions', function () {
+                const commentId = $(this).data('comment-id');
+                const $menu = $(`#actions-menu-${commentId}`);
+                $('.comment-actions-menu').not($menu).hide();
+                $menu.toggle();
+            });
+
+            $(document).on('click', function (event) {
+                if (!$(event.target).closest('.btn-more-actions, .comment-actions-menu').length) {
+                    $('.comment-actions-menu').hide();
+                }
+            });
+
+            $(document).on('click', '.btn-edit-comment', function (event) {
+                event.preventDefault();
+                const commentId = $(this).data('comment-id');
+                const commentText = $(`#comment-${commentId} .comment-text`).text();
+                enterEditMode(commentId, commentText);
+                $(`#actions-menu-${commentId}`).hide();
+            });
+
+            $(document).on('click', '.btn-delete-comment', function () {
+                if (!confirm('Bạn có chắc muốn xóa bình luận này không?')) {
+                    return;
+                }
+                const commentId = $(this).data('comment-id');
+                const videoId = $(this).data('video-id');
+                $.ajax({
+                    url: '/Video/DeleteComment',
                     type: 'POST',
-                    data: { id: playlistId }, // Đảm bảo key 'id' khớp với tham số trong action
+                    data: { commentId: commentId, videoId: videoId, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
+                    success: function (data) {
+                        if (data.isSuccess) {
+                            $(`#comment-${commentId}`).remove();
+                            const commentCount = $('.comment-item').length;
+                            $('.comments-header').text(`${commentCount} ${commentCount > 1 ? 'Comments' : 'Comment'}`);
+                            if (commentCount >= commentsPerPage) {
+                                $('#loadMoreComments').show();
+                            }
+                        } else {
+                            console.error('Delete comment failed:', data.message);
+                        }
+                    },
+                    error: function () {
+                        console.error('Delete comment error');
+                    }
+                });
+            });
+
+            // Playlist modal handling
+            window.loadUserPlaylistsForModal = function (videoId) {
+                $('#playlistLoading').show();
+                $('#playlistList').empty();
+                $.ajax({
+                    url: '/Playlist/GetUserPlaylistsSummary?videoId=' + videoId,
+                    type: 'GET',
+                    success: function (response) {
+                        if (response.isSuccess && response.result) {
+                            let html = '<ul class="list-group">';
+                            response.result.forEach(playlist => {
+                                html += `
+                                    <li class="list-group-item">
+                                        <input type="checkbox" id="playlist-${playlist.id}" ${playlist.isChecked ? 'checked' : ''} data-playlist-id="${playlist.id}" onchange="togglePlaylist('${videoId}', '${playlist.id}', this.checked)">
+                                        <label for="playlist-${playlist.id}" style="margin-left: 10px;">${playlist.name}</label>
+                                    </li>`;
+                            });
+                            html += '</ul>';
+                            $('#playlistList').html(html);
+                        } else {
+                            $('#playlistList').html('<p>Không có danh sách phát nào.</p>');
+                        }
+                        $('#playlistLoading').hide();
+                    },
+                    error: function (xhr) {
+                        console.error('GetUserPlaylistsSummary error:', xhr.status, xhr.responseText);
+                        $('#playlistList').html('<p>Lỗi khi tải danh sách phát.</p>');
+                        $('#playlistLoading').hide();
+                    }
+                });
+            };
+
+            window.togglePlaylist = function (videoId, playlistId, isChecked) {
+                const data = { PlaylistId: playlistId, VideoId: videoId };
+                $.ajax({
+                    url: '/Playlist/ToggleVideoInPlaylist',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
                     headers: {
                         'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
                     },
-                    success: function(response) {
+                    success: function (response) {
                         if (response.isSuccess) {
-                            window.location.href = '/Playlist/Index'; // Quay lại trang danh sách playlist
+                            displayNotification(true, 'Thành công', response.message, 'toastr');
                         } else {
                             alert(response.message);
+                            $(`#playlist-${playlistId}`).prop('checked', !isChecked);
                         }
                     },
-                    error: function(xhr, status, error) {
-                        console.error('Error:', error); // Debug lỗi
-                        alert('Lỗi khi xóa danh sách phát.');
+                    error: function (xhr) {
+                        console.error('TogglePlaylist error:', xhr.status, xhr.responseText);
+                        alert('Lỗi khi cập nhật danh sách phát.');
+                        $(`#playlist-${playlistId}`).prop('checked', !isChecked);
                     }
                 });
+            };
+
+            $('#btnCreateNewPlaylist').on('click', function () {
+                const playlistName = $('#newPlaylistName').val().trim();
+                if (playlistName) {
+                    $.ajax({
+                        url: '/Playlist/CreatePlaylist',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ Name: playlistName }),
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (response) {
+                            if (response.isSuccess) {
+                                $('#newPlaylistName').val('');
+                                loadUserPlaylistsForModal($('.video-card-list.active').data('video-id'));
+                                displayNotification(true, 'Thành công', 'Đã tạo danh sách phát mới.', 'toastr');
+                            } else {
+                                alert(response.message);
+                            }
+                        },
+                        error: function () {
+                            alert('Lỗi khi tạo danh sách phát.');
+                        }
+                    });
+                }
+            });
+
+            // Khởi tạo tooltip
+            $('[data-toggle="tooltip"]').tooltip();
+
+            // Show More/Show Less
+            $('#showMoreBtn').on('click', function () {
+                const $description = $('#descriptionContent');
+                const isExpanded = $description.hasClass('expanded');
+                $description.toggleClass('expanded');
+                $(this).text(isExpanded ? 'Show more' : 'Show less');
+            });
+
+            const descriptionHeight = $('#descriptionContent').height();
+            if (descriptionHeight <= 50) {
+                $('#showMoreBtn').hide();
             }
-        }
+
+            // Carousel frames
+            function moveCarousel(direction) {
+                const carousel = document.getElementById('carouselContent');
+                const cards = carousel.getElementsByClassName('frame-card');
+                if (cards.length === 0) return;
+                const cardWidth = cards[0].offsetWidth + 10;
+                const currentScroll = carousel.scrollLeft;
+                const maxScroll = (cards.length - Math.floor(carousel.offsetWidth / cardWidth)) * cardWidth;
+                let newScroll = currentScroll + (direction * cardWidth);
+                if (newScroll < 0) newScroll = 0;
+                if (newScroll > maxScroll) newScroll = maxScroll;
+                carousel.scrollTo({ left: newScroll, behavior: 'smooth' });
+            }
+
+            $('#prevBtn').on('click', function () { moveCarousel(-1); });
+            $('#nextBtn').on('click', function () { moveCarousel(1); });
+
+            // Subscribe
+            $('#subscribeBtn').on('click', function () {
+                const videoId = $('.video-card-list.active').data('video-id');
+                const channelId = $('.video-card-list.active').data('channel-id');
+                $.ajax({
+                    url: "/Video/SubscribeChannel",
+                    type: "PUT",
+                    data: { channelId: channelId },
+                    success: function (data) {
+                        if (data.title == "Unsubscribed") {
+                            $('#subscribeBtn').removeClass('subscribed btn-secondary').addClass('btn-danger');
+                            $('#subscribeBtn').html(`Subscribe <strong>${data.subscribersCount}</strong>`);
+                            displayNotification(false, data.title, data.message, 'toastr');
+                        } else if (data.title == "Subscribed") {
+                            $('#subscribeBtn').removeClass('btn-danger').addClass('subscribed btn-secondary');
+                            $('#subscribeBtn').html(`Subscribed <strong>${data.subscribersCount}</strong>`);
+                            displayNotification(true, data.title, data.message, 'toastr');
+                        } else {
+                            displayNotification(data.isSuccess, data.title, data.message, 'modal');
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error('Subscribe error:', xhr.statusText);
+                        displayNotification(false, 'Error', `Failed to subscribe: ${xhr.statusText}`, 'toastr');
+                    }
+                });
+            });
+
+            // Fix WAI-ARIA for modal
+            $('.modal').on('shown.bs.modal', function () {
+                $(this).find('.close').attr('tabindex', '0').focus();
+            }).on('hidden.bs.modal', function () {
+                $(this).find('.close').removeAttr('tabindex');
+                $('[data-target="#addToPlaylistModal"]').focus();
+            });
+
+            // Initial load for first video
+            if ($('.video-card-list.active').length > 0) {
+                switchVideo($('.video-card-list.active')[0]);
+            }
+        });
     </script>
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Web_Video.ViewModels.Playlist; // <=== THÊM DÒNG NÀY
 
 namespace Web_Video.ViewModels.Video
 {
@@ -27,6 +28,10 @@ namespace Web_Video.ViewModels.Video
         public string RecognizedCelebrities { get; set; }
         public string CelebrityFramesJson { get; set; } // JSON thô từ DB
         public Dictionary<string, List<CelebrityFrame>> CelebrityFrames { get; set; } // Dữ liệu đã parse
+        // === THÊM CÁC TRƯỜNG CHO PLAYLIST ===
+        public Guid? CurrentPlaylistId { get; set; } // ID của playlist hiện tại
+        public string CurrentPlaylistName { get; set; } // Tên playlist
+        public List<PlaylistItemDto> CurrentPlaylistItems { get; set; } = new List<PlaylistItemDto>(); // Danh sách video trong playlist
         public class CelebrityFrame
         {
             public float Time { get; set; } // Giây xuất hiện
@@ -43,6 +48,7 @@ namespace Web_Video.ViewModels.Video
             public string Title { get; set; }
             public string Thumbnail { get; set; } // Đường dẫn đến thumbnail của video
             public string ChannelName { get; set; }
+            public string Duration { get; set; } // Thêm trường Duration (ví dụ: "03:45")
             public int ViewersCount { get; set; }
             public DateTime CreatedAt { get; set; }
         }
