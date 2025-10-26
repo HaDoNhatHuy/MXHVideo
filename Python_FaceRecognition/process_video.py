@@ -23,7 +23,8 @@ def process_video(video_path, known_faces_dict):
     frame_interval = int(fps)  # Số frame bỏ qua để lấy 1 frame/giây
     current_time = 0.0  # Khởi tạo current_time
 
-    celebrity_frames = {}  # {celeb: [{"time": float, "frame": base64}, ...]}
+    celebrity_frames = {}  # {celeb: [{"time": float, "loc": [T,R,B,L], "frame": base64}, ...]}
+
 
     print(f"Processing video: {video_path} (FPS: {fps}, Total duration: {video_duration:.2f}s)")
 
@@ -37,9 +38,12 @@ def process_video(video_path, known_faces_dict):
         # Nhận diện khuôn mặt bằng face_recognition
         face_locations = face_recognition.face_locations(frame)
         face_encodings = face_recognition.face_encodings(frame, face_locations)
+        
 
-        recognized_celebs = []
-        for face_encoding in face_encodings:
+        # recognized_celebs = []
+        recognized_celebs_with_loc = [] # Lưu trữ {name, loc}
+        #for face_encoding in face_encodings:
+        for i, face_encoding in enumerate(face_encodings):
             best_match_name = "Unknown"
             best_match_distance = 1.0
 
@@ -51,19 +55,28 @@ def process_video(video_path, known_faces_dict):
                     best_match_name = name
 
             if best_match_distance < 0.45:
-                recognized_celebs.append(best_match_name)
+                # Lấy tọa độ khuôn mặt hiện tại
+                loc = face_locations[i] # (top, right, bottom, left)
+                recognized_celebs_with_loc.append({
+                    "name": best_match_name,
+                    "loc": loc # Tọa độ [top, right, bottom, left]
+                })
                 print(f"Matched {best_match_name} with distance {best_match_distance} at time {current_time:.2f}s")
 
         # Lưu frame nếu có celeb
-        if recognized_celebs:
+        if recognized_celebs_with_loc:
             _, buffer = cv2.imencode('.jpg', frame)
             if buffer is not None:
                 frame_base64 = base64.b64encode(buffer).decode('utf-8')
-                for celeb in set(recognized_celebs):  # Unique celeb
+                for entry in recognized_celebs_with_loc:  # Unique celeb
+                    celeb = entry["name"]
+                    loc = entry["loc"]
+
                     if celeb not in celebrity_frames:
                         celebrity_frames[celeb] = []
                     celebrity_frames[celeb].append({
                         "time": round(current_time, 1),
+                        "loc": loc, # THÊM TỌA ĐỘ
                         "frame": frame_base64
                     })
 

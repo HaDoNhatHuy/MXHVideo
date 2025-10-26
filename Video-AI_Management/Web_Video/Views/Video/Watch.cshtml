@@ -56,7 +56,10 @@
                                 <a class="dropdown-item" href="#" data-toggle="modal" data-target="#addToPlaylistModal" onclick="loadUserPlaylistsForModal('@Model.Id')">
                                     <i class="fas fa-fw fa-plus"></i> Add to Playlist
                                 </a>
-                                <a class="dropdown-item" href="#"><i class="fas fa-fw fa-flag"></i> Report</a>
+                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#reportModal">
+                                    <i class="fas fa-fw fa-flag"></i>
+                                    Report
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -144,66 +147,66 @@
                     }
                     @* else
                     { *@
-                        <!-- PHẦN CŨ: Hiển thị Video đề xuất như bình thường -->
-                        <div class="col-md-12">
-                            <div class="adblock">
-                                <div class="img">
-                                    Google AdSense<br>
-                                    336 x 280
-                                </div>
-                            </div>
-                            <div class="main-title">
-                                <div class="btn-group float-right right-action">
-                                    <a href="#" class="right-action-link text-gray" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        Sort by <i class="fa fa-caret-down" aria-hidden="true"></i>
-                                    </a>
-                                    <div class="dropdown-menu dropdown-menu-right">
-                                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> Top Rated</a>
-                                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-signal"></i> Viewed</a>
-                                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-times-circle"></i> Close</a>
-                                    </div>
-                                </div>
-                                <h6>Up Next</h6>
+                    <!-- PHẦN CŨ: Hiển thị Video đề xuất như bình thường -->
+                    <div class="col-md-12">
+                        <div class="adblock">
+                            <div class="img">
+                                Google AdSense<br>
+                                336 x 280
                             </div>
                         </div>
-                        <div class="col-md-12">
-                            @foreach (var video in Model.RecommendedVideos)
-                            {
-                                <div class="video-card video-card-list">
-                                    <div class="video-card-image">
-                                        <a class="play-icon" href="@Url.Action("Watch", "Video", new { id = video.Id })"><i class="fas fa-play-circle"></i></a>
-                                        <a href="@Url.Action("Watch", "Video", new { id = video.Id })"><img class="img-fluid" src="@video.Thumbnail" alt="@video.Title"></a>
-                                    </div>
-                                    <div class="video-card-body">
-                                        <div class="btn-group float-right right-action">
-                                            <a href="#" class="right-action-link text-gray" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
-                                            </a>
-                                            <div class="dropdown-menu dropdown-menu-right">
-                                                <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> Top Rated</a>
-                                                <a class="dropdown-item" href="#"><i class="fas fa-fw fa-signal"></i> Viewed</a>
-                                                <a class="dropdown-item" href="#"><i class="fas fa-fw fa-times-circle"></i> Close</a>
-                                            </div>
-                                        </div>
-                                        <div class="video-title">
-                                            <a href="@Url.Action("Watch", "Video", new { id = video.Id })">@video.Title</a>
-                                        </div>
-                                        <div class="video-page text-success">
-                                            @video.ChannelName <a title="" data-placement="top" data-toggle="tooltip" href="#" data-original-title="Verified"><i class="fas fa-check-circle text-success"></i></a>
-                                        </div>
-                                        <div class="video-view">
-                                            @SD.FormatView(video.ViewersCount) views &nbsp;<i class="fas fa-calendar-alt"></i> @SD.TimeAgo(video.CreatedAt)
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                            <div class="adblock mt-0">
-                                <div class="img">
-                                    Google AdSense<br>
-                                    336 x 280
+                        <div class="main-title">
+                            <div class="btn-group float-right right-action">
+                                <a href="#" class="right-action-link text-gray" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Sort by <i class="fa fa-caret-down" aria-hidden="true"></i>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right">
+                                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> Top Rated</a>
+                                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-signal"></i> Viewed</a>
+                                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-times-circle"></i> Close</a>
                                 </div>
                             </div>
+                            <h6>Up Next</h6>
                         </div>
+                    </div>
+                    <div class="col-md-12">
+                        @foreach (var video in Model.RecommendedVideos)
+                        {
+                            <div class="video-card video-card-list">
+                                <div class="video-card-image">
+                                    <a class="play-icon" href="@Url.Action("Watch", "Video", new { id = video.Id })"><i class="fas fa-play-circle"></i></a>
+                                    <a href="@Url.Action("Watch", "Video", new { id = video.Id })"><img class="img-fluid" src="@video.Thumbnail" alt="@video.Title"></a>
+                                </div>
+                                <div class="video-card-body">
+                                    <div class="btn-group float-right right-action">
+                                        <a href="#" class="right-action-link text-gray" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-right">
+                                            <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> Top Rated</a>
+                                            <a class="dropdown-item" href="#"><i class="fas fa-fw fa-signal"></i> Viewed</a>
+                                            <a class="dropdown-item" href="#"><i class="fas fa-fw fa-times-circle"></i> Close</a>
+                                        </div>
+                                    </div>
+                                    <div class="video-title">
+                                        <a href="@Url.Action("Watch", "Video", new { id = video.Id })">@video.Title</a>
+                                    </div>
+                                    <div class="video-page text-success">
+                                        @video.ChannelName <a title="" data-placement="top" data-toggle="tooltip" href="#" data-original-title="Verified"><i class="fas fa-check-circle text-success"></i></a>
+                                    </div>
+                                    <div class="video-view">
+                                        @SD.FormatView(video.ViewersCount) views &nbsp;<i class="fas fa-calendar-alt"></i> @SD.TimeAgo(video.CreatedAt)
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        <div class="adblock mt-0">
+                            <div class="img">
+                                Google AdSense<br>
+                                336 x 280
+                            </div>
+                        </div>
+                    </div>
                     @* } *@
                 </div>
             </div>
@@ -236,6 +239,49 @@
                     <input type="text" class="form-control mr-2" id="newPlaylistName" placeholder="Nhập tên danh sách phát mới" required>
                     <button class="btn btn-danger btn-sm" id="btnCreateNewPlaylist">Tạo</button>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal Báo cáo Video -->
+<div class="modal fade" id="reportModal" tabindex="-1" role="dialog" aria-labelledby="reportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <!-- ... Modal Header ... -->
+            <div class="modal-body">
+                <form id="reportForm">
+                    <input type="hidden" name="VideoId" value="@Model.Id" />
+                    <input type="hidden" name="__RequestVerificationToken"
+                           value="@Html.AntiForgeryToken().ToString()" />
+                    <div class="form-group">
+                        <label for="reportReason">Lý do báo cáo:</label>
+                        <select class="form-control" id="reportReason" name="Reason" required>
+                            <option value="">Chọn lý do</option>
+                            <option value="Celebrity Copyright">Vi phạm bản quyền khuôn mặt người nổi tiếng</option>
+                            <option value="Hate Speech">Nội dung thù địch/bắt nạt</option>
+                            <option value="Sexual Content">Nội dung khiêu dâm</option>
+                            <option value="Other">Lý do khác (Vui lòng ghi rõ)</option>
+                        </select>
+                    </div>
+
+                    <!-- THÊM: Khu vực chọn Người nổi tiếng -->
+                    <div class="form-group" id="celebritySelectionGroup" style="display: none; margin-top: 15px;">
+                        <label>Chọn người nổi tiếng vi phạm:</label>
+                        <div id="celebrityListContainer" class="d-flex flex-wrap gap-2">
+                            <!-- Danh sách tên celeb sẽ được chèn vào đây bằng JS -->
+                        </div>
+                        <!-- Trường ẩn để lưu tên celeb được chọn -->
+                        <input type="hidden" id="reportedCelebrityNameInput" name="ReportedCelebrityName" />
+                        <span class="text-danger" id="celebrityError" style="font-size: 14px; display: none;">Vui lòng chọn một người nổi tiếng.</span>
+                    </div>
+
+                    <div class="form-group" id="otherReasonGroup" style="display: none; margin-top: 10px;">
+                        <label for="otherReason">Mô tả chi tiết:</label>
+                        <textarea class="form-control" id="otherReason" name="OtherReason"
+                                  rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-danger mt-3" id="submitReportBtn">Gửi Báo cáo</button>
+                </form>
             </div>
         </div>
     </div>
@@ -452,6 +498,126 @@
                 });
             }
         });
+
+        // === 1. DỮ LIỆU CELEBRITIES TỪ DB (AN TOÀN 100%) ===
+            const recognizedCelebritiesRaw = @Html.Raw(Json.Serialize(Model.RecognizedCelebrities ?? ""))
+                .replace(/^"|"$/g, '')  // Loại bỏ dấu nháy kép thừa
+                .trim();
+
+            console.log('Raw celeb string:', recognizedCelebritiesRaw); // DEBUG
+
+            // === 2. PARSE CHUỖI THÀNH MẢNG ===
+            function parseCelebrities(raw) {
+                if (!raw || typeof raw !== 'string' || raw.trim() === '') return [];
+                raw = raw.trim();
+                if (raw.includes("Không nhận diện được")) return [];
+
+                const prefix = "Đã nhận diện: ";
+                if (raw.startsWith(prefix)) {
+                    return raw
+                        .substring(prefix.length)
+                        .split(',')
+                        .map(n => n.trim())
+                        .filter(n => n.length > 0);
+                }
+                return raw
+                    .split(',')
+                    .map(n => n.trim())
+                    .filter(n => n.length > 0);
+            }
+
+            const availableCelebrities = parseCelebrities(recognizedCelebritiesRaw);
+            console.log('Available celebs:', availableCelebrities); // DEBUG
+
+            // === 3. MODAL REPORT: HIỂN THỊ NÚT CELEB ===
+            $('#reportReason').on('change', function () {
+                const reason = $(this).val();
+                const $celebGroup = $('#celebritySelectionGroup');
+                const $otherGroup = $('#otherReasonGroup');
+
+                // Reset
+                $otherGroup.hide();
+                $('#otherReason').prop('required', false);
+                $celebGroup.hide();
+                $('#reportedCelebrityNameInput').val('');
+                $('#celebrityError').hide();
+
+                if (reason === 'Other') {
+                    $otherGroup.show();
+                    $('#otherReason').prop('required', true);
+                }
+
+                if (reason === 'Celebrity Copyright') {
+                    if (availableCelebrities.length > 0) {
+                        $celebGroup.show();
+                        renderCelebrityButtons(availableCelebrities);
+                    } else {
+                        displayNotification(false, 'Cảnh báo',
+                            'Video này không có dữ liệu nhận diện người nổi tiếng. Vui lòng chọn lý do khác.',
+                            'toastr');
+                        $(this).val(''); // reset
+                        $otherGroup.show();
+                        $('#otherReason').prop('required', true);
+                    }
+                }
+            });
+
+            // === 4. HIỂN THỊ NÚT CELEB ===
+            function renderCelebrityButtons(celebs) {
+                const $container = $('#celebrityListContainer');
+                $container.empty();
+                celebs.forEach(name => {
+                    $container.append(`
+                        <button type="button"
+                                class="btn btn-sm btn-outline-primary me-2 mb-2 celebrity-btn"
+                                data-name="${name}">
+                            ${name}
+                        </button>
+                    `);
+                });
+            }
+
+            // === 5. CLICK CHỌN CELEB ===
+            $(document).on('click', '.celebrity-btn', function () {
+                $('.celebrity-btn')
+                    .removeClass('btn-primary')
+                    .addClass('btn-outline-primary');
+                $(this)
+                    .removeClass('btn-outline-primary')
+                    .addClass('btn-primary');
+                $('#reportedCelebrityNameInput').val($(this).data('name'));
+                $('#celebrityError').hide();
+            });
+
+            // === 6. SUBMIT BÁO CÁO ===
+            $('#reportForm').on('submit', function (e) {
+                e.preventDefault();
+                const reason = $('#reportReason').val();
+
+                if (reason === 'Celebrity Copyright' && !$('#reportedCelebrityNameInput').val()) {
+                    $('#celebrityError').text('Vui lòng chọn một người nổi tiếng.').show();
+                    return;
+                }
+
+                $.ajax({
+                    url: '/Video/ReportVideo',
+                    type: 'POST',
+                    // data: $(this).serialize(),
+                    data: {
+                            VideoId: '@Model.Id',
+                            Reason: $('#reportReason').val(),
+                            OtherReason: $('#otherReason').val(),
+                            ReportedCelebrityName: $('#reportedCelebrityNameInput').val() // THÊM DÒNG NÀY
+                    },
+                    success: function (res) {
+                        displayNotification(res.isSuccess, 'Thông báo', res.message, 'toastr');
+                        $('#reportModal').modal('hide');
+                    },
+                    error: function () {
+                        displayNotification(false, 'Lỗi', 'Không thể gửi báo cáo. Vui lòng thử lại.', 'toastr');
+                    }
+                });
+            });
 
             // Hàm shareVideo
             function shareVideo() {

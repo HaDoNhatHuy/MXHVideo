@@ -117,35 +117,7 @@ namespace Web_Video.Controllers
                     currentPage = pageNumber
                 }
             });
-        }
-
-        //[Authorize(Roles = $"{SD.UserRole}")]
-        //[HttpGet]
-        //public async Task<IActionResult> GetHistory(int pageNumber = 1, int pageSize = 12)
-        //{
-        //    var query = Context.VideoViews
-        //        .Where(x => x.AppUserId == User.GetUserId())
-        //        .Select(x => new
-        //        {
-        //            Id = x.VideoId,
-        //            x.Video.Title,
-        //            x.Video.Thumbnail,
-        //            ChannelName = x.Video.Channel.ChannelName,
-        //            ChannelId = x.Video.Channel.Id,
-        //            LastVisitTimeAgo = SD.TimeAgo(x.LastVisit),
-        //            x.LastVisit,
-        //            Views = x.Video.Views
-        //        });
-        //    var totalItems = await query.CountAsync();
-        //    var items = await query
-        //        .OrderByDescending(x => x.LastVisit)
-        //        .Skip((pageNumber - 1) * pageSize)
-        //        .Take(pageSize)
-        //        .ToListAsync();
-        //    var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
-        //    var paginatedResults = new PaginatedResult<object>(items, totalItems, pageNumber, pageSize, totalPages);
-        //    return Json(new ApiResponse(200, result: paginatedResults));
-        //}
+        }        
         [Authorize(Roles = $"{SD.UserRole}")]
         [HttpGet]
         public async Task<IActionResult> GetHistory(int pageNumber = 1, int pageSize = 12)

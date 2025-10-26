@@ -6,36 +6,125 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container-fluid" style="padding: 24px 96px; background-color: #cba088;">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="d-flex align-items-center mb-4">
-                <i class="fas fa-list-ul" style="font-size: 24px; color: #fff; margin-right: 16px;"></i>
-                <h5 style="color: #fff; margin: 0; font-weight: 500; font-size: 20px;">Danh sách phát của bạn</h5>
+<div class="playlists-page">
+    <div class="playlists-container">
+        <!-- Header Section -->
+        <div class="page-header">
+            <div class="header-content">
+                <div class="header-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18M3 12h18M3 18h18" />
+                    </svg>
+                </div>
+                <h1 class="page-title">Danh sách phát của bạn</h1>
             </div>
         </div>
-        <div id="playlistsContainer" class="row w-100">
-            <div class="col-12 text-center p-5" id="loadingIndicator">
-                <i class="fas fa-spinner fa-spin fa-2x" style="color: #aaa;"></i>
-                <p style="color: #aaa; margin-top: 16px;">Đang tải danh sách phát...</p>
+
+        <!-- Playlists Grid -->
+        <div id="playlistsContainer" class="playlists-grid">
+            <div class="loading-wrapper" id="loadingIndicator">
+                <div class="loading-spinner">
+                    <svg class="spinner" viewBox="0 0 50 50">
+                        <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="4"></circle>
+                    </svg>
+                </div>
+                <p class="loading-text">Đang tải danh sách phát...</p>
             </div>
         </div>
     </div>
 </div>
-@section Css{
+
+@section Css {
     <style>
+        .playlists-page {
+            background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+            min-height: 100vh;
+            padding: 32px 24px;
+        }
+
+        .playlists-container {
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        /* Header Styles */
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 40px 48px;
+            margin-bottom: 40px;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+            .header-icon svg {
+                color: #ffffff;
+            }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 600;
+            color: #ffffff;
+            margin: 0;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Grid Layout */
+        .playlists-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 28px;
+        }
+
+        /* Playlist Card */
         .playlist-card {
-            transition: transform 0.2s;
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid #f0f0f0;
         }
 
             .playlist-card:hover {
-                transform: translateY(-4px);
+                transform: translateY(-8px);
+                box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+                border-color: #e0e0e0;
             }
 
+        /* Thumbnail */
         .playlist-thumbnail {
             position: relative;
             overflow: hidden;
-            border-radius: 12px;
+            cursor: pointer;
+        }
+
+            .playlist-thumbnail img {
+                width: 100%;
+                aspect-ratio: 16/9;
+                object-fit: cover;
+                display: block;
+                transition: transform 0.4s ease;
+            }
+
+        .playlist-card:hover .playlist-thumbnail img {
+            transform: scale(1.08);
         }
 
         .playlist-overlay {
@@ -44,20 +133,29 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.6));
-            border-radius: 12px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%);
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        .playlist-card:hover .playlist-overlay {
+            opacity: 0.85;
         }
 
         .playlist-count {
             position: absolute;
-            top: 8px;
-            right: 8px;
-            background: rgba(0, 0, 0, 0.8);
+            top: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.9);
             color: #fff;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(10px);
         }
 
         .playlist-hover-info {
@@ -66,99 +164,333 @@
             left: 50%;
             transform: translate(-50%, -50%);
             opacity: 0;
-            transition: opacity 0.3s;
+            transition: all 0.3s ease;
             text-align: center;
             color: #fff;
-            font-weight: 500;
-            font-size: 14px;
         }
 
-            .playlist-hover-info i {
-                font-size: 48px;
-                margin-bottom: 8px;
+        .playlist-card:hover .playlist-hover-info {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .playlist-hover-info i {
+            font-size: 56px;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        }
+
+        .playlist-hover-info span {
+            display: block;
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Playlist Info */
+        .playlist-info {
+            padding: 20px;
+        }
+
+        .playlist-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0f0f0f;
+            margin: 0 0 8px 0;
+            line-height: 1.4;
+        }
+
+            .playlist-title a {
+                text-decoration: none;
+                color: inherit;
+                transition: color 0.2s;
             }
 
-        .playlist-thumbnail:hover .playlist-hover-info {
-            opacity: 1;
+                .playlist-title a:hover {
+                    color: #065fd4;
+                }
+
+        .playlist-meta {
+            font-size: 13px;
+            color: #606060;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .playlist-title a:hover {
-            color: #fff !important;
+        .view-playlist-btn {
+            width: 100%;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff !important;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
         }
 
-        .view-playlist-btn:hover {
-            color: #fff !important;
+            .view-playlist-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
+            }
+
+        /* Loading State */
+        .loading-wrapper {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
         }
 
-        #loadingIndicator {
-            background-color: transparent;
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 20px;
+        }
+
+        .spinner {
+            animation: rotate 2s linear infinite;
+            width: 60px;
+            height: 60px;
+        }
+
+            .spinner .path {
+                stroke: #667eea;
+                stroke-linecap: round;
+                animation: dash 1.5s ease-in-out infinite;
+            }
+
+        @@keyframes rotate {
+            100%
+
+        {
+            transform: rotate(360deg);
+        }
+
+        }
+
+        @@keyframes dash {
+            0%
+
+        {
+            stroke-dasharray: 1, 150;
+            stroke-dashoffset: 0;
+        }
+
+        50% {
+            stroke-dasharray: 90, 150;
+            stroke-dashoffset: -35;
+        }
+
+        100% {
+            stroke-dasharray: 90, 150;
+            stroke-dashoffset: -124;
+        }
+
+        }
+
+        .loading-text {
+            color: #606060;
+            font-size: 15px;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        /* Empty State */
+        .empty-state {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        }
+
+            .empty-state i {
+                font-size: 72px;
+                color: #c0c0c0;
+                margin-bottom: 20px;
+            }
+
+            .empty-state p {
+                color: #909090;
+                font-size: 16px;
+                margin: 0;
+                font-weight: 500;
+            }
+
+        /* Error State */
+        .error-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px 20px;
+            background: #fff5f5;
+            border-radius: 16px;
+            color: #d32f2f;
+            font-weight: 500;
+            border: 1px solid #ffcdd2;
+        }
+
+        /* Responsive Design */
+        @@media (max-width: 1200px) {
+            .playlists-grid
+
+        {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        }
+
+        @@media (max-width: 992px) {
+            .page-header
+
+        {
+            padding: 32px 36px;
+        }
+
+        .page-title {
+            font-size: 28px;
+        }
+
+        .playlists-grid {
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        }
+
+        @@media (max-width: 768px) {
+            .playlists-page
+
+        {
+            padding: 24px 16px;
+        }
+
+        .page-header {
+            padding: 28px 24px;
+            margin-bottom: 32px;
+        }
+
+        .header-icon {
+            width: 48px;
+            height: 48px;
+        }
+
+            .header-icon svg {
+                width: 24px;
+                height: 24px;
+            }
+
+        .page-title {
+            font-size: 24px;
+        }
+
+        .playlists-grid {
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        }
+
+        @@media (max-width: 480px) {
+            .playlists-grid
+
+        {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .page-title {
+            font-size: 20px;
+        }
+
         }
     </style>
 }
+
 @section Scripts {
     <script>
-            $(document).ready(function() {
-                loadUserPlaylists();
-            });
+        $(document).ready(function() {
+            loadUserPlaylists();
+        });
 
-            function loadUserPlaylists() {
-                const container = $('#playlistsContainer');
-                const loading = $('#loadingIndicator');
-                loading.show();
-                container.empty();
+        function loadUserPlaylists() {
+            const container = $('#playlistsContainer');
+            const loading = $('#loadingIndicator');
+            loading.show();
+            container.empty().append(loading);
 
-                $.ajax({
-                    url: "/Playlist/GetUserPlaylists",
-                    type: "GET",
-                    success: function (data) {
-                        loading.hide();
-                            if (data.isSuccess && data.result.length > 0) {
-            let html = '';
-            data.result.forEach(p => {
-                const videoCountText = p.videoCount === 1 ? '1 video' : `${p.videoCount} videos`;
-                const thumbnailUrl = p.firstVideoThumbnail || '/img/default-thumbnail.jpg';
+            $.ajax({
+                url: "/Playlist/GetUserPlaylists",
+                type: "GET",
+                success: function (data) {
+                    loading.hide();
+                    if (data.isSuccess && data.result.length > 0) {
+                        let html = '';
+                        data.result.forEach(p => {
+                            const videoCountText = p.videoCount === 1 ? '1 video' : `${p.videoCount} videos`;
+                            const thumbnailUrl = p.firstVideoThumbnail || '/img/default-thumbnail.jpg';
 
-                html += `
-                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-4">
-                        <div class="playlist-card" style="cursor: pointer;">
-                            <div class="playlist-thumbnail" onclick="location.href='/Playlist/WatchPlaylist/${p.id}'">
-                                <img src="${thumbnailUrl}" alt="${p.name}" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 12px;">
-                                <div class="playlist-overlay">
-                                    <div class="playlist-count">
-                                        <i class="fas fa-list"></i> ${p.videoCount}
+                            html += `
+                                <div class="playlist-card">
+                                    <div class="playlist-thumbnail" onclick="location.href='/Playlist/WatchPlaylist/${p.id}'">
+                                        <img src="${thumbnailUrl}" alt="${p.name}">
+                                        <div class="playlist-overlay">
+                                            <div class="playlist-count">
+                                                <i class="fas fa-list"></i>
+                                                <span>${p.videoCount}</span>
+                                            </div>
+                                            <div class="playlist-hover-info">
+                                                <i class="fas fa-play-circle"></i>
+                                                <span>PHÁT TẤT CẢ</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="playlist-hover-info">
-                                        <i class="fas fa-play"></i>
-                                        <span>PHÁT TẤT CẢ</span>
+                                    <div class="playlist-info">
+                                        <h3 class="playlist-title">
+                                            <a href="/Playlist/WatchPlaylist/${p.id}">${p.name}</a>
+                                        </h3>
+                                        <p class="playlist-meta">
+                                            <span>${videoCountText}</span>
+                                            <span>•</span>
+                                            <span>${p.createdAtTimeAgo}</span>
+                                        </p>
+                                        <button class="view-playlist-btn" onclick="location.href='/Playlist/FullList/${p.id}'">
+                                            Xem toàn bộ danh sách
+                                        </button>
                                     </div>
                                 </div>
+                            `;
+                        });
+                        container.html(html);
+                    } else {
+                        container.html(`
+                            <div class="empty-state">
+                                <i class="fas fa-list-ul"></i>
+                                <p>Bạn chưa có danh sách phát nào.</p>
                             </div>
-                            <div class="playlist-info" style="padding: 12px 0;">
-                                <h3 class="playlist-title" style="font-size: 16px; font-weight: 500; color: #030303; margin: 0 0 4px 0;"> 
-                                    <a href="/Playlist/WatchPlaylist/${p.id}" style="text-decoration: none; color: inherit;">${p.name}</a>
-                                </h3>
-                                <p style="font-size: 13px; color: #606060; margin: 0;">${videoCountText} • ${p.createdAtTimeAgo}</p>
-                                <button class="btn btn-outline-secondary btn-sm mt-2" onclick="location.href='/Playlist/FullList/${p.id}'">Xem toàn bộ danh sách</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            container.html(html);
-        } else {
-            container.html(`
-                <div class="col-12 text-center p-5">
-                    <i class="fas fa-list-ul" style="font-size: 48px; color: #717171; margin-bottom: 16px;"></i>
-                    <p style="color: #aaa; font-size: 14px;">Bạn chưa có danh sách phát nào.</p>
-                </div>
-            `);
-        }
-                    },
-                    error: function () {
-                        loading.hide();
-                        container.html('<div class="col-12 text-center p-3 text-danger">Lỗi khi tải danh sách phát.</div>');
+                        `);
                     }
-                });
-            }
+                },
+                error: function () {
+                    loading.hide();
+                    container.html('<div class="error-state"><i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 12px; display: block;"></i>Lỗi khi tải danh sách phát. Vui lòng thử lại.</div>');
+                }
+            });
+        }
     </script>
 }

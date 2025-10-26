@@ -1,0 +1,442 @@
+﻿@model IEnumerable<Web_Video.ViewModels.Moderator.ReportDisplayViewModel>
+@{
+    ViewData["Title"] = "Quản lý Báo cáo Video";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="modern-report-container">
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="icon-badge">
+                    <i class="fas fa-flag"></i>
+                </div>
+                <div>
+                    <h1 class="page-title">Quản lý Báo cáo Video</h1>
+                    <p class="page-subtitle">Tổng cộng @Model.Count() báo cáo cần xem xét</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report List -->
+    <div class="report-list-wrapper">
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-clipboard-check empty-icon"></i>
+                <h3>Không có báo cáo mới</h3>
+                <p>Tất cả báo cáo đã được xử lý.</p>
+            </div>
+        }
+        else
+        {
+            <div class="report-grid">
+                @foreach (var report in Model)
+                {
+                    <div class="report-card @(report.Status == "New" ? "status-new" : "status-reviewed")">
+                        <div class="report-card-header">
+                            <span class="report-id">#@report.ReportedDate.ToString("yyyyMMdd")@report.Id.ToString().Substring(0, 4)</span>
+                            <span class="status-badge status-@(report.Status.ToLower().Contains("new") ? "new" : "closed")">
+                                @report.Status
+                            </span>
+                        </div>
+                        <h3 class="video-title">
+                            <a href="@Url.Action("Watch", "Video", new { id = report.VideoId })" target="_blank">
+                                @report.VideoTitle
+                            </a>
+                        </h3>
+                        <div class="report-details">
+                            <div class="detail-row">
+                                <i class="fas fa-user-tag detail-icon"></i>
+                                Báo cáo bởi: <strong>@report.ReportedByUserName</strong>
+                            </div>
+                            <div class="detail-row">
+                                <i class="fas fa-clock detail-icon"></i>
+                                Ngày: @report.ReportedDate.ToString("dd/MM/yyyy HH:mm")
+                            </div>
+                            <div class="detail-row reason">
+                                <i class="fas fa-exclamation-triangle detail-icon"></i>
+                                Lý do: @report.Reason
+                            </div>
+                            <div class="detail-row blur-status">
+                                <i class="fas fa-low-vision detail-icon"></i>
+                                Trạng thái Blur:
+                                <strong class="@(report.IsBlurringActivated ? "text-danger" : "text-success")">
+                                    @(report.IsBlurringActivated ? "Đã Kích hoạt" : "Chưa Kích hoạt")
+                                </strong>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="report-actions">
+                            @if (!report.IsBlurringActivated)
+                            {
+                                <button class="action-btn activate-blur-btn"
+                                        data-report-id="@report.Id"
+                                        data-video-id="@report.VideoId" {{-- THÊM: VideoId --}}
+                                        data-video-title="@report.VideoTitle"
+                                        data-celebrity-name="@report.ReportedCelebrityName">
+                                    <i class="fas fa-mask"></i> Kích hoạt Blur
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="action-btn deactivate-blur-btn"
+                                        data-report-id="@report.Id"
+                                        data-video-id="@report.VideoId" 
+                                        data-video-title="@report.VideoTitle">
+                                    <i class="fas fa-eye"></i> Vô hiệu hóa Blur
+                                </button>
+                            }
+
+                            @if (!report.Status.ToLower().Contains("closed"))
+                            {
+                                <button class="action-btn close-report-btn"
+                                        data-report-id="@report.Id">
+                                    <i class="fas fa-check"></i> Đánh dấu đã xem
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // === 1. XÁC NHẬN HÀNH ĐỘNG (Bootstrap Modal) ===
+        function confirmation(message) {
+            return new Promise((resolve) => {
+                const id = 'confirm_' + Date.now();
+                $('body').append(`
+                    <div class="modal fade" id="${id}" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header border-0">
+                                    <h5 class="modal-title">Xác nhận</h5>
+                                    <button type="button" class="close" data-dismiss="modal">×</button>
+                                </div>
+                                <div class="modal-body text-center">
+                                    <p>${message}</p>
+                                </div>
+                                <div class="modal-footer border-0 justify-content-center">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                                    <button type="button" class="btn btn-danger confirm-ok">Đồng ý</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+
+                const $modal = $(`#${id}`);
+                $modal.modal({ backdrop: 'static', keyboard: false }).modal('show');
+
+                $modal.find('.confirm-ok').on('click', () => {
+                    $modal.modal('hide');
+                    resolve(true);
+                });
+
+                $modal.on('hidden.bs.modal', () => {
+                    $modal.remove();
+                    resolve(false);
+                });
+            });
+        }
+
+        // === 2. HIỂN THỊ THÔNG BÁO ===
+        function displayNotification(success, title, message) {
+            // Tạo modal nếu chưa có
+            if ($('#notifyModal').length === 0) {
+                $('body').append(`
+                    <div class="modal fade" id="notifyModal" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered modal-sm">
+                            <div class="modal-content border-0 shadow">
+                                <div class="modal-body text-center py-4">
+                                    <i class="notify-icon fas fa-4x mb-3"></i>
+                                    <h5 class="modal-title font-weight-bold"></h5>
+                                    <p class="modal-message text-muted mt-2"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+            }
+
+            const $m = $('#notifyModal');
+            $m.find('.modal-title').text(title);
+            $m.find('.modal-message').text(message);
+            const $i = $m.find('.notify-icon').removeClass().addClass('notify-icon fas fa-4x mb-3');
+            $i.addClass(success ? 'fa-check-circle text-success' : 'fa-times-circle text-danger');
+            $m.modal('show');
+
+            if (success) {
+                setTimeout(() => $m.modal('hide'), 2500);
+            }
+        }
+
+        // === 3. XỬ LÝ HÀNH ĐỘNG (SỬA ĐỔI) ===
+        // Hàm xử lý chung, giờ đây sẽ nhận các tham số cụ thể cho ToggleBlur
+        async function handleAction(url, data, message, reportId) {
+            const confirmed = await confirmation(message);
+            if (!confirmed) return;
+
+            const $btn = $(`[data-report-id="${reportId}"]`);
+            const orig = $btn.html();
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang xử lý...');
+
+            $.ajax({
+                url: url,
+                type: "POST",
+                // Quan trọng: Sử dụng application/json để Controller có thể bind tham số
+                // contentType: "application/json",
+                // data: JSON.stringify(data), // Truyền payload đã được cấu trúc
+                data: data, // Truyền payload đã được cấu trúc
+                success: function (res) {
+                    const r = res || {};
+                    displayNotification(r.isSuccess !== false, r.title || (r.isSuccess !== false ? "Thành công!" : "Lỗi"), r.message || "Đã xử lý.");
+                    if (r.isSuccess !== false) {
+                        setTimeout(() => location.reload(), 1800);
+                    }
+                },
+                error: function (xhr) {
+                    let msg = "Lỗi không xác định.";
+                    try {
+                        // Thử parse lỗi từ server (nếu có)
+                        const err = xhr.responseJSON || JSON.parse(xhr.responseText);
+                        msg = err.message || msg;
+                    } catch { }
+                    displayNotification(false, "Lỗi", msg);
+                },
+                complete: function () {
+                    $btn.prop('disabled', false).html(orig);
+                }
+            });
+        }
+
+        // === 4. GẮN SỰ KIỆN ===
+        $(document).ready(function () {
+            // XÓA BACKDROP KHI ĐÓNG MODAL
+            $(document).on('hidden.bs.modal', '.modal', function () {
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open').css({ paddingRight: '', overflow: '' });
+            });
+
+                    // Kích hoạt Blur: Cần videoId, activate=true, và celebrityName
+            $(document).on('click', '.activate-blur-btn', function () {
+                const reportId = $(this).data('report-id');
+                const videoId = $(this).data('video-id'); // Lấy từ data attribute
+                const celebrityName = $(this).data('celebrity-name'); // Lấy từ data attribute
+                const videoTitle = $(this).data('video-title');
+
+                // KIỂM TRA LỖI DEBUG CỦA BẠN: Nếu celebrityName là null khi KÍCH HOẠT,
+                // Python API sẽ không biết làm mờ ai [4]. Cần cảnh báo nếu bị thiếu.
+                if (!celebrityName) {
+                    displayNotification(false, "Lỗi Dữ liệu", "Báo cáo này thiếu tên người nổi tiếng cần làm mờ. Vui lòng kiểm tra dữ liệu Report.", 'modal');
+                    return;
+                }
+
+                // Payload cho ToggleBlur C#: {videoId, activate, celebrityName} [1]
+                const data = {
+                    videoId: videoId,
+                    activate: true,
+                    celebrityName: celebrityName
+                };
+
+                handleAction('/Moderator/ToggleBlur', data,
+                    `Bạn có chắc muốn <strong>KÍCH HOẠT</strong> làm mờ cho người nổi tiếng ${celebrityName} trong video "<em>${videoTitle}</em>"?`,
+                    reportId);
+            });
+
+            // Vô hiệu hóa Blur: Cần videoId, activate=false, celebrityName=null (hoặc bỏ qua)
+            $(document).on('click', '.deactivate-blur-btn', function () {
+                const reportId = $(this).data('report-id');
+                const videoId = $(this).data('video-id'); // Lấy từ data attribute
+                const videoTitle = $(this).data('video-title');
+
+                // Payload cho ToggleBlur C#: {videoId, activate, celebrityName} [1]
+                const data = {
+                    videoId: videoId,
+                    activate: false,
+                    celebrityName: null // Không cần tên celebrity khi tắt blur
+                };
+
+                handleAction('/Moderator/ToggleBlur', data,
+                    `Bạn có chắc muốn <strong>VÔ HIỆU HÓA</strong> làm mờ cho video "<em>${videoTitle}</em>"?`,
+                    reportId);
+            });
+
+            // Đóng báo cáo: Chỉ cần reportId
+            $(document).on('click', '.close-report-btn', function () {
+                const reportId = $(this).data('report-id');
+
+                // Payload cho CloseReport C#: {reportId} [2]. Đảm bảo tên tham số khớp.
+                const data = { reportId: reportId };
+
+                handleAction('/Moderator/CloseReport', data, "Bạn có chắc muốn <strong>ĐÓNG</strong> báo cáo này?", reportId);
+            });
+        });
+    </script>
+}
+
+@section Css {
+    <style>
+        /* Thêm CSS cơ bản cho AllReports (Có thể tái sử dụng CSS từ AllUsers/Category) */
+        .modern-report-container {
+            background: linear-gradient(135deg, #f0f4ff 0%, #eef2ff 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .page-header {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .icon-badge {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #cc0000 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 24px;
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 24px;
+        }
+
+        .report-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            border-left: 5px solid #667eea;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+            .report-card.status-new {
+                border-left-color: #ff6b6b;
+                border-top: 1px solid #ff6b6b;
+            }
+
+        .report-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #909090;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-weight: 600;
+        }
+
+        .status-new {
+            background-color: #ffe0e0;
+            color: #cc0000;
+        }
+
+        .status-closed {
+            background-color: #e0f7fa;
+            color: #00838f;
+        }
+
+        .video-title a {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+            .video-title a:hover {
+                color: #ff6b6b;
+            }
+
+        .report-details {
+            padding: 10px 0;
+            border-top: 1px solid #f0f0f0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .detail-row {
+            font-size: 14px;
+            color: #4a5568;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-icon {
+            color: #ff6b6b;
+        }
+
+        .report-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 8px 15px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-grow: 1;
+        }
+
+        .activate-blur-btn {
+            background-color: #ff6b6b;
+            color: white;
+        }
+
+            .activate-blur-btn:hover {
+                background-color: #cc0000;
+            }
+
+        .deactivate-blur-btn {
+            background-color: #10b981;
+            color: white;
+        }
+
+            .deactivate-blur-btn:hover {
+                background-color: #0d946d;
+            }
+
+        .close-report-btn {
+            background-color: #e0e7ff;
+            color: #667eea;
+        }
+
+            .close-report-btn:hover {
+                background-color: #c3ccff;
+            }
+    </style>
+}

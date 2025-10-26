@@ -2,11 +2,12 @@ import face_recognition
 import pickle
 from flask import Flask, request, jsonify
 from process_video import process_video
+from video_blurring_processor import blur_selected_celebrity_face
 import io
 import numpy as np
-import base64  # Thêm dòng này
+import base64
 from PIL import Image
-
+import json  # THÊM DÒNG NÀY
 
 app = Flask(__name__)
 
@@ -15,7 +16,7 @@ embeddings_file = "celebrity_embeddings.pkl"
 with open(embeddings_file, "rb") as f:
     known_faces_dict = pickle.load(f)
 
-print(f"✅ Đã load {len(known_faces_dict)} celebrities từ embeddings file.")
+print(f"Đã load {len(known_faces_dict)} celebrities từ embeddings file.")
 
 @app.route('/recognize', methods=['POST'])
 def recognize():
@@ -56,6 +57,38 @@ def process_video_endpoint():
         print(f"Error in process_video_endpoint: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/blur_selected_celebrity', methods=['POST'])
+def blur_endpoint():
+    data = request.json
+    video_path = data.get('video_path')
+    output_path = data.get('output_path')
+    frames_json = data.get('celebrity_frames_json')  # JSON string
+    celeb_name = data.get('celebrity_to_blur')
+    
+    if not all([video_path, output_path, frames_json, celeb_name]):
+        return jsonify({"error": "Thiếu thông tin đầu vào (video_path, output_path, frames_json, celebrity_to_blur)"}), 400
+    
+    try:
+        # Parse JSON frames data
+        frames_data = json.loads(frames_json)  # ĐÃ CÓ json
+        
+        # Gọi hàm xử lý làm mờ chính
+        success = blur_selected_celebrity_face(
+            video_path, 
+            output_path, 
+            frames_data, 
+            celeb_name
+        )
+        
+        if success:
+            return jsonify({"status": "success", "message": f"Đã làm mờ {celeb_name} và lưu tại {output_path}"})
+        else:
+            return jsonify({"status": "error", "message": "Quá trình xử lý video thất bại."}), 500
+            
+    except Exception as e:
+        print(f"Error in blur_endpoint: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    
 @app.route('/recognize_image', methods=['POST'])
 def recognize_image():
     data = request.json
@@ -63,7 +96,6 @@ def recognize_image():
         return jsonify({"error": "Thiếu image_base64"}), 400
     
     try:
-        # Giải mã base64 thành hình ảnh
         image_data = base64.b64decode(data['image_base64'])
         image = Image.open(io.BytesIO(image_data))
         frame = np.array(image)
@@ -74,7 +106,7 @@ def recognize_image():
     face_locations = face_recognition.face_locations(frame)
     face_encodings = face_recognition.face_encodings(frame, face_locations)
     
-    recognized_celebrities = []
+    recognized_celebs = []
     for face_encoding in face_encodings:
         best_match_name = "Unknown"
         best_match_distance = 1.0
@@ -88,12 +120,12 @@ def recognize_image():
         
         if best_match_distance < 0.45:
             print(f"Matched celebrity: {best_match_name} with distance: {best_match_distance:.4f}")
-            recognized_celebrities.append(best_match_name)
+            recognized_celebs.append(best_match_name)
         else:
             print(f"No match found, best distance: {best_match_distance:.4f} (Unknown)")
-            recognized_celebrities.append("Unknown")
+            recognized_celebs.append("Unknown")
     
-    unique_celebs = list(set([c for c in recognized_celebrities if c != "Unknown"]))
+    unique_celebs = list(set([c for c in recognized_celebs if c != "Unknown"]))
     print(f"Recognized celebrities: {unique_celebs}")
     return jsonify({"celebrities": unique_celebs})
 

@@ -1,24 +1,45 @@
 ﻿@model Web_Video.ViewModels.Playlist.PlaylistWatchViewModel
-
 @{
     ViewData["Title"] = "Toàn bộ danh sách phát: " + Model.PlaylistInfo.Name;
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container-fluid" style="background-color: #fff; padding: 24px 0;">
-    <div class="row" style="max-width: 1280px; margin: 0 auto;">
-        <div class="col-12">
-            <h1 style="font-size: 24px; font-weight: 400; color: #030303; margin-bottom: 16px;">@Model.PlaylistInfo.Name</h1>
-            <p style="font-size: 14px; color: #606060;">@Model.PlaylistInfo.VideoCount video • @Model.PlaylistInfo.CreatedAtTimeAgo</p>
+<div class="playlist-container">
+    <div class="playlist-wrapper">
+        <!-- Header Section -->
+        <div class="playlist-header">
+            <div class="playlist-info">
+                <h1 class="playlist-title">@Model.PlaylistInfo.Name</h1>
+                <div class="playlist-meta">
+                    <span class="meta-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <path d="M9 10l6 2-6 2V10z" />
+                        </svg>
+                        @Model.PlaylistInfo.VideoCount video
+                    </span>
+                    <span class="meta-divider">•</span>
+                    <span class="meta-item">@Model.PlaylistInfo.CreatedAtTimeAgo</span>
+                </div>
+            </div>
         </div>
-        <div class="row">
+
+        <!-- Video Grid -->
+        <div class="video-grid">
             @foreach (var item in Model.Items)
             {
-                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                    <div class="video-card" style="cursor: pointer;" onclick="location.href='/Video/Watch/@item.VideoId'">
-                        <img src="@(item.Thumbnail ?? "/default-thumbnail.jpg")" alt="@item.Title" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px;">
-                        <h3 style="font-size: 14px; font-weight: 400; color: #030303; margin: 8px 0 4px; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@item.Title</h3>
-                        <p style="font-size: 13px; color: #606060; margin: 0;">@item.ChannelName • @item.Duration</p>
+                <div class="video-item" onclick="location.href='/Video/Watch/@item.VideoId'">
+                    <div class="thumbnail-wrapper">
+                        <img src="@(item.Thumbnail ?? "/default-thumbnail.jpg")"
+                             alt="@item.Title"
+                             class="thumbnail">
+                        <div class="duration-badge">@item.Duration</div>
+                    </div>
+                    <div class="video-details">
+                        <h3 class="video-title" title="@item.Title">@item.Title</h3>
+                        <div class="video-meta">
+                            <span class="channel-name">@item.ChannelName</span>
+                        </div>
                     </div>
                 </div>
             }
@@ -28,8 +49,195 @@
 
 @section Css {
     <style>
-        .video-card:hover {
-            opacity: 0.9;
+        .playlist-container {
+            background: linear-gradient(180deg, #f9f9f9 0%, #ffffff 100%);
+            min-height: 100vh;
+            padding: 32px 24px;
+        }
+
+        .playlist-wrapper {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .playlist-header {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e5e5;
+        }
+
+        .playlist-title {
+            font-size: 32px;
+            font-weight: 600;
+            color: #0f0f0f;
+            margin: 0 0 12px 0;
+            line-height: 1.3;
+        }
+
+        .playlist-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #606060;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+            .meta-item svg {
+                opacity: 0.8;
+            }
+
+        .meta-divider {
+            color: #d0d0d0;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .video-item {
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+            .video-item:hover {
+                transform: translateY(-4px);
+            }
+
+        .thumbnail-wrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .thumbnail {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.3s ease;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .video-item:hover .thumbnail {
+            transform: scale(1.05);
+        }
+
+        .duration-badge {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .video-details {
+            padding: 0 4px;
+        }
+
+        .video-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: #0f0f0f;
+            margin: 0 0 8px 0;
+            line-height: 1.4;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            text-overflow: ellipsis;
+            min-height: 42px;
+        }
+
+        .video-item:hover .video-title {
+            color: #065fd4;
+        }
+
+        .video-meta {
+            font-size: 13px;
+            color: #606060;
+        }
+
+        .channel-name {
+            font-weight: 400;
+        }
+
+        /* Responsive Design */
+        @@media (max-width: 992px) {
+            .video-grid
+
+        {
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 20px;
+        }
+
+        .playlist-header {
+            padding: 24px;
+        }
+
+        .playlist-title {
+            font-size: 26px;
+        }
+
+        }
+
+        @@media (max-width: 768px) {
+            .playlist-container
+
+        {
+            padding: 20px 16px;
+        }
+
+        .video-grid {
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 16px;
+        }
+
+        .playlist-header {
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .playlist-title {
+            font-size: 22px;
+        }
+
+        .video-title {
+            font-size: 14px;
+        }
+
+        }
+
+        @@media (max-width: 480px) {
+            .video-grid
+
+        {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .playlist-title {
+            font-size: 20px;
+        }
+
         }
     </style>
 }

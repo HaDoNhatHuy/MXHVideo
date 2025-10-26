@@ -202,19 +202,126 @@ namespace Web_Video.Controllers
         //    TempData["notification"] = "false;Not Found;Requested video was not found";
         //    return RedirectToAction("Index", "Home");
         //}
+        [Authorize(Roles = $"{SD.UserRole}")]
+        [HttpPost]
+        public async Task<IActionResult> ReportVideo(ReportViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Json(new ApiResponse(400, message: "Dữ liệu báo cáo không hợp lệ."));
+            }
+
+            var userId = User.GetUserId(); // Lấy ID người dùng hiện tại
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new ApiResponse(401, message: "Người dùng chưa đăng nhập.")); 
+            }
+
+            var video = await Context.Videos.AnyAsync(v => v.Id == model.VideoId);
+            if (!video)
+            {
+                return Json(new ApiResponse(404, message: "Video không tồn tại.")); 
+            }
+
+            // Kiểm tra xem người dùng đã báo cáo video này chưa (tùy chọn)
+            var existingReport = await Context.Reports
+                .AnyAsync(r => r.AppUserId == userId && r.VideoId == model.VideoId && r.Status == "New");
+
+            if (existingReport)
+            {
+                return Json(new ApiResponse(400, message: "Bạn đã gửi báo cáo cho video này.")); 
+            }
+
+            var newReport = new Report
+            {
+                VideoId = model.VideoId,
+                AppUserId = userId,
+                Reason = model.Reason + (model.OtherReason != null ? $" ({model.OtherReason})" : ""),
+                Status = "New",
+                IsBlurringActivated = false,
+                ReportedCelebrityName = model.ReportedCelebrityName,  // Thêm nếu có
+                ReportedDate = DateTime.UtcNow
+            };
+
+            Context.Reports.Add(newReport); // Thêm Report vào DbSet
+            await Context.SaveChangesAsync(); // Lưu thay đổi
+
+            return Json(new ApiResponse(201, "Thành công", "Báo cáo của bạn đã được gửi và sẽ được xem xét.")); 
+}
+        //public async Task<IActionResult> GetVideoFile(Guid videoId)
+        //{
+        //    try
+        //    {
+        //        var fetchedVideoFile = await UnitOfWork.VideoFileRepo.GetFirstOrDefaultAsync(x => x.VideoId == videoId);
+        //        if (fetchedVideoFile == null)
+        //        {
+        //            //_logger.LogWarning($"Video file not found for videoId: {videoId}");
+        //            return NotFound($"Video file not found for videoId: {videoId}");
+        //        }
+
+        //        var contentType = fetchedVideoFile.ContentType ?? "video/mp4";
+        //        var bytes = fetchedVideoFile.Contents;
+        //        var fileLength = bytes.Length;
+
+        //        var rangeHeader = Request.Headers.Range.FirstOrDefault();
+        //        if (rangeHeader != null && !string.IsNullOrEmpty(rangeHeader.ToString()))
+        //        {
+        //            var ranges = RangeHeaderValue.Parse(rangeHeader.ToString()).Ranges;
+        //            if (ranges != null && ranges.Any())
+        //            {
+        //                var range = ranges.First();
+        //                long from = range.From ?? 0;
+        //                long to = range.To ?? fileLength - 1;
+        //                long length = to - from + 1;
+
+        //                Response.StatusCode = 206; // Partial Content
+        //                Response.Headers.Add("Content-Range", $"bytes {from}-{to}/{fileLength}");
+        //                Response.Headers.Add("Content-Length", length.ToString());
+
+        //                return File(new MemoryStream(bytes, (int)from, (int)length), contentType);
+        //            }
+        //        }
+
+        //        // Nếu không có range, return toàn bộ
+        //        Response.Headers.Add("Accept-Ranges", "bytes");
+        //        Response.Headers.Add("Content-Disposition", "inline");
+        //        Response.Headers.Add("Content-Length", fileLength.ToString());
+        //        return File(bytes, contentType);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        //_logger.LogError(ex, $"Error retrieving video file for videoId: {videoId}");
+        //        return StatusCode(500, $"Error retrieving video file: {ex.Message}");
+        //    }
+        //}
         public async Task<IActionResult> GetVideoFile(Guid videoId)
         {
             try
             {
-                var fetchedVideoFile = await UnitOfWork.VideoFileRepo.GetFirstOrDefaultAsync(x => x.VideoId == videoId);
-                if (fetchedVideoFile == null)
+                // <<< THAY ĐỔI: Bắt đầu
+                // 1. Truy vấn Video và Include VideoFile theo hướng dẫn
+                var video = await Context.Videos // <-- Giả sử DbContext của bạn tên là _context
+                    .Include(v => v.VideoFile)
+              .FirstOrDefaultAsync(v => v.Id == videoId);
+
+                // 2. Kiểm tra null cho cả video và video file
+                if (video == null || video.VideoFile == null)
                 {
-                    //_logger.LogWarning($"Video file not found for videoId: {videoId}");
-                    return NotFound($"Video file not found for videoId: {videoId}");
+                    //_logger.LogWarning($"Video or video file not found for videoId: {videoId}");
+                    return NotFound($"Video or video file not found for videoId: {videoId}");
                 }
 
+                // 3. Gán fetchedVideoFile từ đối tượng con đã Include
+                var fetchedVideoFile = video.VideoFile;
+                // <<< THAY ĐỔI: Kết thúc
+
+                // (Lưu ý: Code hướng dẫn có gợi ý về logic làm mờ 'IsBlurActivated'.
+                // Nếu bạn cần logic đó, bạn sẽ kiểm tra 'video.IsBlurActivated' ở đây
+                // và quyết định 'bytes' sẽ là 'fetchedVideoFile.Contents' 
+                // hay một mảng byte đã làm mờ nào đó.)
+
                 var contentType = fetchedVideoFile.ContentType ?? "video/mp4";
-                var bytes = fetchedVideoFile.Contents;
+                var bytes = fetchedVideoFile.Contents; // <-- Lấy byte từ 'fetchedVideoFile'
                 var fileLength = bytes.Length;
 
                 var rangeHeader = Request.Headers.Range.FirstOrDefault();

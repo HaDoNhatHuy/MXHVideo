@@ -5,7 +5,8 @@
     </div>
 </div>
 
-<button type="button" id="triggerModalButton" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#notificationModal" style="display:none;">
+<!-- Dùng cú pháp Bootstrap 4/jQuery -->
+<button type="button" id="triggerModalButton" class="btn btn-primary" data-toggle="modal" data-target="#notificationModal" style="display:none;">
     Launch demo modal
 </button>
 
@@ -35,17 +36,27 @@
                 `
                 <div class="modal-header ${isSuccess === true ? 'bg-success' : 'bg-danger'}">
                     <h5 class="modal-title" id="modalLabel">${title}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     ${message}
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-bs-dismiss="modal">OK</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">OK</button>
                 </div>`;
 
             $("#notificationModalContent").append(modalContentInnerHtml);
             $("#triggerModalButton").trigger('click');
+            // === THÊM: Dọn dẹp DOM khi modal này đóng ===
+            $('#notificationModal').on('hidden.bs.modal', function () {
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open').css({
+                    overflow: '',
+                    paddingRight: ''
+                });
+                // Xóa handler để tránh chạy nhiều lần
+                $(this).off('hidden.bs.modal');
+            });
         } else {
             toastr.options = {
                 positionClass: "toast-bottom-right"

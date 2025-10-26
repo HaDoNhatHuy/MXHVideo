@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="/vendor/owl-carousel/owl.theme.css">
     @await RenderSectionAsync("Css", false)
     <style>
-        /* Các style hiện có từ _Layout.cshtml */
+        /* === CÁC STYLE CŨ === */
         #sidebarOverlay {
             display: none;
             position: fixed;
@@ -26,7 +26,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0,0,0,0.5);
             z-index: 998;
         }
 
@@ -94,18 +94,6 @@
                 margin-right: 8px;
             }
 
-        .modal {
-            background: rgba(0, 0, 0, 0.5);
-        }
-
-        .modal-backdrop {
-            display: none;
-        }
-
-       /*  .modal-backdrop {
-            z-index: -1;
-        } */
-
         .channel-sidebar-list ul li a {
             display: flex;
             align-items: center;
@@ -135,7 +123,7 @@
                 margin-right: 8px;
             }
 
-        /* Style mới cho modal chọn ảnh - ĐÃ SỬA */
+        /* === IMAGE SEARCH MODAL === */
         #imageSearchModal .modal-dialog {
             max-width: 500px;
             margin: 1.75rem auto;
@@ -156,18 +144,15 @@
         }
 
         #imageSearchModal .modal-title {
-            color: #ffffff;
+            color: #fff;
             font-weight: 600;
             font-size: 20px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         #imageSearchModal .close {
-            color: #ffffff;
+            color: #fff;
             opacity: 0.9;
-            text-shadow: none;
             font-size: 28px;
-            font-weight: 300;
         }
 
             #imageSearchModal .close:hover {
@@ -211,7 +196,7 @@
 
         .dropzone-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #ffffff;
+            color: #fff;
             border: none;
             padding: 12px 28px;
             border-radius: 12px;
@@ -224,10 +209,6 @@
             .dropzone-btn:hover {
                 transform: translateY(-2px);
                 box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-            }
-
-            .dropzone-btn:active {
-                transform: translateY(0);
             }
 
         .preview-container {
@@ -249,15 +230,15 @@
             max-height: 250px;
             object-fit: contain;
             border-radius: 12px;
-            display: block;
             margin: 0 auto;
+            display: block;
         }
 
         .remove-image-btn {
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255,255,255,0.9);
             border: none;
             border-radius: 50%;
             width: 32px;
@@ -272,7 +253,7 @@
 
             .remove-image-btn:hover {
                 background: #ff4444;
-                color: #ffffff;
+                color: #fff;
                 transform: scale(1.1);
             }
 
@@ -284,7 +265,7 @@
             border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
-            color: #ffffff;
+            color: #fff;
             transition: all 0.3s ease;
         }
 
@@ -294,12 +275,12 @@
             }
 
             #submitImageBtn:disabled {
-                background: linear-gradient(135deg, #cbd5e0 0%, #a0aec0 100%);
+                background: #cbd5e0;
                 cursor: not-allowed;
                 opacity: 0.6;
             }
 
-        /* Loading indicator - ĐÃ SỬA ĐỂ CĂNG GIỮA */
+        /* === LOADING INDICATOR – ĐÃ SỬA === */
         #loadingIndicator {
             display: none;
             position: fixed;
@@ -311,34 +292,35 @@
             z-index: 2000;
             justify-content: center;
             align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
-
-            #loadingIndicator.show {
+            /* Đảm bảo loading indicator luôn nằm trên hết */
+            #loadingIndicator.active {
                 display: flex;
+                opacity: 1;
+                z-index: 5004 !important; /* Cao hơn tất cả modal */
             }
 
             #loadingIndicator .spinner-container {
-                background: #ffffff;
+                background: #fff;
                 padding: 40px 50px;
                 border-radius: 20px;
                 text-align: center;
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+                box-shadow: 0 10px 40px rgba(0,0,0,0.3);
                 animation: fadeInScale 0.3s ease;
             }
 
         @@keyframes fadeInScale {
-            from
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
 
-        {
-            opacity: 0;
-            transform: scale(0.9);
-        }
-
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
-
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
         #loadingIndicator .spinner-icon {
@@ -348,16 +330,13 @@
         }
 
         @@keyframes spin {
-            from
+            from {
+                transform: rotate(0deg);
+            }
 
-        {
-            transform: rotate(0deg);
-        }
-
-        to {
-            transform: rotate(360deg);
-        }
-
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         #loadingIndicator p {
@@ -365,7 +344,24 @@
             margin-top: 20px;
             font-weight: 600;
             font-size: 16px;
-            margin-bottom: 0;
+        }
+
+        /* === KHÔNG ẨN BACKDROP === */
+        /* XÓA HOÀN TOÀN DÒNG NÀY */
+        .modal-backdrop { display: none; }
+        /* === GHI ĐÈ Z-INDEX CHO BOOTSTRAP V4.1.3 === */
+        .modal {
+            /* Modal nội dung (vd: #imageSearchModal, #logoutModal) */
+            z-index: 1050 !important;
+        }
+
+        .modal-backdrop {
+            /* Lớp phủ nền */
+            z-index: 1040 !important; 
+        }
+        /* Đảm bảo Notification Modal tùy chỉnh cũng đủ cao */
+        #notificationModal {
+            z-index: 1060 !important;
         }
     </style>
 </head>
@@ -401,7 +397,7 @@
             <input type="file" name="image" id="hiddenImageInput">
         </form>
         <!-- Modal chọn/kéo thả ảnh -->
-        <div class="modal fade" id="imageSearchModal" tabindex="-1" role="dialog" aria-labelledby="imageSearchModalLabel" aria-hidden="true">
+        <div class="modal fade" id="imageSearchModal" tabindex="-1" role="dialog" aria-labelledby="imageSearchModalLabel">
             <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -434,36 +430,40 @@
         </div>
         <!-- Navbar -->
         <ul class="navbar-nav ml-auto ml-md-0 osahan-right-navbar">
-            <li class="nav-item mx-1">
-                <a class="nav-link" asp-controller="Video" asp-action="CreateEditVideo">
-                    <i class="fas fa-plus-circle fa-fw"></i>
-                    Upload Video
-                </a>
-            </li>
-            <li class="nav-item dropdown no-arrow mx-1">
-                <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fas fa-bell fa-fw"></i>
-                    <span class="badge badge-danger">9+</span>
-                </a>
-                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="alertsDropdown">
-                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-edit"></i> &nbsp; Action</a>
-                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-headphones-alt"></i> &nbsp; Another action</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> &nbsp; Something else here</a>
-                </div>
-            </li>
-            <li class="nav-item dropdown no-arrow mx-1">
-                <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fas fa-envelope fa-fw"></i>
-                    <span class="badge badge-success">7</span>
-                </a>
-                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="messagesDropdown">
-                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-edit"></i> &nbsp; Action</a>
-                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-headphones-alt"></i> &nbsp; Another action</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> &nbsp; Something else here</a>
-                </div>
-            </li>
+            @if (User.Identity.IsAuthenticated)
+            {
+
+                <li class="nav-item mx-1">
+                    <a class="nav-link" asp-controller="Video" asp-action="CreateEditVideo">
+                        <i class="fas fa-plus-circle fa-fw"></i>
+                        Upload Video
+                    </a>
+                </li>
+                <li class="nav-item dropdown no-arrow mx-1">
+                    <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-bell fa-fw"></i>
+                        <span class="badge badge-danger">9+</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="alertsDropdown">
+                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-edit"></i> &nbsp; Action</a>
+                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-headphones-alt"></i> &nbsp; Another action</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> &nbsp; Something else here</a>
+                    </div>
+                </li>
+                <li class="nav-item dropdown no-arrow mx-1">
+                    <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-envelope fa-fw"></i>
+                        <span class="badge badge-success">7</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="messagesDropdown">
+                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-edit"></i> &nbsp; Action</a>
+                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-headphones-alt"></i> &nbsp; Another action</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> &nbsp; Something else here</a>
+                    </div>
+                </li>
+            }
             @if (User.Identity.IsAuthenticated)
             {
                 <li class="nav-item dropdown no-arrow osahan-right-navbar-user">
@@ -488,7 +488,7 @@
                             <div class="dropdown-divider"></div>
                             <h6 style="margin-left:10px;">Moderator Panel</h6>
                             <a class="dropdown-item" asp-controller="Moderator" asp-action="AllVideos"><i class="fas fa-fw fa-video"></i> &nbsp; Video Management</a>
-                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" asp-controller="Moderator" asp-action="AllReports"><i class="fas fa-fw fa-flag"></i> &nbsp; Reports</a>
                         }
                         <div class="dropdown-divider"></div>
                         <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal"><i class="fas fa-fw fa-sign-out-alt"></i> &nbsp; Logout</a>
@@ -540,7 +540,7 @@
                         <i class="fas fa-fw fa-list"></i>
                         <span>Playlists</span>
                     </a>
-                </li> 
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" asp-controller="Channel" asp-action="Index">
                         <i class="fas fa-fw fa-video"></i>
@@ -548,7 +548,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" asp-controller="Video" asp-action="CreateEditVideo">
+                    <a class="nav-link" asp-controller="Playlist" asp-action="FullList" asp-route-id="@Guid.Parse("A6EA568A-F279-4002-8C9D-801934C1BE49")">
                         <i class="fas fa-fw fa-clock"></i>
                         <span>Watch Later</span>
                     </a>
@@ -600,8 +600,8 @@
     <a class="scroll-to-top rounded" href="#page-top">
         <i class="fas fa-angle-up"></i>
     </a>
-    <!-- Logout Modal-->
-    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="logoutModalLabel" aria-hidden="true">
+    <!-- Logout Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="logoutModalLabel">
         <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -626,28 +626,27 @@
     <!-- Owl Carousel -->
     <script src="/vendor/owl-carousel/owl.carousel.js"></script>
     <!-- Custom scripts for all pages-->
-    <script src="/js_new/custom.js" asp-append-version="true"></script>    
+    <script src="/js_new/custom.js" asp-append-version="true"></script>
     <script>
         $(document).ready(function () {
-            console.log('Document ready, loadingIndicator display:', $('#loadingIndicator').css('display')); // Debug trạng thái ban đầu
+            console.log('Document ready - Script bắt đầu chạy');
 
+            // Ẩn loading indicator ngay từ đầu
+            $('#loadingIndicator').hide().removeClass('active');
+
+            // === BIẾN CƠ BẢN ===
             const sidebar = $('#sidebarMenu');
             const content = $('.youtube-content');
             const toggleBtn = $('#toggleSidebarBtn');
             const overlay = $('#sidebarOverlay');
             const subscriptionsList = $('#subscriptionsList');
-
-            // Kiểm tra trạng thái xác thực người dùng
             const isAuthenticated = @Json.Serialize(User.Identity.IsAuthenticated);
-
-            // Kiểm tra trang hiện tại từ ViewData
             const currentPage = '@ViewData["CurrentPage"]';
 
-            // Biến để theo dõi trang hiện tại của subscriptions
             let currentSubPage = 1;
             let totalSubPages = 1;
 
-            // Ẩn sidebar trên Watch, Login, Register ở màn hình lớn
+            // === ẨN/HIỆN SIDEBAR THEO TRANG ===
             if (currentPage === 'Watch' || currentPage === 'Login' || currentPage === 'Register') {
                 sidebar.addClass('hidden');
                 content.addClass('full-width');
@@ -656,7 +655,7 @@
                 content.removeClass('full-width');
             }
 
-            // Toggle sidebar
+            // === NÚT MỞ/ĐÓNG SIDEBAR ===
             toggleBtn.on('click', function () {
                 if ($(window).width() >= 992) {
                     sidebar.toggleClass('hidden');
@@ -667,13 +666,13 @@
                 }
             });
 
-            // Đóng sidebar trên mobile khi nhấn overlay
+            // === ĐÓNG SIDEBAR KHI NHẤN NỀN ĐEN (MOBILE) ===
             overlay.on('click', function () {
                 sidebar.removeClass('active');
                 overlay.removeClass('active');
             });
 
-            // Đóng sidebar khi click link trên mobile
+            // === ĐÓNG SIDEBAR KHI NHẤN LINK (MOBILE) ===
             sidebar.find('.nav-link').on('click', function () {
                 if ($(window).width() < 992) {
                     sidebar.removeClass('active');
@@ -681,7 +680,7 @@
                 }
             });
 
-            // Xử lý khi thay đổi kích thước màn hình
+            // === KHI THAY ĐỔI KÍCH THƯỚC MÀN HÌNH ===
             $(window).on('resize', function () {
                 if ($(window).width() >= 992) {
                     sidebar.removeClass('active');
@@ -699,36 +698,33 @@
                 }
             });
 
-            // Load danh sách kênh đăng ký
+            // === LOAD DANH SÁCH KÊNH ĐĂNG KÝ ===
             if (isAuthenticated) {
-                console.log('User is authenticated, loading subscriptions');
+                console.log('Đang tải danh sách kênh đăng ký...');
                 loadSubscriptions();
             }
 
             function loadSubscriptions(page = 1) {
-                console.log('Loading subscriptions, page:', page);
+                console.log('Tải trang:', page);
                 $.ajax({
                     url: `/Home/GetSubscriptions?pageNumber=${page}&pageSize=5`,
                     type: 'GET',
                     success: function (response) {
-                        console.log('Subscriptions API response:', response);
                         if (response.statusCode === 200 && response.result && response.result.items) {
                             const items = response.result.items;
                             totalSubPages = response.result.totalPages || 1;
                             currentSubPage = response.result.currentPage || page;
 
-                            if (page === 1) {
-                                subscriptionsList.empty();
-                            }
+                            if (page === 1) subscriptionsList.empty();
 
                             if (items.length === 0 && page === 1) {
-                                subscriptionsList.append('<li><span>No subscriptions found</span></li>');
+                                subscriptionsList.append('<li><span>Chưa có kênh nào</span></li>');
                             } else {
                                 items.forEach(item => {
                                     const channelItem = `
                                         <li>
                                             <a href="/Member/Channel/${item.id}">
-                                                <img class="img-fluid" alt="${item.channelName}" src="${item.channelPicture}">
+                                                <img class="img-fluid" alt="${item.channelName}" src="${item.channelPicture}" style="width:24px;height:24px;border-radius:50%;margin-right:8px;">
                                                 ${item.channelName}
                                             </a>
                                         </li>`;
@@ -736,15 +732,11 @@
                                 });
                             }
 
-                            // Thêm hoặc cập nhật nút "Xem thêm"
-                            const existingLoadMore = subscriptionsList.find('.load-more-btn');
-                            if (existingLoadMore.length > 0) {
-                                existingLoadMore.remove();
-                            }
+                            subscriptionsList.find('.load-more-btn').remove();
 
                             if (currentSubPage < totalSubPages) {
                                 subscriptionsList.append(`
-                                    <li class="load-more-btn">
+                                    <li class="load-more-btn" style="cursor:pointer;text-align:center;padding:8px;color:#606060;">
                                         <i class="fas fa-angle-down"></i> Xem thêm
                                     </li>
                                 `);
@@ -753,18 +745,16 @@
                                 });
                             }
                         } else {
-                            console.error('Invalid response format:', response);
-                            subscriptionsList.append('<li><span>Error loading subscriptions</span></li>');
+                            subscriptionsList.append('<li><span>Lỗi tải dữ liệu</span></li>');
                         }
                     },
-                    error: function (xhr, status, error) {
-                        console.error('Error loading subscriptions:', error);
-                        subscriptionsList.append('<li><span>Error loading subscriptions</span></li>');
+                    error: function () {
+                        subscriptionsList.append('<li><span>Lỗi kết nối</span></li>');
                     }
                 });
             }
 
-            // Xử lý gợi ý tìm kiếm
+            // === TÌM KIẾM GỢI Ý ===
             const searchInput = document.getElementById('searchInput');
             const suggestionsContainer = document.getElementById('searchSuggestions');
             const searchBtn = document.getElementById('searchBtn');
@@ -782,14 +772,13 @@
 
                     if (suggestions.length > 0) {
                         suggestionsContainer.innerHTML = suggestions
-                            .map(s => `<div class="p-2 suggestion-item" role="option">${s}</div>`)
+                            .map(s => `<div class="p-2 suggestion-item" style="cursor:pointer;">${s}</div>`)
                             .join('');
                         suggestionsContainer.style.display = 'block';
                     } else {
                         suggestionsContainer.style.display = 'none';
                     }
                 } catch (error) {
-                    console.error('Error fetching suggestions:', error);
                     suggestionsContainer.style.display = 'none';
                 }
             });
@@ -808,44 +797,34 @@
                 }
             });
 
-            // Xử lý tìm kiếm bằng giọng nói
+            // === TÌM KIẾM BẰNG GIỌNG NÓI ===
             const voiceSearchBtn = document.getElementById('voiceSearchBtn');
             voiceSearchBtn.addEventListener('click', function () {
                 if (!('webkitSpeechRecognition' in window)) {
-                    alert('Trình duyệt của bạn không hỗ trợ tìm kiếm bằng giọng nói');
+                    alert('Trình duyệt không hỗ trợ giọng nói');
                     return;
                 }
 
                 const recognition = new webkitSpeechRecognition();
-                recognition.continuous = false;
-                recognition.interimResults = false;
                 recognition.lang = 'vi-VN';
+                recognition.continuous = false;
 
-                recognition.onstart = function () {
-                    voiceSearchBtn.classList.add('recording');
-                };
-
-                recognition.onresult = function (event) {
-                    const transcript = event.results[0][0].transcript;
-                    searchInput.value = transcript;
+                recognition.onstart = () => voiceSearchBtn.classList.add('recording');
+                recognition.onresult = (event) => {
+                    searchInput.value = event.results[0][0].transcript;
                     voiceSearchBtn.classList.remove('recording');
                     searchBtn.click();
                 };
-
-                recognition.onerror = function (event) {
-                    console.error('Voice recognition error:', event.error);
+                recognition.onerror = () => {
                     voiceSearchBtn.classList.remove('recording');
-                    alert('Có lỗi khi nhận diện giọng nói');
+                    alert('Lỗi nhận diện giọng nói');
                 };
-
-                recognition.onend = function () {
-                    voiceSearchBtn.classList.remove('recording');
-                };
+                recognition.onend = () => voiceSearchBtn.classList.remove('recording');
 
                 recognition.start();
             });
 
-            // Xử lý tìm kiếm khi nhấn nút hoặc Enter
+            // === TÌM KIẾM KHI NHẤN NÚT HOẶC ENTER ===
             window.getMyVideos = function () {
                 const query = searchInput.value.trim();
                 if (query) {
@@ -853,107 +832,118 @@
                 }
             };
 
-            searchBtn.addEventListener('click', function () {
-                getMyVideos();
+            searchBtn.addEventListener('click', getMyVideos);
+            searchInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') getMyVideos();
             });
 
-            searchInput.addEventListener('keypress', function (event) {
-                if (event.key === 'Enter' || event.keyCode === 13) {
-                    getMyVideos();
-                }
-            });
+            // === HIỂN THỊ / ẨN LOADING ===
+            function showLoading() {
+                const indicator = document.getElementById('loadingIndicator');
+                indicator.style.display = 'flex';
+                indicator.classList.add('active');
+            }
 
-            // Xử lý tìm kiếm bằng hình ảnh
+            function hideLoading() {
+                const indicator = document.getElementById('loadingIndicator');
+                indicator.classList.remove('active');
+                setTimeout(() => {
+                    indicator.style.display = 'none';
+                }, 300);
+            }
+
+            // === TÌM KIẾM BẰNG HÌNH ẢNH ===
             const imageUpload = $('#imageUpload');
             const selectImageBtn = $('#selectImageBtn');
             const submitImageBtn = $('#submitImageBtn');
             const dropzone = $('#dropzone');
             const previewContainer = $('#previewContainer');
             const previewImage = $('#previewImage');
+            const removeImageBtn = $('#removeImageBtn');
 
-            // Mở trình chọn file khi nhấp vào nút "Chọn ảnh"
-            selectImageBtn.on('click', function () {
-                console.log('Select image button clicked');
-                imageUpload.click();
-            });
+            selectImageBtn.on('click', () => imageUpload.click());
 
-            // Xử lý khi chọn file
             imageUpload.on('change', function (e) {
-                console.log('Image selected via input');
                 handleImageSelect(e.target.files);
             });
 
-            // Xử lý kéo thả
             dropzone.on('dragover', function (e) {
                 e.preventDefault();
-                e.stopPropagation();
                 dropzone.addClass('dragover');
-                console.log('Dragover on dropzone');
             });
 
             dropzone.on('dragleave', function (e) {
                 e.preventDefault();
-                e.stopPropagation();
                 dropzone.removeClass('dragover');
-                console.log('Dragleave on dropzone');
             });
 
             dropzone.on('drop', function (e) {
                 e.preventDefault();
-                e.stopPropagation();
                 dropzone.removeClass('dragover');
-                const files = e.originalEvent.dataTransfer.files;
-                console.log('Image dropped:', files);
-                handleImageSelect(files);
+                handleImageSelect(e.originalEvent.dataTransfer.files);
             });
 
-            // Hàm xử lý file ảnh
             function handleImageSelect(files) {
-                if (files && files.length > 0) {
-                    const file = files[0];
-                    if (!file.type.startsWith('image/')) {
-                        alert('Vui lòng chọn một file ảnh (jpg, jpeg, png).');
-                        return;
-                    }
-                    // Hiển thị ảnh xem trước
-                    const reader = new FileReader();
-                    reader.onload = function (e) {
-                        previewImage.attr('src', e.target.result);
-                        previewContainer.show();
-                        submitImageBtn.prop('disabled', false);
-                        console.log('Image preview loaded');
-                    };
-                    reader.readAsDataURL(file);
-                    // Copy file sang input ẩn
-                    document.getElementById('hiddenImageInput').files = files;
-                }
-            }
+                if (!files || files.length === 0) return;
 
-            // Submit form khi nhấn nút tìm kiếm
-            submitImageBtn.on('click', function () {
-                if (!document.getElementById('hiddenImageInput').files.length) {
-                    alert('Vui lòng chọn một ảnh trước khi tìm kiếm.');
+                const file = files[0];
+                if (!file.type.startsWith('image/')) {
+                    alert('Vui lòng chọn file ảnh!');
                     return;
                 }
-                console.log('Submit image search');
-                $('#loadingIndicator').show();
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    previewImage.attr('src', e.target.result);
+                    previewContainer.addClass('show');
+                    submitImageBtn.prop('disabled', false);
+                    document.getElementById('hiddenImageInput').files = files;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            removeImageBtn.on('click', function () {
+                previewContainer.removeClass('show');
+                submitImageBtn.prop('disabled', true);
+                imageUpload.val('');
+                document.getElementById('hiddenImageInput').files = null;
+            });
+
+            submitImageBtn.on('click', function () {
+                if (!document.getElementById('hiddenImageInput').files.length) {
+                    alert('Vui lòng chọn ảnh!');
+                    return;
+                }
+                showLoading();
                 $('#imageSearchModal').modal('hide');
                 document.getElementById('imageSearchForm').submit();
             });
 
-            // Ngăn submit form ngoài ý muốn và debug
-            $('#imageSearchForm').on('submit', function (e) {
-                console.log('imageSearchForm submitting');
-                $('#loadingIndicator').show(); // Đảm bảo chỉ hiển thị khi submit
+            $('#imageSearchForm').on('submit', showLoading);
+            window.addEventListener('load', hideLoading);
+
+            // === FIX: XÓA BACKDROP KHI ĐÓNG MODAL ===
+            $(document).on('hidden.bs.modal', '.modal', function () {
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open').css({
+                    overflow: '',
+                    paddingRight: ''
+                });
             });
 
-            // Debug click trên "Logout"
-            $('[data-target="#logoutModal"]').on('click', function () {
-                console.log('Logout item clicked');
-                $('#logoutModal').modal('show');
+            // === LOGOUT MODAL – CHỈ DÙNG 1 LẦN ===
+            $('#logoutModal').on('shown.bs.modal', function () {
+                $(this).find('[data-dismiss="modal"]').focus();
+            });
+
+            // === ĐÓNG MODAL KHI NHẤN ESC ===
+            $(document).on('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    $('.modal.show').modal('hide');
+                }
             });
         });
-    </script>   
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
