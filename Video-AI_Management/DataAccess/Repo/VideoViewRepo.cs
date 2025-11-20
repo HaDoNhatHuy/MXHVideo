@@ -2,15 +2,9 @@
 using Database_Video.DTOs;
 using Database_Video.Entities;
 using Database_Video.IRepo;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http.Json;
-using System.Text;
-using System.Threading.Tasks;
 using WebVideo.Utility;
 
 namespace DataAccess.Repo

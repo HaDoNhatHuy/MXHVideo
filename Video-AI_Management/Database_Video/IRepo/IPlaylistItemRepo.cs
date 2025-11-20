@@ -1,6 +1,4 @@
 ﻿using Database_Video.Entities;
-using System;
-using System.Threading.Tasks;
 
 namespace Database_Video.IRepo
 {

@@ -7,7 +7,9 @@ import io
 import numpy as np
 import base64
 from PIL import Image
-import json  # THÊM DÒNG NÀY
+import json  # ĐÃ THÊM
+import shutil  # ĐÃ THÊM
+import os
 
 app = Flask(__name__)
 
@@ -18,6 +20,7 @@ with open(embeddings_file, "rb") as f:
 
 print(f"Đã load {len(known_faces_dict)} celebrities từ embeddings file.")
 
+# ==================== RECOGNIZE FRAME ====================
 @app.route('/recognize', methods=['POST'])
 def recognize():
     frame_path = request.json['frame_path']
@@ -47,6 +50,7 @@ def recognize():
 
     return jsonify({"celebrities": recognized_celebrities})
 
+# ==================== PROCESS VIDEO ====================
 @app.route('/process_video', methods=['POST'])
 def process_video_endpoint():
     video_path = request.json['video_path']
@@ -57,38 +61,41 @@ def process_video_endpoint():
         print(f"Error in process_video_endpoint: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+# ==================== BLUR & GHI ĐÈ GỐC ====================
+# Trong app.py, sửa hàm blur_endpoint
 @app.route('/blur_selected_celebrity', methods=['POST'])
 def blur_endpoint():
     data = request.json
     video_path = data.get('video_path')
-    output_path = data.get('output_path')
-    frames_json = data.get('celebrity_frames_json')  # JSON string
+    frames_json = data.get('celebrity_frames_json')
     celeb_name = data.get('celebrity_to_blur')
-    
-    if not all([video_path, output_path, frames_json, celeb_name]):
-        return jsonify({"error": "Thiếu thông tin đầu vào (video_path, output_path, frames_json, celebrity_to_blur)"}), 400
-    
+
+    if not all([video_path, frames_json, celeb_name]):
+        return jsonify({"error": "Thiếu dữ liệu"}), 400
+
     try:
-        # Parse JSON frames data
-        frames_data = json.loads(frames_json)  # ĐÃ CÓ json
-        
-        # Gọi hàm xử lý làm mờ chính
-        success = blur_selected_celebrity_face(
-            video_path, 
-            output_path, 
-            frames_data, 
-            celeb_name
+        frames_data = json.loads(frames_json)
+        # Gọi hàm xử lý, nhận về đường dẫn file mới
+        output_path = blur_selected_celebrity_face(
+            video_path=video_path,
+            frames_data=frames_data,
+            celebrity_to_blur=celeb_name
         )
-        
-        if success:
-            return jsonify({"status": "success", "message": f"Đã làm mờ {celeb_name} và lưu tại {output_path}"})
+
+        if output_path and os.path.exists(output_path):
+            return jsonify({
+                "status": "success", 
+                "message": "Đã làm mờ xong.", 
+                "output_path": output_path 
+            })
         else:
-            return jsonify({"status": "error", "message": "Quá trình xử lý video thất bại."}), 500
-            
+            return jsonify({"status": "error", "message": "Xử lý thất bại."}), 500
+
     except Exception as e:
-        print(f"Error in blur_endpoint: {str(e)}")
+        print(f"Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
-    
+
+# ==================== RECOGNIZE IMAGE ====================
 @app.route('/recognize_image', methods=['POST'])
 def recognize_image():
     data = request.json
@@ -119,14 +126,11 @@ def recognize_image():
                 best_match_name = name
         
         if best_match_distance < 0.45:
-            print(f"Matched celebrity: {best_match_name} with distance: {best_match_distance:.4f}")
             recognized_celebs.append(best_match_name)
         else:
-            print(f"No match found, best distance: {best_match_distance:.4f} (Unknown)")
             recognized_celebs.append("Unknown")
     
     unique_celebs = list(set([c for c in recognized_celebs if c != "Unknown"]))
-    print(f"Recognized celebrities: {unique_celebs}")
     return jsonify({"celebrities": unique_celebs})
 
 if __name__ == '__main__':

@@ -1,18 +1,16 @@
-﻿using System;
-using System.Threading.Tasks;
-using DataAccess.Data;
+﻿using DataAccess.Data;
+using Database_Video.DTOs;
+using Database_Video.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Web_Video.Extensions;
-using Web_Video.ViewModels;
-using Web_Video.ViewModels.Home;
-using Database_Video.Pagination;
-using Database_Video.DTOs;
-using WebVideo.Utility;
+using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Web_Video.ViewModels.Channel;
+using Web_Video.ViewModels.Home;
+using WebVideo.Utility;
 
 namespace Web_Video.Controllers
 {

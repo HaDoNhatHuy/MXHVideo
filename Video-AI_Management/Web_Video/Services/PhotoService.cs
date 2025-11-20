@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Hosting;
-using System.IO;
 using System;
+using System.IO;
 using Web_Video.Services.IServices;
 
 namespace Web_Video.Services

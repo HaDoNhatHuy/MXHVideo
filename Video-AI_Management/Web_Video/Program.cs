@@ -3,7 +3,6 @@ using Database_Video.Entities;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -11,7 +10,6 @@ using System;
 using System.Threading.Tasks;
 using Web_Video.Extensions;
 using Web_Video.Seed;
-using Web_Video.Services;
 using Web_Video.Services.IServices;
 
 var builder = WebApplication.CreateBuilder(args);

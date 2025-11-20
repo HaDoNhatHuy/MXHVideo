@@ -1,16 +1,15 @@
-﻿using Database_Video.Entities;
-using DataAccess.Data;
+﻿using DataAccess.Data;
+using Database_Video.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using System.IO;
-using System.Net.Http;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Json;
-using Newtonsoft.Json; // Thêm để serialize/deserialize TempData nếu cần
+using System.Threading.Tasks;
 
 namespace Web_Video.Controllers
 {

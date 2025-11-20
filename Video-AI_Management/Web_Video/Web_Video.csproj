@@ -35,11 +35,4 @@
     <Folder Include="wwwroot\avatarUser\" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Update="wwwroot\js\home_index.js">
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-  </ItemGroup>
-
 </Project>

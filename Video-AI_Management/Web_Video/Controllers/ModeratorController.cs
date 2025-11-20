@@ -1,16 +1,17 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using DataAccess.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using Web_Video.Services;
 using Web_Video.ViewModels.Channel;
 using Web_Video.ViewModels.Moderator;
 using WebVideo.Utility;
@@ -21,9 +22,11 @@ namespace Web_Video.Controllers
     public class ModeratorController : CoreController
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        public ModeratorController(IHttpClientFactory httpClientFactory)
+        private readonly IServiceScopeFactory _scopeFactory; // THÊM
+        public ModeratorController(IHttpClientFactory httpClientFactory, IServiceScopeFactory scopeFactory)
         {
             _httpClientFactory = httpClientFactory;
+            _scopeFactory = scopeFactory;
         }
         public async Task<IActionResult> AllVideos()
         {
@@ -76,141 +79,137 @@ namespace Web_Video.Controllers
                     Status = r.Status,
                     IsBlurringActivated = r.IsBlurringActivated,
                     ReportedDate = r.ReportedDate,
-                    ReportedCelebrityName = r.ReportedCelebrityName 
+                    ReportedCelebrityName = r.ReportedCelebrityName
                 })
                 .ToListAsync();
 
             return View(reports);
         }
-        [Authorize(Roles = $"{SD.AdminRole}")] // Đảm bảo chỉ Admin/Mod được phép [4]
+        [Authorize(Roles = $"{SD.AdminRole}")]         
         [HttpPost]
         public async Task<IActionResult> ToggleBlur(Guid videoId, bool activate, string celebrityName)
         {
-            var video = await Context.Videos
+            using var scope = _scopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+
+            var video = await context.Videos
                 .Include(v => v.VideoFile)
                 .FirstOrDefaultAsync(v => v.Id == videoId);
 
             if (video == null || video.VideoFile == null)
-            {
-                return Json(new ApiResponse(404, message: "Video hoặc file video không tồn tại."));
-            }
+                return Json(new ApiResponse(404, message: "Video không tồn tại."));
 
-            // 1. Cập nhật trạng thái trong DB
             video.IsBlurActivated = activate;
-            await Context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
-            // 2. KÍCH HOẠT QUÁ TRÌNH XỬ LÝ VIDEO PYTHON
-            if (activate)
+            if (!activate)
+                return Json(new ApiResponse(200, "Thành công", "Đã vô hiệu hóa làm mờ."));
+
+            if (string.IsNullOrWhiteSpace(video.CelebrityFrames))
+                return Json(new ApiResponse(400, message: "Chưa có dữ liệu khuôn mặt."));
+
+            var videoContent = video.VideoFile.Contents;
+            var videoExtension = video.VideoFile.Extension ?? ".mp4";
+            var celebrityFramesJson = video.CelebrityFrames;
+            var videoTitle = video.Title;
+
+            // FIRE-AND-FORGET
+            _ = Task.Run(async () =>
             {
-                if (string.IsNullOrEmpty(video.CelebrityFrames))
-                {
-                    return Json(new ApiResponse(400, message: "Không có dữ liệu khuôn mặt để làm mờ. Chỉ bật cờ DB."));
-                }
-
-                // Bước 2a: Lưu video gốc ra file tạm thời để Python truy cập
-                var tempDirectory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/temp_processing");
-                Directory.CreateDirectory(tempDirectory);
-                var originalVideoPath = Path.Combine(tempDirectory, $"{videoId}_original{video.VideoFile.Extension}");
-                await System.IO.File.WriteAllBytesAsync(originalVideoPath, video.VideoFile.Contents);
-
-                var blurredVideoPath = Path.Combine(tempDirectory, $"{videoId}_blurred{video.VideoFile.Extension}");
-
-                var client = _httpClientFactory.CreateClient(); // Giả định đã inject IHttpClientFactory [5]
-
-                var requestBody = new
-                {
-                    video_path = originalVideoPath,
-                    output_path = blurredVideoPath,
-                    celebrity_frames_json = video.CelebrityFrames,
-                    celebrity_to_blur = celebrityName // Chỉ làm mờ người này
-                };
-
-                var content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
-
                 try
                 {
-                    // Gọi API Python để bắt đầu xử lý làm mờ (PHẦN B.1)
-                    var response = await client.PostAsync("http://localhost:5000/blur_selected_celebrity", content);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        // Bước 2b: Đọc file video đã làm mờ và lưu trở lại DB
-                        if (System.IO.File.Exists(blurredVideoPath))
-                        {
-                            byte[] blurredContents = await System.IO.File.ReadAllBytesAsync(blurredVideoPath);
-
-                            // Cập nhật Entity VideoFile (Đây là điểm phức tạp. Nếu VideoFile chỉ có 1 Contents [3], ta phải ghi đè)
-                            // **GIẢI PHÁP TỐT HƠN**: Tạo Entity VideoFileBlurred riêng hoặc thêm trường ContentsBlurred vào VideoFile.
-                            // TẠM THỜI: Ghi đè file gốc (trong ngữ cảnh này, file đã làm mờ trở thành file chính thức nếu cờ bật)
-                            video.VideoFile.Contents = blurredContents;
-
-                            // Xóa file tạm thời
-                            System.IO.File.Delete(originalVideoPath);
-                            System.IO.File.Delete(blurredVideoPath);
-
-                            await Context.SaveChangesAsync(); // Lưu nội dung file mới
-                            return Json(new ApiResponse(200, "Thành công", $"Đã KÍCH HOẠT và xử lý làm mờ ({celebrityName}) cho video '{video.Title}'"));
-                        }
-                        else
-                        {
-                            return Json(new ApiResponse(202, "Cảnh báo", $"Kích hoạt làm mờ thành công, nhưng không tìm thấy file làm mờ trả về từ Python."));
-                        }
-                    }
-                    else
-                    {
-                        // Nếu API Python báo lỗi
-                        var errorContent = await response.Content.ReadAsStringAsync();
-                        video.IsBlurActivated = false; // Rollback
-                        await Context.SaveChangesAsync();
-                        return Json(new ApiResponse(500, "Lỗi API Python", $"Lỗi khi xử lý làm mờ: {errorContent}"));
-                    }
+                    await RunVideoBlurringJobAsync(
+                        videoId, videoTitle, videoContent,
+                        videoExtension, celebrityFramesJson, celebrityName
+                    );
                 }
                 catch (Exception ex)
                 {
-                    // Xóa file tạm nếu xảy ra lỗi C#
-                    if (System.IO.File.Exists(originalVideoPath)) System.IO.File.Delete(originalVideoPath);
-                    if (System.IO.File.Exists(blurredVideoPath)) System.IO.File.Delete(blurredVideoPath);
-                    video.IsBlurActivated = false; // Rollback
-                    await Context.SaveChangesAsync();
-                    return Json(new ApiResponse(500, "Lỗi", $"Lỗi kết nối hoặc xử lý file: {ex.Message}"));
+                    Console.WriteLine($"[Blur Job] LỖI NGOẠI LỆ: {ex}");
+                }
+            });
+
+            return Json(new ApiResponse(202, "Đang xử lý",
+                $"Đang làm mờ '{celebrityName}' trong video '{videoTitle}'. Vui lòng reload sau 1-2 phút."));
+        }
+
+        private async Task RunVideoBlurringJobAsync(
+            Guid videoId, string videoTitle, byte[] videoContent,
+            string videoExtension, string celebrityFramesJson, string celebrityName)
+        {
+            var tempDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "temp_processing");
+            Directory.CreateDirectory(tempDir);
+            var originalPath = Path.Combine(tempDir, $"{videoId}_original{videoExtension}");
+
+            try
+            {
+                await System.IO.File.WriteAllBytesAsync(originalPath, videoContent);
+                Console.WriteLine($"[C#] Ghi file tạm: {originalPath}");
+
+                var client = _httpClientFactory.CreateClient();
+                client.Timeout = TimeSpan.FromMinutes(15);
+
+                var payload = new
+                {
+                    video_path = originalPath.Replace("\\", "/"),
+                    celebrity_frames_json = celebrityFramesJson,
+                    celebrity_to_blur = celebrityName
+                };
+
+                var json = JsonConvert.SerializeObject(payload, new JsonSerializerSettings
+                {
+                    ContractResolver = new CamelCasePropertyNamesContractResolver()
+                });
+
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await client.PostAsync("http://localhost:5000/blur_selected_celebrity", content);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var err = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[C#] Python lỗi: {err}");
+                    return;
+                }
+
+                Console.WriteLine($"[C#] Python đã xử lý xong. Đang đọc lại file...");
+
+                if (!System.IO.File.Exists(originalPath))
+                {
+                    Console.WriteLine($"[C#] File bị mất: {originalPath}");
+                    return;
+                }
+
+                var blurredBytes = await System.IO.File.ReadAllBytesAsync(originalPath);
+                Console.WriteLine($"[C#] Đã đọc {blurredBytes.Length} bytes (đã mờ)");
+
+                // CẬP NHẬT DB VỚI CONTEXT MỚI
+                using var scope = _scopeFactory.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+
+                var videoToUpdate = await context.Videos
+                    .Include(v => v.VideoFile)
+                    .FirstOrDefaultAsync(v => v.Id == videoId);
+
+                if (videoToUpdate?.VideoFile != null)
+                {
+                    videoToUpdate.VideoFile.Contents = blurredBytes;
+                    await context.SaveChangesAsync();
+                    Console.WriteLine($"[C#] ĐÃ CẬP NHẬT DB: {videoTitle}");
                 }
             }
-            else // Vô hiệu hóa
+            catch (Exception ex)
             {
-                // Khi vô hiệu hóa, nếu bạn ghi đè file gốc, bạn sẽ cần phải có một bản sao lưu (backup) video gốc.
-                // **LƯU Ý**: Vì đây là logic A-Z, ta giả định khi Admin tắt blur, họ sẽ tải lại video gốc thủ công, hoặc hệ thống phải có cơ chế backup.
-
-                return Json(new ApiResponse(200, "Thành công", $"Đã VÔ HIỆU HÓA tính năng làm mờ cho video '{video.Title}'"));
+                Console.WriteLine($"[C#] Lỗi: {ex.Message}\n{ex.StackTrace}");
+            }
+            finally
+            {
+                if (System.IO.File.Exists(originalPath))
+                {
+                    System.IO.File.Delete(originalPath);
+                    Console.WriteLine($"[C#] Đã xóa file tạm");
+                }
             }
         }
-        //[HttpPost]
-        //public async Task<IActionResult> ToggleBlur(Guid reportId, bool activate)
-        //{
-        //    var report = await Context.Reports.Include(r => r.Video).FirstOrDefaultAsync(r => r.Id == reportId);
-
-        //    if (report == null)
-        //    {
-        //        return Json(new ApiResponse(404, message: "Không tìm thấy báo cáo."));
-        //    }
-
-        //    var video = report.Video;
-        //    if (video == null)
-        //    {
-        //        return Json(new ApiResponse(404, message: "Video liên quan không tồn tại."));
-        //    }
-
-        //    // Cập nhật cờ trên Entity Video
-        //    video.IsBlurActivated = activate;
-
-        //    // Cập nhật trạng thái Report và cờ trên Report
-        //    report.IsBlurringActivated = activate;
-        //    report.Status = activate ? "Activated Blur" : "Deactivated Blur";
-
-        //    await Context.SaveChangesAsync(); // Lưu cả Video và Report
-
-        //    return Json(new ApiResponse(200, "Thành công",
-        //        $"Đã {(activate ? "KÍCH HOẠT" : "VÔ HIỆU HÓA")} tính năng làm mờ cho video '{video.Title}'"));
-        //}
 
         // Phương thức để Admin đánh dấu Report là đã xem
         [HttpPost]

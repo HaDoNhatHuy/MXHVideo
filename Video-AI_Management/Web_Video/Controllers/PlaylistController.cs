@@ -4,15 +4,12 @@ using Database_Video.IRepo;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Web_Video.Extensions;
 using Web_Video.ViewModels.Channel;
 using Web_Video.ViewModels.Playlist;
-using Web_Video.ViewModels.Video;
 using WebVideo.Utility;
 
 namespace Web_Video.Controllers

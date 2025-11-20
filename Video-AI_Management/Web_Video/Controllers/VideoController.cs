@@ -192,16 +192,6 @@ namespace Web_Video.Controllers
             await UnitOfWork.CompleteAsync();
             return Json(new { isSuccess = true, title = "Success", message = "Comment deleted successfully" });
         }
-        //public async Task<IActionResult> GetVideoFile(Guid videoId)
-        //{
-        //    var fetchedVideoFile = await UnitOfWork.VideoFileRepo.GetFirstOrDefaultAsync(x => x.VideoId == videoId);
-        //    if (fetchedVideoFile != null)
-        //    {
-        //        return File(fetchedVideoFile.Contents, fetchedVideoFile.ContentType);
-        //    }
-        //    TempData["notification"] = "false;Not Found;Requested video was not found";
-        //    return RedirectToAction("Index", "Home");
-        //}
         [Authorize(Roles = $"{SD.UserRole}")]
         [HttpPost]
         public async Task<IActionResult> ReportVideo(ReportViewModel model)
@@ -214,13 +204,13 @@ namespace Web_Video.Controllers
             var userId = User.GetUserId(); // Lấy ID người dùng hiện tại
             if (string.IsNullOrEmpty(userId))
             {
-                return Json(new ApiResponse(401, message: "Người dùng chưa đăng nhập.")); 
+                return Json(new ApiResponse(401, message: "Người dùng chưa đăng nhập."));
             }
 
             var video = await Context.Videos.AnyAsync(v => v.Id == model.VideoId);
             if (!video)
             {
-                return Json(new ApiResponse(404, message: "Video không tồn tại.")); 
+                return Json(new ApiResponse(404, message: "Video không tồn tại."));
             }
 
             // Kiểm tra xem người dùng đã báo cáo video này chưa (tùy chọn)
@@ -229,7 +219,7 @@ namespace Web_Video.Controllers
 
             if (existingReport)
             {
-                return Json(new ApiResponse(400, message: "Bạn đã gửi báo cáo cho video này.")); 
+                return Json(new ApiResponse(400, message: "Bạn đã gửi báo cáo cho video này."));
             }
 
             var newReport = new Report
@@ -246,54 +236,8 @@ namespace Web_Video.Controllers
             Context.Reports.Add(newReport); // Thêm Report vào DbSet
             await Context.SaveChangesAsync(); // Lưu thay đổi
 
-            return Json(new ApiResponse(201, "Thành công", "Báo cáo của bạn đã được gửi và sẽ được xem xét.")); 
-}
-        //public async Task<IActionResult> GetVideoFile(Guid videoId)
-        //{
-        //    try
-        //    {
-        //        var fetchedVideoFile = await UnitOfWork.VideoFileRepo.GetFirstOrDefaultAsync(x => x.VideoId == videoId);
-        //        if (fetchedVideoFile == null)
-        //        {
-        //            //_logger.LogWarning($"Video file not found for videoId: {videoId}");
-        //            return NotFound($"Video file not found for videoId: {videoId}");
-        //        }
-
-        //        var contentType = fetchedVideoFile.ContentType ?? "video/mp4";
-        //        var bytes = fetchedVideoFile.Contents;
-        //        var fileLength = bytes.Length;
-
-        //        var rangeHeader = Request.Headers.Range.FirstOrDefault();
-        //        if (rangeHeader != null && !string.IsNullOrEmpty(rangeHeader.ToString()))
-        //        {
-        //            var ranges = RangeHeaderValue.Parse(rangeHeader.ToString()).Ranges;
-        //            if (ranges != null && ranges.Any())
-        //            {
-        //                var range = ranges.First();
-        //                long from = range.From ?? 0;
-        //                long to = range.To ?? fileLength - 1;
-        //                long length = to - from + 1;
-
-        //                Response.StatusCode = 206; // Partial Content
-        //                Response.Headers.Add("Content-Range", $"bytes {from}-{to}/{fileLength}");
-        //                Response.Headers.Add("Content-Length", length.ToString());
-
-        //                return File(new MemoryStream(bytes, (int)from, (int)length), contentType);
-        //            }
-        //        }
-
-        //        // Nếu không có range, return toàn bộ
-        //        Response.Headers.Add("Accept-Ranges", "bytes");
-        //        Response.Headers.Add("Content-Disposition", "inline");
-        //        Response.Headers.Add("Content-Length", fileLength.ToString());
-        //        return File(bytes, contentType);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        //_logger.LogError(ex, $"Error retrieving video file for videoId: {videoId}");
-        //        return StatusCode(500, $"Error retrieving video file: {ex.Message}");
-        //    }
-        //}
+            return Json(new ApiResponse(201, "Thành công", "Báo cáo của bạn đã được gửi và sẽ được xem xét."));
+        }
         public async Task<IActionResult> GetVideoFile(Guid videoId)
         {
             try
@@ -670,70 +614,7 @@ namespace Web_Video.Controllers
                 ? $"Đã nhận diện: {string.Join(", ", allCelebrities)}"
                 : "Không nhận diện được nhân vật nổi tiếng.";
         }
-        #region API Endpoints
-        //[HttpGet]
-        //public async Task<IActionResult> GetVideosForChannelGrid(int pageNumber = 1, int pageSize = 10, string sortBy = "")
-        //{
-        //    try
-        //    {
-        //        var userId = User.GetUserId();
-        //        if (string.IsNullOrEmpty(userId))
-        //        {
-        //            return Json(new ApiResponse(401, message: "Người dùng chưa đăng nhập."));
-        //        }
-
-        //        var userChannelId = await UnitOfWork.ChannelRepo.GetChannelIdByUserId(userId);
-        //        if (userChannelId == Guid.Empty)
-        //        {
-        //            return Json(new ApiResponse(404, message: "Không tìm thấy kênh của người dùng."));
-        //        }
-
-        //        var parameters = new BaseParameters
-        //        {
-        //            PageNumber = pageNumber,
-        //            PageSize = pageSize,
-        //            SortBy = sortBy
-        //        };
-
-        //        var videosForGrid = await UnitOfWork.VideoRepo.GetVideosForChannelGridAsync(userChannelId, parameters);
-
-        //        var paginatedResults = new
-        //        {
-        //            items = videosForGrid, // Sử dụng trực tiếp videosForGrid vì nó là List<VideoGridChannelDto>
-        //            totalItemsCount = videosForGrid.TotalItemsCount, // Sử dụng TotalItemsCount
-        //            pageNumber = videosForGrid.PageNumber,
-        //            totalPages = videosForGrid.TotalPages
-        //        };
-
-        //        return Json(new ApiResponse(200, result: paginatedResults));
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return Json(new ApiResponse(500, message: $"Đã xảy ra lỗi: {ex.Message}"));
-        //    }
-        //}
-
-        //[HttpDelete]
-        //public async Task<IActionResult> DeleteVideo(Guid id)
-        //{
-        //    var video = await Context.Videos
-        //        .Where(x => x.Id == id && x.Channel.AppUserId == User.GetUserId())
-        //        .Select(x => new
-        //        {
-        //            x.Id,
-        //            x.Thumbnail,
-        //            x.Title
-        //        }).FirstOrDefaultAsync();
-        //    //var video = await UnitOfWork.VideoRepo.GetFirstOrDefaultAsync(x => x.Id == id && x.Channel.AppUserId == User.GetUserId());
-        //    if (video != null)
-        //    {
-        //        PhotoService.DeletePhotoLocally(video.Thumbnail);
-        //        await UnitOfWork.VideoRepo.RemoveVideoAsync(video.Id);
-        //        await UnitOfWork.CompleteAsync();
-        //        return Json(new ApiResponse(200, "Deleted", "Your video of " + video.Title + " has been deleted"));
-        //    }
-        //    return Json(new ApiResponse(404, message: "The requested video was not found"));
-        //}
+        #region API Endpoints        
         [HttpDelete]
         public async Task<IActionResult> DeleteVideo(Guid id)
         {
@@ -931,42 +812,6 @@ namespace Web_Video.Controllers
             }
             return Json(new ApiResponse(404, message: "The requested video was not found"));
 
-        }
-        private async Task<VideoWatchViewModel> GetVideoWatch_VMWithIncludeProperties(Guid id)
-        {
-            // with having DOT(.) we can have then include eg:"Channel.Subscribers"
-            var fetchedVideo = await UnitOfWork.VideoRepo.GetFirstOrDefaultAsync(x => x.Id == id, "Channel.Subscribers,LikeDislikes,Comments.AppUser,Viewers");
-            if (fetchedVideo != null)
-            {
-                string userId = User.GetUserId();
-                var toReturn = new VideoWatchViewModel();
-                toReturn.Id = fetchedVideo.Id;
-                toReturn.Title = fetchedVideo.Title;
-                toReturn.Description = fetchedVideo.Description;
-                toReturn.CreatedAt = fetchedVideo.UploadDate;
-                toReturn.ChannelId = fetchedVideo.ChannelId ?? Guid.Empty;
-                toReturn.ChannelName = fetchedVideo.Channel.ChannelName;
-
-                toReturn.IsSubscribed = fetchedVideo.Channel.Subscribers.Any(x => x.AppUserId == userId);
-                toReturn.IsLiked = fetchedVideo.LikeDislikes.Any(x => x.AppUserId == userId && x.Liked == true);
-                toReturn.IsDisiked = fetchedVideo.LikeDislikes.Any(x => x.AppUserId == userId && x.Liked == false);
-
-                toReturn.SubscribersCount = fetchedVideo.Channel.Subscribers.Count();
-                toReturn.ViewersCount = fetchedVideo.Viewers.Select(x => x.NumberOfVisit).Sum();
-                toReturn.LikesCount = fetchedVideo.LikeDislikes.Where(x => x.Liked == true).Count();
-                toReturn.DislikesCount = fetchedVideo.LikeDislikes.Where(x => x.Liked == false).Count();
-
-                toReturn.CommentVM.PostComment.VideoId = id;
-                toReturn.CommentVM.AvailableComments = fetchedVideo.Comments.Select(x => new AvailableCommentViewModel
-                {
-                    FromName = x.AppUser.FullName,
-                    FromChannelId = UnitOfWork.ChannelRepo.GetChannelIdByUserId(x.AppUserId).GetAwaiter().GetResult(),
-                    PostedAt = x.CreatedDate ?? DateTime.UtcNow,
-                    Content = x.Content
-                });
-                return toReturn;
-            }
-            return null;
         }
         private async Task<VideoWatchViewModel> GetVideoWatch_VMWithProjections(Guid id, Guid? playlistId) // THAY ĐỔI: Thêm Guid? playlistId
         {

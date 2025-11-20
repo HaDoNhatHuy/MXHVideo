@@ -1,11 +1,6 @@
 ﻿using DataAccess.Data;
 using Database_Video.IRepo;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DataAccess.Repo
 {

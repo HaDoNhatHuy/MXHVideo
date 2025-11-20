@@ -1,17 +1,16 @@
-﻿using System;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
-using DataAccess.Data;
+﻿using DataAccess.Data;
 using Database_Video.DTOs;
 using Database_Video.Entities;
-using Database_Video.IRepo;
 using Database_Video.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 using Web_Video.Extensions;
 using Web_Video.ViewModels;
 using Web_Video.ViewModels.Channel;
@@ -194,21 +193,6 @@ namespace Web_Video.Controllers
             return Json(new ApiResponse(200, result: paginatedResults));
         }
 
-        //[Authorize(Roles = $"{SD.UserRole}")]
-        //[HttpPost]
-        //public async Task<IActionResult> RemoveHistory(Guid videoId)
-        //{
-        //    var videoView = await Context.VideoViews
-        //        .FirstOrDefaultAsync(x => x.AppUserId == User.GetUserId() && x.VideoId == videoId);
-        //    if (videoView == null)
-        //    {
-        //        return Json(new ApiResponse(404, message: "Video not found in history."));
-        //    }
-
-        //    Context.VideoViews.Remove(videoView);
-        //    await Context.SaveChangesAsync();
-        //    return Json(new ApiResponse(200, message: "Video removed from history."));
-        //}
         [Authorize(Roles = $"{SD.UserRole}")]
         [HttpPost]
         public async Task<IActionResult> RemoveHistory(Guid videoViewId)
@@ -240,46 +224,6 @@ namespace Web_Video.Controllers
             await Context.SaveChangesAsync();
             return Json(new ApiResponse(200, message: "Video removed from liked videos."));
         }
-
-        //[Authorize(Roles = $"{SD.UserRole}")]
-        //[HttpPost]
-        //public async Task<IActionResult> AddOrUpdateView(string videoId)
-        //{
-        //    if (!Guid.TryParse(videoId, out var videoGuid))
-        //    {
-        //        return Json(new ApiResponse(400, message: "Invalid video ID."));
-        //    }
-
-        //    var videoView = await Context.VideoViews
-        //        .FirstOrDefaultAsync(x => x.AppUserId == User.GetUserId() && x.VideoId == videoGuid);
-
-        //    if (videoView == null)
-        //    {
-        //        videoView = new VideoView
-        //        {
-        //            AppUserId = User.GetUserId(),
-        //            VideoId = videoGuid,
-        //            LastVisit = DateTime.UtcNow,
-        //            NumberOfVisit = 1,
-        //            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-        //        };
-        //        Context.VideoViews.Add(videoView);
-        //    }
-        //    else
-        //    {
-        //        videoView.LastVisit = DateTime.UtcNow;
-        //        videoView.NumberOfVisit += 1;
-        //    }
-
-        //    var video = await Context.Videos.FirstOrDefaultAsync(x => x.Id == videoGuid);
-        //    if (video != null)
-        //    {
-        //        video.Views = (video.Views ?? 0) + 1;
-        //    }
-
-        //    await Context.SaveChangesAsync();
-        //    return Json(new ApiResponse(200, message: "View recorded successfully."));
-        //}
         [HttpPost]
         public async Task<IActionResult> AddOrUpdateView(string videoId)
         {
