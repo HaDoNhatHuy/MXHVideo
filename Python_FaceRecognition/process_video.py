@@ -1,4 +1,4 @@
-# process_video.py (chỉ chứa function, không có app Flask)
+# process_video.py
 import cv2
 import base64
 import os
@@ -13,81 +13,74 @@ def process_video(video_path, known_faces_dict):
         raise ValueError(f"Could not open video: {video_path}")
 
     fps = cap.get(cv2.CAP_PROP_FPS)
-    if fps == 0:
-        fps = 30  # Fallback nếu không lấy được FPS
+    if fps == 0: fps = 30
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    video_duration = total_frames / fps  # Tổng thời lượng video (giây)
+    
+    # --- THAY ĐỔI QUAN TRỌNG: Tăng tần suất nhận diện ---
+    # Thay vì int(fps) (mỗi giây 1 lần), ta lấy mỗi 5 frame (khoảng 0.15 giây)
+    # Số càng nhỏ thì càng mượt nhưng xử lý càng lâu.
+    frame_interval = 5 
+    
+    current_time = 0.0
+    celebrity_frames = {} 
 
-    # Khoảng cách trích frame: mỗi giây (tối ưu)
-    frame_interval = int(fps)  # Số frame bỏ qua để lấy 1 frame/giây
-    current_time = 0.0  # Khởi tạo current_time
+    print(f"Processing video: {video_path} (FPS: {fps}, Interval: {frame_interval})")
 
-    celebrity_frames = {}  # {celeb: [{"time": float, "loc": [T,R,B,L], "frame": base64}, ...]}
-
-
-    print(f"Processing video: {video_path} (FPS: {fps}, Total duration: {video_duration:.2f}s)")
-
-    current_frame = 0
-    while current_frame < total_frames:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, current_frame)
+    frame_idx = 0
+    while True:
         ret, frame = cap.read()
-        if not ret:
-            break
+        if not ret: break
 
-        # Nhận diện khuôn mặt bằng face_recognition
-        face_locations = face_recognition.face_locations(frame)
-        face_encodings = face_recognition.face_encodings(frame, face_locations)
-        
+        # Chỉ xử lý các frame nằm trong interval để tối ưu tốc độ
+        if frame_idx % frame_interval == 0:
+            
+            # Resize nhỏ lại để nhận diện nhanh hơn (tùy chọn, ở đây giữ nguyên để chính xác)
+            # small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+            
+            # Chuyển BGR (OpenCV) sang RGB (face_recognition)
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            
+            face_locations = face_recognition.face_locations(rgb_frame)
+            face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
-        # recognized_celebs = []
-        recognized_celebs_with_loc = [] # Lưu trữ {name, loc}
-        #for face_encoding in face_encodings:
-        for i, face_encoding in enumerate(face_encodings):
-            best_match_name = "Unknown"
-            best_match_distance = 1.0
+            for i, face_encoding in enumerate(face_encodings):
+                best_match_name = "Unknown"
+                best_match_distance = 1.0
 
-            for name, known_faces in known_faces_dict.items():
-                distances = face_recognition.face_distance(known_faces, face_encoding)
-                min_distance = min(distances)
-                if min_distance < best_match_distance:
-                    best_match_distance = min_distance
-                    best_match_name = name
+                for name, known_faces in known_faces_dict.items():
+                    distances = face_recognition.face_distance(known_faces, face_encoding)
+                    min_distance = min(distances)
 
-            if best_match_distance < 0.45:
-                # Lấy tọa độ khuôn mặt hiện tại
-                loc = face_locations[i] # (top, right, bottom, left)
-                recognized_celebs_with_loc.append({
-                    "name": best_match_name,
-                    "loc": loc # Tọa độ [top, right, bottom, left]
-                })
-                print(f"Matched {best_match_name} with distance {best_match_distance} at time {current_time:.2f}s")
+                    if min_distance < best_match_distance:
+                        best_match_distance = min_distance
+                        best_match_name = name
+                
+                # Ngưỡng nhận diện (0.45 là khá chặt chẽ)
+                if best_match_distance < 0.45:
+                    loc = face_locations[i] # (top, right, bottom, left)
+                    
+                    # Lưu ảnh base64 để hiện lên UI (chỉ lưu frame đại diện mỗi giây để nhẹ JSON)
+                    frame_base64 = ""
+                    # Chỉ convert ảnh khi cần thiết (ví dụ mỗi 1 giây mới lưu ảnh 1 lần cho UI đỡ nặng)
+                    if frame_idx % int(fps) < frame_interval: 
+                        _, buffer = cv2.imencode('.jpg', frame)
+                        if buffer is not None:
+                            frame_base64 = base64.b64encode(buffer).decode('utf-8')
+                    
+                    if best_match_name not in celebrity_frames:
+                        celebrity_frames[best_match_name] = []
 
-        # Lưu frame nếu có celeb
-        if recognized_celebs_with_loc:
-            _, buffer = cv2.imencode('.jpg', frame)
-            if buffer is not None:
-                frame_base64 = base64.b64encode(buffer).decode('utf-8')
-                for entry in recognized_celebs_with_loc:  # Unique celeb
-                    celeb = entry["name"]
-                    loc = entry["loc"]
+                    # Tính thời gian chính xác của frame này
+                    exact_time = frame_idx / fps
 
-                    if celeb not in celebrity_frames:
-                        celebrity_frames[celeb] = []
-                    celebrity_frames[celeb].append({
-                        "time": round(current_time, 1),
-                        "loc": loc, # THÊM TỌA ĐỘ
-                        "frame": frame_base64
+                    celebrity_frames[best_match_name].append({
+                        "time": round(exact_time, 2), # Lưu số thực, không làm tròn int
+                        "loc": loc,
+                        "frame": frame_base64 # Có thể rỗng để tiết kiệm
                     })
 
-        current_frame += frame_interval
-        current_time += 1.0  # Tăng thời gian 1 giây mỗi lần lặp
+        frame_idx += 1
 
     cap.release()
-
-    # In kết quả
-    print("\nKhung hình xuất hiện của từng celebrity:")
-    for celeb, frames in celebrity_frames.items():
-        print(f"{celeb}: {len(frames)} frames")
-
     return celebrity_frames

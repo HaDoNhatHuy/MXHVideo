@@ -62,7 +62,6 @@ def process_video_endpoint():
         return jsonify({"error": str(e)}), 500
 
 # ==================== BLUR & GHI ĐÈ GỐC ====================
-# Trong app.py, sửa hàm blur_endpoint
 @app.route('/blur_selected_celebrity', methods=['POST'])
 def blur_endpoint():
     data = request.json
@@ -75,7 +74,8 @@ def blur_endpoint():
 
     try:
         frames_data = json.loads(frames_json)
-        # Gọi hàm xử lý, nhận về đường dẫn file mới
+        
+        # Gọi hàm xử lý mới
         output_path = blur_selected_celebrity_face(
             video_path=video_path,
             frames_data=frames_data,
@@ -83,13 +83,15 @@ def blur_endpoint():
         )
 
         if output_path and os.path.exists(output_path):
+            # Python đã tạo file _final.mp4 thành công
+            # Bây giờ C# sẽ đọc file này.
             return jsonify({
-                "status": "success", 
-                "message": "Đã làm mờ xong.", 
-                "output_path": output_path 
+                "status": "success",
+                "message": "Đã xử lý xong",
+                "output_path": output_path # Trả về đường dẫn file mới cho C#
             })
         else:
-            return jsonify({"status": "error", "message": "Xử lý thất bại."}), 500
+             return jsonify({"status": "error", "message": "Lỗi xử lý video"}), 500
 
     except Exception as e:
         print(f"Error: {str(e)}")

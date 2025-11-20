@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
 using Web_Video.ViewModels.Channel;
@@ -134,20 +135,22 @@ namespace Web_Video.Controllers
         }
 
         private async Task RunVideoBlurringJobAsync(
-            Guid videoId, string videoTitle, byte[] videoContent,
-            string videoExtension, string celebrityFramesJson, string celebrityName)
+    Guid videoId, string videoTitle, byte[] videoContent,
+    string videoExtension, string celebrityFramesJson, string celebrityName)
         {
             var tempDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "temp_processing");
             Directory.CreateDirectory(tempDir);
-            var originalPath = Path.Combine(tempDir, $"{videoId}_original{videoExtension}");
+
+            // File gốc để Python đọc
+            var originalPath = Path.Combine(tempDir, $"{videoId}_orig{videoExtension}");
 
             try
             {
+                // 1. Ghi file gốc ra đĩa
                 await System.IO.File.WriteAllBytesAsync(originalPath, videoContent);
-                Console.WriteLine($"[C#] Ghi file tạm: {originalPath}");
 
                 var client = _httpClientFactory.CreateClient();
-                client.Timeout = TimeSpan.FromMinutes(15);
+                client.Timeout = TimeSpan.FromMinutes(20); // Tăng timeout vì xử lý video lâu
 
                 var payload = new
                 {
@@ -156,57 +159,53 @@ namespace Web_Video.Controllers
                     celebrity_to_blur = celebrityName
                 };
 
-                var json = JsonConvert.SerializeObject(payload, new JsonSerializerSettings
-                {
-                    ContractResolver = new CamelCasePropertyNamesContractResolver()
-                });
-
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await client.PostAsync("http://localhost:5000/blur_selected_celebrity", content);
+                // 2. Gọi Python
+                var response = await client.PostAsJsonAsync("http://localhost:5000/blur_selected_celebrity", payload);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    var err = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[C#] Python lỗi: {err}");
+                    Console.WriteLine($"[Blur] Lỗi Python: {response.StatusCode}");
                     return;
                 }
 
-                Console.WriteLine($"[C#] Python đã xử lý xong. Đang đọc lại file...");
-
-                if (!System.IO.File.Exists(originalPath))
+                // 3. Lấy đường dẫn file kết quả từ Python
+                var resultDict = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+                if (resultDict != null && resultDict.ContainsKey("output_path"))
                 {
-                    Console.WriteLine($"[C#] File bị mất: {originalPath}");
-                    return;
-                }
+                    string blurredPath = resultDict["output_path"];
 
-                var blurredBytes = await System.IO.File.ReadAllBytesAsync(originalPath);
-                Console.WriteLine($"[C#] Đã đọc {blurredBytes.Length} bytes (đã mờ)");
+                    if (System.IO.File.Exists(blurredPath))
+                    {
+                        // 4. Đọc file đã làm mờ (có tiếng)
+                        var blurredBytes = await System.IO.File.ReadAllBytesAsync(blurredPath);
 
-                // CẬP NHẬT DB VỚI CONTEXT MỚI
-                using var scope = _scopeFactory.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+                        // 5. Cập nhật vào Database
+                        using var scope = _scopeFactory.CreateScope();
+                        var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+                        var videoToUpdate = await context.Videos.Include(v => v.VideoFile).FirstOrDefaultAsync(v => v.Id == videoId);
 
-                var videoToUpdate = await context.Videos
-                    .Include(v => v.VideoFile)
-                    .FirstOrDefaultAsync(v => v.Id == videoId);
+                        if (videoToUpdate?.VideoFile != null)
+                        {
+                            videoToUpdate.VideoFile.Contents = blurredBytes;
+                            await context.SaveChangesAsync();
+                            Console.WriteLine($"[Blur] Đã cập nhật video {videoTitle} thành công.");
+                        }
 
-                if (videoToUpdate?.VideoFile != null)
-                {
-                    videoToUpdate.VideoFile.Contents = blurredBytes;
-                    await context.SaveChangesAsync();
-                    Console.WriteLine($"[C#] ĐÃ CẬP NHẬT DB: {videoTitle}");
+                        // 6. Xóa file kết quả
+                        System.IO.File.Delete(blurredPath);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[C#] Lỗi: {ex.Message}\n{ex.StackTrace}");
+                Console.WriteLine($"[Blur] Exception: {ex.Message}");
             }
             finally
             {
+                // Dọn dẹp file gốc
                 if (System.IO.File.Exists(originalPath))
                 {
-                    System.IO.File.Delete(originalPath);
-                    Console.WriteLine($"[C#] Đã xóa file tạm");
+                    try { System.IO.File.Delete(originalPath); } catch { }
                 }
             }
         }
