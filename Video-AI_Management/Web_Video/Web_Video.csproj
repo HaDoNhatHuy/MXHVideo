@@ -33,6 +33,7 @@
   <ItemGroup>
     <Folder Include="Seed\Files\" />
     <Folder Include="wwwroot\avatarUser\" />
+    <Folder Include="wwwroot\uploads\" />
   </ItemGroup>
 
 </Project>

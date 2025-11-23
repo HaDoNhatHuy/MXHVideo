@@ -39,7 +39,8 @@ namespace DataAccess.Repo
                     Duration = x.Duration ?? "0:00", // Thêm Duration
                     CreatedAt = x.UploadDate,
                     CategoryName = x.Category.CategoryName,
-                    Views = x.Viewers.Count(),
+                    //Views = x.Viewers.Count(),
+                    Views = x.Viewers.Sum(v => v.NumberOfVisit),
                     Comments = x.Comments.Count(),
                     Likes = x.LikeDislikes.Where(l => l.Liked == true).Count(),
                     Dislikes = x.LikeDislikes.Where(l => l.Liked == false).Count(),

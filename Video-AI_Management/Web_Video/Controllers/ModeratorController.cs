@@ -86,7 +86,7 @@ namespace Web_Video.Controllers
 
             return View(reports);
         }
-        [Authorize(Roles = $"{SD.AdminRole}")]         
+        [Authorize(Roles = $"{SD.AdminRole}")]
         [HttpPost]
         public async Task<IActionResult> ToggleBlur(Guid videoId, bool activate, string celebrityName)
         {
@@ -100,29 +100,36 @@ namespace Web_Video.Controllers
             if (video == null || video.VideoFile == null)
                 return Json(new ApiResponse(404, message: "Video không tồn tại."));
 
+            // Cập nhật trạng thái DB
             video.IsBlurActivated = activate;
-            await context.SaveChangesAsync();
 
             if (!activate)
+            {
+                // Nếu tắt blur: (Tùy chọn) Bạn có thể khôi phục file gốc nếu trước đó bạn đã backup
+                // Hiện tại chỉ update trạng thái
+                await context.SaveChangesAsync();
                 return Json(new ApiResponse(200, "Thành công", "Đã vô hiệu hóa làm mờ."));
+            }
 
-            if (string.IsNullOrWhiteSpace(video.CelebrityFrames))
-                return Json(new ApiResponse(400, message: "Chưa có dữ liệu khuôn mặt."));
+            if (string.IsNullOrWhiteSpace(video.CelebrityFrames) || video.CelebrityFrames == "{}")
+                return Json(new ApiResponse(400, message: "Chưa có dữ liệu khuôn mặt để làm mờ."));
 
-            var videoContent = video.VideoFile.Contents;
-            var videoExtension = video.VideoFile.Extension ?? ".mp4";
+            // Lấy đường dẫn vật lý
+            string webRootPath = Directory.GetCurrentDirectory() + "\\wwwroot";
+            string physicalPath = webRootPath + video.VideoFile.FilePath.Replace("/", "\\");
+
+            if (!System.IO.File.Exists(physicalPath))
+                return Json(new ApiResponse(404, message: "File video gốc không tìm thấy trên server."));
+
             var celebrityFramesJson = video.CelebrityFrames;
             var videoTitle = video.Title;
 
-            // FIRE-AND-FORGET
+            // FIRE-AND-FORGET: Chạy ngầm để không treo UI
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    await RunVideoBlurringJobAsync(
-                        videoId, videoTitle, videoContent,
-                        videoExtension, celebrityFramesJson, celebrityName
-                    );
+                    await RunVideoBlurringJobAsync(videoId, videoTitle, physicalPath, celebrityFramesJson, celebrityName);
                 }
                 catch (Exception ex)
                 {
@@ -131,35 +138,27 @@ namespace Web_Video.Controllers
             });
 
             return Json(new ApiResponse(202, "Đang xử lý",
-                $"Đang làm mờ '{celebrityName}' trong video '{videoTitle}'. Vui lòng reload sau 1-2 phút."));
+                $"Hệ thống đang xử lý làm mờ '{celebrityName}' trên file gốc. Vui lòng đợi vài phút."));
         }
 
         private async Task RunVideoBlurringJobAsync(
-    Guid videoId, string videoTitle, byte[] videoContent,
-    string videoExtension, string celebrityFramesJson, string celebrityName)
+    Guid videoId, string videoTitle, string originalPhysicalPath,
+    string celebrityFramesJson, string celebrityName)
         {
-            var tempDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "temp_processing");
-            Directory.CreateDirectory(tempDir);
-
-            // File gốc để Python đọc
-            var originalPath = Path.Combine(tempDir, $"{videoId}_orig{videoExtension}");
-
             try
             {
-                // 1. Ghi file gốc ra đĩa
-                await System.IO.File.WriteAllBytesAsync(originalPath, videoContent);
-
                 var client = _httpClientFactory.CreateClient();
-                client.Timeout = TimeSpan.FromMinutes(20); // Tăng timeout vì xử lý video lâu
+                client.Timeout = TimeSpan.FromMinutes(30); // Tăng timeout vì xử lý video lâu
 
+                // Gửi đường dẫn file thật cho Python
                 var payload = new
                 {
-                    video_path = originalPath.Replace("\\", "/"),
+                    video_path = originalPhysicalPath, // Python sẽ đọc trực tiếp file này
                     celebrity_frames_json = celebrityFramesJson,
                     celebrity_to_blur = celebrityName
                 };
 
-                // 2. Gọi Python
+                // Gọi Python API (Lưu ý: Python code cần update để trả về output_path)
                 var response = await client.PostAsJsonAsync("http://localhost:5000/blur_selected_celebrity", payload);
 
                 if (!response.IsSuccessStatusCode)
@@ -168,45 +167,38 @@ namespace Web_Video.Controllers
                     return;
                 }
 
-                // 3. Lấy đường dẫn file kết quả từ Python
                 var resultDict = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+
                 if (resultDict != null && resultDict.ContainsKey("output_path"))
                 {
-                    string blurredPath = resultDict["output_path"];
+                    string blurredPath = resultDict["output_path"]; // File _final.mp4 do Python tạo
 
-                    if (System.IO.File.Exists(blurredPath))
+                    // CẬP NHẬT DB: Trỏ FilePath sang file mới đã làm mờ
+                    // Hoặc: Python đã ghi đè file gốc thì không cần làm gì cả (tùy logic Python của bạn)
+
+                    // Ở đây giả sử Python tạo file mới tên là _final.mp4 nằm cùng thư mục
+                    // Chúng ta cập nhật DB để trỏ vào file mới này
+
+                    using var scope = _scopeFactory.CreateScope();
+                    var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+                    var videoToUpdate = await context.Videos.Include(v => v.VideoFile).FirstOrDefaultAsync(v => v.Id == videoId);
+
+                    if (videoToUpdate?.VideoFile != null)
                     {
-                        // 4. Đọc file đã làm mờ (có tiếng)
-                        var blurredBytes = await System.IO.File.ReadAllBytesAsync(blurredPath);
+                        // Chuyển đường dẫn tuyệt đối thành tương đối để lưu Web
+                        string webRootPath = Directory.GetCurrentDirectory() + "\\wwwroot";
+                        string relativePath = blurredPath.Replace(webRootPath, "").Replace("\\", "/");
 
-                        // 5. Cập nhật vào Database
-                        using var scope = _scopeFactory.CreateScope();
-                        var context = scope.ServiceProvider.GetRequiredService<DataContext>();
-                        var videoToUpdate = await context.Videos.Include(v => v.VideoFile).FirstOrDefaultAsync(v => v.Id == videoId);
+                        videoToUpdate.VideoFile.FilePath = relativePath;
+                        await context.SaveChangesAsync();
 
-                        if (videoToUpdate?.VideoFile != null)
-                        {
-                            videoToUpdate.VideoFile.Contents = blurredBytes;
-                            await context.SaveChangesAsync();
-                            Console.WriteLine($"[Blur] Đã cập nhật video {videoTitle} thành công.");
-                        }
-
-                        // 6. Xóa file kết quả
-                        System.IO.File.Delete(blurredPath);
+                        Console.WriteLine($"[Blur] Đã cập nhật video {videoTitle} sang file đã làm mờ.");
                     }
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[Blur] Exception: {ex.Message}");
-            }
-            finally
-            {
-                // Dọn dẹp file gốc
-                if (System.IO.File.Exists(originalPath))
-                {
-                    try { System.IO.File.Delete(originalPath); } catch { }
-                }
             }
         }
 

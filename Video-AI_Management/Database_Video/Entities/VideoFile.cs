@@ -8,7 +8,9 @@ namespace Database_Video.Entities
         [Required]
         public string ContentType { get; set; }
         [Required]
-        public byte[] Contents { get; set; }
+        //public byte[] Contents { get; set; }
+        // Thay byte[] bằng đường dẫn file
+        public string FilePath { get; set; }
         [Required]
         public string Extension { get; set; }
         public Guid VideoId { get; set; }

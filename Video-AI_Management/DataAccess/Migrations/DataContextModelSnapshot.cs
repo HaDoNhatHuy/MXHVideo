@@ -456,11 +456,11 @@ namespace DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<byte[]>("Contents")
-                        .IsRequired()
-                        .HasColumnType("varbinary(max)");
-
                     b.Property<string>("Extension")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FilePath")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

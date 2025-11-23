@@ -24,5 +24,7 @@ namespace Web_Video.ViewModels.Video
         public string ImageContentTypes { get; set; }
         public string VideoContentTypes { get; set; }
         public string ImageUrl { get; set; }
+        [Display(Name = "Video này có chứa người nổi tiếng không?")]
+        public bool HasCelebrity { get; set; } = false;
     }
 }

@@ -10,6 +10,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Web_Video.Extensions;
 using Web_Video.ViewModels;
@@ -22,10 +24,11 @@ namespace Web_Video.Controllers
     public class HomeController : CoreController
     {
         private readonly ILogger<HomeController> _logger;
-
-        public HomeController(DataContext context, ILogger<HomeController> logger)
+        private IHttpClientFactory _httpClientFactory;
+        public HomeController(DataContext context, ILogger<HomeController> logger, IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
+            _httpClientFactory = httpClientFactory;
         }
 
         public async Task<IActionResult> Index()
@@ -73,51 +76,77 @@ namespace Web_Video.Controllers
         }
 
         #region API Endpoints
-        [Authorize(Roles = $"{SD.UserRole}")]
+        [Authorize(Roles = $"{SD.UserRole},{SD.AdminRole}")]
         [HttpGet]
         public async Task<IActionResult> GetVideosForHomeGrid(HomeParameters parameters)
         {
-            var items = await UnitOfWork.VideoRepo.GetVideosForHomeGridAsync(parameters);
-            var paginatedResults = new PaginatedResult<VideoForHomeGridDto>(items, items.TotalItemsCount, items.PageNumber, items.PageSize, items.TotalPages);
-            return Json(new ApiResponse(200, result: paginatedResults));
-        }
-
-        [Authorize(Roles = $"{SD.UserRole}")]
-        [HttpGet]
-        public async Task<IActionResult> GetSubscriptions(int pageNumber = 1, int pageSize = 5)
-        {
-            _logger.LogInformation("GetSubscriptions called for user {UserId}, page {PageNumber}", User.GetUserId(), pageNumber);
-            var query = Context.Subscribes
-                .Where(x => x.AppUserId == User.GetUserId())
-                .Select(x => new
-                {
-                    id = x.ChannelId,
-                    channelName = x.Channel.ChannelName ?? "Unknown Channel",
-                    channelPicture = x.Channel.ChannelPicture ?? "/avatarUser/avt-default.jpg"
-                });
-
-            var totalItems = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
-            var items = await query
-                .OrderBy(x => x.channelName)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            _logger.LogInformation("Subscriptions count: {Count}, total pages: {TotalPages}", items.Count, totalPages);
-            return Json(new
+            // NẾU CÓ TÌM KIẾM HOẶC CHỌN CATEGORY -> Dùng logic cũ (filter)
+            if (!string.IsNullOrEmpty(parameters.SearchBy) || parameters.CategoryId != Guid.Empty)
             {
-                statusCode = 200,
-                result = new
+                var items = await UnitOfWork.VideoRepo.GetVideosForHomeGridAsync(parameters);
+                return Json(new ApiResponse(200, result: new PaginatedResult<VideoForHomeGridDto>(items, items.TotalItemsCount, items.PageNumber, items.PageSize, items.TotalPages)));
+            }
+
+            // NẾU LÀ TRANG CHỦ MẶC ĐỊNH -> GỌI AI PYTHON ĐỂ CÁ NHÂN HÓA
+            try
+            {
+                string userId = User.GetUserId();
+                var httpClient = _httpClientFactory.CreateClient(); // Cần inject IHttpClientFactory vào HomeController
+
+                // Gọi Python API: Chỉ gửi UserID, không gửi currentVideoId (vì đang ở Home)
+                var payload = new { userId = userId, currentVideoId = (Guid?)null };
+                var response = await httpClient.PostAsJsonAsync("http://localhost:5001/api/recommend", payload);
+
+                if (response.IsSuccessStatusCode)
                 {
-                    items = items,
-                    totalItems = totalItems,
-                    totalPages = totalPages,
-                    currentPage = pageNumber
+                    var apiResult = await response.Content.ReadFromJsonAsync<Web_Video.Controllers.VideoController.PythonRecommendResponse>();
+                    var videoIds = apiResult.recommendations;
+
+                    if (videoIds != null && videoIds.Any())
+                    {
+                        // Query DB lấy video theo danh sách ID từ Python trả về
+                        var personalizedVideos = await Context.Videos
+                            .Include(x => x.Channel)
+                            .Include(x => x.Category)
+                            .Where(x => videoIds.Contains(x.Id))
+                            .Select(x => new VideoForHomeGridDto
+                            {
+                                Id = x.Id,
+                                Thumbnail = x.Thumbnail,
+                                Duration = x.Duration ?? "0:00",
+                                Title = x.Title,
+                                Description = x.Description,
+                                CreatedAt = x.UploadDate,
+                                ChannelName = x.Channel.ChannelName,
+                                ChannelId = x.Channel.Id,
+                                CategoryId = x.Category.Id,
+                                Views = x.Viewers.Sum(v => v.NumberOfVisit), // Sửa lại cách tính view
+                                CreatedAtTimeAgo = SD.TimeAgo(x.UploadDate)
+                            })
+                            .ToListAsync();
+
+                        // Sắp xếp lại theo thứ tự Python trả về (quan trọng để giữ độ ưu tiên)
+                        personalizedVideos = personalizedVideos
+                            .OrderBy(v => videoIds.IndexOf(v.Id))
+                            .ToList();
+
+                        // Chuyển đổi sang PaginatedResult (Giả lập trang 1, full size vì đây là list gợi ý)
+                        var result = new PaginatedResult<VideoForHomeGridDto>(personalizedVideos, personalizedVideos.Count, 1, parameters.PageSize, 1);
+                        return Json(new ApiResponse(200, result: result));
+                    }
                 }
-            });
-        }        
-        [Authorize(Roles = $"{SD.UserRole}")]
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Lỗi AI Home Recommendation: {ex.Message}");
+                // Fallback về logic cũ nếu AI lỗi
+            }
+
+            // FALLBACK: Nếu AI lỗi hoặc chưa có data, dùng logic cũ (Lấy mới nhất)
+            var defaultItems = await UnitOfWork.VideoRepo.GetVideosForHomeGridAsync(parameters);
+            return Json(new ApiResponse(200, result: new PaginatedResult<VideoForHomeGridDto>(defaultItems, defaultItems.TotalItemsCount, defaultItems.PageNumber, defaultItems.PageSize, defaultItems.TotalPages)));
+        }
+        [Authorize(Roles = $"{SD.UserRole},{SD.AdminRole}")]
         [HttpGet]
         public async Task<IActionResult> GetHistory(int pageNumber = 1, int pageSize = 12)
         {
@@ -165,7 +194,7 @@ namespace Web_Video.Controllers
             return date.ToString("MMMM yyyy");
         }
 
-        [Authorize(Roles = $"{SD.UserRole}")]
+        [Authorize(Roles = $"{SD.UserRole},{SD.AdminRole}")]
         [HttpGet]
         public async Task<IActionResult> GetLikesDislikesVideos(bool liked, int pageNumber = 1, int pageSize = 12)
         {
@@ -193,7 +222,7 @@ namespace Web_Video.Controllers
             return Json(new ApiResponse(200, result: paginatedResults));
         }
 
-        [Authorize(Roles = $"{SD.UserRole}")]
+        [Authorize(Roles = $"{SD.UserRole},{SD.AdminRole}")]
         [HttpPost]
         public async Task<IActionResult> RemoveHistory(Guid videoViewId)
         {
@@ -209,7 +238,7 @@ namespace Web_Video.Controllers
             return Json(new ApiResponse(200, message: "Video removed from history."));
         }
 
-        [Authorize(Roles = $"{SD.UserRole}")]
+        [Authorize(Roles = $"{SD.UserRole},{SD.AdminRole}")]
         [HttpPost]
         public async Task<IActionResult> RemoveLike(Guid videoId)
         {

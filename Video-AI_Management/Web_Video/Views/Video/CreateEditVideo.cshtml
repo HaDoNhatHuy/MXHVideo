@@ -1066,6 +1066,21 @@
                             <span asp-validation-for="CategoryId" class="text-danger"></span>
                         </div>
                     </div>
+                    <div class="col-lg-12">
+                        <div class="form-group mt-3 p-3 border rounded bg-light">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" id="hasCelebToggle" asp-for="HasCelebrity">
+                                <label class="custom-control-label text-dark font-weight-bold" for="hasCelebToggle">
+                                    Video này có chứa người nổi tiếng? (Bật AI nhận diện)
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                <i class="fas fa-info-circle"></i>
+                                Nếu <strong>BẬT</strong>: Hệ thống sẽ mất vài phút để phân tích khuôn mặt. <br />
+                                Nếu <strong>TẮT</strong>: Video sẽ được đăng ngay lập tức.
+                            </small>
+                        </div>
+                    </div>
                     <div class="col-lg-3">
                         <div class="form-group">
                             <label for="e4">Privacy Settings</label>
@@ -1244,126 +1259,93 @@
 
         let xhr;
 
-                $('#videoAddEditForm').on('submit', function (e) {
+            $('#videoAddEditForm').on('submit', function (e) {
             e.preventDefault();
             console.log('=== FORM SUBMITTED ===');
 
             const formData = new FormData(this);
             const progressContainer = $('#progressContainer');
             const progressBar = $('#progressBar');
-            const progressText = $('#progressText');
             const recognitionLoading = $('#recognitionLoading');
             const resultContainer = $('#resultContainer');
             const uploadMessage = $('#uploadMessage');
 
-            // Reset tất cả
+            // Reset UI
             resultContainer.empty();
             recognitionLoading.hide();
             progressContainer.hide();
             uploadMessage.hide();
-
-            // Reset progress
             progressBar.css('width', '0%').removeClass('animating');
             $('#progressPercentage').text('0%');
-            $('#progressLoaded').text('0 KB');
-            $('#progressTotal').text('0 KB');
 
-            // HIỂN THỊ progress container
+            // Kiểm tra checkbox có được tích không
+            const hasCeleb = $('#hasCelebToggle').is(':checked');
+
+            // Hiển thị Progress
             progressContainer.show();
             uploadMessage.show();
-
-            // Vô hiệu hóa nút Save
             $('.btn-save').prop('disabled', true).text('Uploading...');
 
             xhr = new XMLHttpRequest();
             xhr.open('POST', '/Video/CreateEditVideo', true);
 
-            // Theo dõi tiến trình upload
+            // Theo dõi upload
             xhr.upload.onprogress = function (event) {
                 if (event.lengthComputable) {
                     const percentComplete = Math.round((event.loaded / event.total) * 100);
-
-                    // Thêm class animating để có hiệu ứng shimmer
-                    if (!progressBar.hasClass('animating')) {
-                        progressBar.addClass('animating');
-                    }
-
-                    // Cập nhật progress bar
+                    if (!progressBar.hasClass('animating')) progressBar.addClass('animating');
                     progressBar.css('width', percentComplete + '%');
                     $('#progressPercentage').text(percentComplete + '%');
                     $('#progressLoaded').text(formatBytes(event.loaded));
                     $('#progressTotal').text(formatBytes(event.total));
-
-                    console.log(`Upload progress: ${percentComplete}% (${formatBytes(event.loaded)} / ${formatBytes(event.total)})`);
                 }
             };
 
-            // Khi upload xong, bắt đầu nhận diện khuôn mặt
+            // Khi upload xong file lên server
             xhr.upload.onloadend = function () {
-                console.log('Upload complete, starting face recognition...');
-
-                // Xóa animation shimmer
+                console.log('Upload file complete.');
                 progressBar.removeClass('animating');
 
-                // Ẩn progress, hiện face recognition
-                progressContainer.hide();
-                uploadMessage.hide();
-                recognitionLoading.show();
-                $('.btn-save').text('Processing...');
+                if (hasCeleb) {
+                    // Nếu CÓ người nổi tiếng -> Hiện loading AI
+                    progressContainer.hide();
+                    uploadMessage.hide();
+                    recognitionLoading.show();
+                    $('.btn-save').text('Running AI...');
+                } else {
+                    // Nếu KHÔNG CÓ -> Hiện thông báo đang lưu
+                    $('#uploadMessage').html('<i class="fas fa-save"></i> Đang lưu video, vui lòng đợi...');
+                    $('.btn-save').text('Saving...');
+                }
             };
 
-            // Xử lý phản hồi từ server
+            // Nhận kết quả từ Server
             xhr.onload = function () {
-                console.log('=== XHR COMPLETE ===');
-                console.log('Status:', xhr.status);
-
                 recognitionLoading.hide();
-
                 if (xhr.status === 200) {
                     try {
-                        const contentType = xhr.getResponseHeader('Content-Type');
-
-                        if (contentType && contentType.includes('application/json')) {
-                            const response = JSON.parse(xhr.responseText);
-                            if (response.redirectUrl) {
-                                window.location.href = response.redirectUrl;
-                                return;
-                            }
+                        // Nếu server trả về Redirect (JSON hoặc Header)
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.redirectUrl) {
+                            window.location.href = response.redirectUrl;
+                        } else {
+                            window.location.href = '/Channel/Index';
                         }
-                        window.location.href = '/Channel/Index';
                     } catch (e) {
-                        console.error('Parse error:', e);
                         window.location.href = '/Channel/Index';
                     }
-                } else if (xhr.status === 302) {
-                    const redirectUrl = xhr.getResponseHeader('Location') || '/Channel/Index';
-                    window.location.href = redirectUrl;
                 } else {
-                    resultContainer.html(`
-                        <p class="text-danger">
-                            <i class="fas fa-exclamation-circle"></i>
-                            Lỗi upload: ${xhr.statusText} (Mã: ${xhr.status})
-                        </p>
-                    `);
+                    resultContainer.html(`<p class="text-danger">Lỗi: ${xhr.statusText}</p>`);
                     $('.btn-save').prop('disabled', false).text('Save');
                 }
             };
 
             xhr.onerror = function () {
-                console.error('=== XHR ERROR ===');
-                progressContainer.hide();
-                uploadMessage.hide();
                 recognitionLoading.hide();
-                resultContainer.html(`
-                    <p class="text-danger">
-                        <i class="fas fa-exclamation-circle"></i>
-                        Có lỗi kết nối mạng.
-                    </p>
-                `);
+                resultContainer.html(`<p class="text-danger">Lỗi kết nối mạng.</p>`);
                 $('.btn-save').prop('disabled', false).text('Save');
             };
 
-            console.log('Sending XHR request...');
             xhr.send(formData);
         });
 

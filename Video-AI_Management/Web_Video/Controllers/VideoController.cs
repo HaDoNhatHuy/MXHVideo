@@ -238,66 +238,32 @@ namespace Web_Video.Controllers
 
             return Json(new ApiResponse(201, "Thành công", "Báo cáo của bạn đã được gửi và sẽ được xem xét."));
         }
+        [HttpGet]
         public async Task<IActionResult> GetVideoFile(Guid videoId)
         {
-            try
+            var video = await Context.Videos.Include(v => v.VideoFile).FirstOrDefaultAsync(v => v.Id == videoId);
+            if (video == null || video.VideoFile == null) return NotFound();
+
+            // Tạo đường dẫn vật lý từ đường dẫn web trong DB
+            // DB lưu: /uploads/videos/abc.mp4
+            //string webRootPath = Directory.GetCurrentDirectory() + "\\wwwroot";
+            //string physicalPath = webRootPath + video.VideoFile.FilePath.Replace("/", "\\");
+            string physicalPath = video.VideoFile.FilePath;
+
+            // BƯỚC SỬA: Kiểm tra nếu đường dẫn không phải là tuyệt đối hoặc không tồn tại, thì giả định nó là tương đối trong wwwroot
+            if (!System.IO.File.Exists(physicalPath))
             {
-                // <<< THAY ĐỔI: Bắt đầu
-                // 1. Truy vấn Video và Include VideoFile theo hướng dẫn
-                var video = await Context.Videos // <-- Giả sử DbContext của bạn tên là _context
-                    .Include(v => v.VideoFile)
-              .FirstOrDefaultAsync(v => v.Id == videoId);
+                // Giả sử đây là đường dẫn tương đối (từ upload thủ công)
+                string webRootPath = Directory.GetCurrentDirectory() + "\\wwwroot";
+                physicalPath = webRootPath + video.VideoFile.FilePath.Replace("/", "\\");
 
-                // 2. Kiểm tra null cho cả video và video file
-                if (video == null || video.VideoFile == null)
-                {
-                    //_logger.LogWarning($"Video or video file not found for videoId: {videoId}");
-                    return NotFound($"Video or video file not found for videoId: {videoId}");
-                }
-
-                // 3. Gán fetchedVideoFile từ đối tượng con đã Include
-                var fetchedVideoFile = video.VideoFile;
-                // <<< THAY ĐỔI: Kết thúc
-
-                // (Lưu ý: Code hướng dẫn có gợi ý về logic làm mờ 'IsBlurActivated'.
-                // Nếu bạn cần logic đó, bạn sẽ kiểm tra 'video.IsBlurActivated' ở đây
-                // và quyết định 'bytes' sẽ là 'fetchedVideoFile.Contents' 
-                // hay một mảng byte đã làm mờ nào đó.)
-
-                var contentType = fetchedVideoFile.ContentType ?? "video/mp4";
-                var bytes = fetchedVideoFile.Contents; // <-- Lấy byte từ 'fetchedVideoFile'
-                var fileLength = bytes.Length;
-
-                var rangeHeader = Request.Headers.Range.FirstOrDefault();
-                if (rangeHeader != null && !string.IsNullOrEmpty(rangeHeader.ToString()))
-                {
-                    var ranges = RangeHeaderValue.Parse(rangeHeader.ToString()).Ranges;
-                    if (ranges != null && ranges.Any())
-                    {
-                        var range = ranges.First();
-                        long from = range.From ?? 0;
-                        long to = range.To ?? fileLength - 1;
-                        long length = to - from + 1;
-
-                        Response.StatusCode = 206; // Partial Content
-                        Response.Headers.Add("Content-Range", $"bytes {from}-{to}/{fileLength}");
-                        Response.Headers.Add("Content-Length", length.ToString());
-
-                        return File(new MemoryStream(bytes, (int)from, (int)length), contentType);
-                    }
-                }
-
-                // Nếu không có range, return toàn bộ
-                Response.Headers.Add("Accept-Ranges", "bytes");
-                Response.Headers.Add("Content-Disposition", "inline");
-                Response.Headers.Add("Content-Length", fileLength.ToString());
-                return File(bytes, contentType);
+                if (!System.IO.File.Exists(physicalPath)) return NotFound("File not found on server");
             }
-            catch (Exception ex)
-            {
-                //_logger.LogError(ex, $"Error retrieving video file for videoId: {videoId}");
-                return StatusCode(500, $"Error retrieving video file: {ex.Message}");
-            }
+
+            if (!System.IO.File.Exists(physicalPath)) return NotFound("File not found on server");
+
+            // Streaming video (Cho phép tua)
+            return PhysicalFile(physicalPath, video.VideoFile.ContentType, enableRangeProcessing: true);
         }
         [HttpPost]
         public async Task<IActionResult> DownloadVideoFile(Guid videoId)
@@ -305,8 +271,22 @@ namespace Web_Video.Controllers
             var fetchedVideo = await UnitOfWork.VideoRepo.GetFirstOrDefaultAsync(x => x.Id == videoId, "VideoFile");
             if (fetchedVideo != null)
             {
+                //string fileDownloadName = fetchedVideo.Title + fetchedVideo.VideoFile.Extension;
+                //string webRootPath = Directory.GetCurrentDirectory() + "\\wwwroot";
+                //string physicalPath = webRootPath + fetchedVideo.VideoFile.FilePath.Replace("/", "\\");
+                string physicalPath = fetchedVideo.VideoFile.FilePath;
                 string fileDownloadName = fetchedVideo.Title + fetchedVideo.VideoFile.Extension;
-                return File(fetchedVideo.VideoFile.Contents, fetchedVideo.VideoFile.ContentType, fileDownloadName);
+
+                // BƯỚC SỬA: Kiểm tra nếu đường dẫn không phải là tuyệt đối hoặc không tồn tại, thì giả định nó là tương đối trong wwwroot
+                if (!System.IO.File.Exists(physicalPath))
+                {
+                    string webRootPath = Directory.GetCurrentDirectory() + "\\wwwroot";
+                    physicalPath = webRootPath + fetchedVideo.VideoFile.FilePath.Replace("/", "\\");
+                }
+                if (!System.IO.File.Exists(physicalPath)) return NotFound("File not found on server");
+
+                // Trả về file từ ổ cứng
+                return PhysicalFile(physicalPath, fetchedVideo.VideoFile.ContentType, fileDownloadName);
             }
             TempData["notification"] = "false;Not Found;Requested video was not found";
             return RedirectToAction("Index", "Home");
@@ -353,97 +333,59 @@ namespace Web_Video.Controllers
         {
             if (ModelState.IsValid)
             {
-                bool proceed = true;
+                // 1. Cấu hình đường dẫn lưu file (Lưu vào wwwroot/uploads/videos)
+                string webRootPath = _httpClientFactory.GetType() == typeof(string) ? "" : Directory.GetCurrentDirectory() + "\\wwwroot";
+                // Lưu ý: Dòng trên để lấy path, nếu bạn đã có _webHostEnvironment thì dùng nó tốt hơn.
+                // Giả sử bạn dùng Directory.GetCurrentDirectory() cho đơn giản:
+                string uploadDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "videos");
+
+                if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
+
+                Video videoToAdd = null;
+
+                // === TRƯỜNG HỢP TẠO MỚI ===
                 if (model.Id == Guid.Empty)
                 {
-                    if (model.ImageUpload == null)
-                    {
-                        ModelState.AddModelError("ImageUpload", "Please upload an image for your video");
-                        proceed = false;
-                    }
-                    if (proceed && model.VideoUpload == null)
-                    {
-                        ModelState.AddModelError("VideoUpload", "Please upload a video for your video");
-                        proceed = false;
-                    }
-                }
-                if (model.ImageUpload != null)
-                {
-                    if (proceed && !IsAcceptableContentType("image", model.ImageUpload.ContentType))
-                    {
-                        ModelState.AddModelError("ImageUpload", string.Format("Invalid content type. It must be one of the following: {0}",
-                            string.Join(", ", AcceptableContentTypes("image"))));
-                        proceed = false;
-                    }
-                    if (proceed && model.ImageUpload.Length > int.Parse(Configuration["FileUpload:ImageMaxSizeInMB"]) * SD.MB)
-                    {
-                        ModelState.AddModelError("ImageUpload", string.Format("The uploaded file should not exceed {0} MB",
-                            int.Parse(Configuration["FileUpload:ImageMaxSizeInMB"])));
-                        proceed = false;
-                    }
-                }
+                    if (model.VideoUpload == null) return Json(new { isSuccess = false, message = "Thiếu video" });
 
-                if (model.VideoUpload != null)
-                {
-                    if (proceed && !IsAcceptableContentType("video", model.VideoUpload.ContentType))
+                    // A. Lưu file video vào ổ cứng
+                    string fileName = Guid.NewGuid().ToString() + Path.GetExtension(model.VideoUpload.FileName);
+                    string physicalPath = Path.Combine(uploadDir, fileName); // Đường dẫn vật lý D:\...
+
+                    using (var fileStream = new FileStream(physicalPath, FileMode.Create))
                     {
-                        ModelState.AddModelError("VideoUpload", string.Format("Invalid content type. It must be one of the following: {0}",
-                            string.Join(", ", AcceptableContentTypes("video"))));
-                        proceed = false;
+                        await model.VideoUpload.CopyToAsync(fileStream);
                     }
-                    if (proceed && model.VideoUpload.Length > int.Parse(Configuration["FileUpload:VideoMaxSizeInMB"]) * SD.MB)
+
+                    // B. Lấy thời lượng video (dùng đường dẫn vật lý)
+                    string duration = await GetVideoDuration(physicalPath);
+
+                    // --- XỬ LÝ THUMBNAIL TỰ ĐỘNG ---
+                    string thumbnailPath = "";
+                    if (model.ImageUpload != null)
                     {
-                        ModelState.AddModelError("VideoUpload", string.Format("The uploaded file should not exceed {0} MB",
-                            int.Parse(Configuration["FileUpload:VideoMaxSizeInMB"])));
-                        proceed = false;
+                        // Nếu người dùng chọn ảnh -> Upload bình thường
+                        thumbnailPath = PhotoService.UploadPhotoLocally(model.ImageUpload);
                     }
-                }
-                if (proceed)
-                {
-                    string title = "";
-                    string message = "";
-                    Video videoToAdd = null;
-                    if (model.Id == Guid.Empty)  // Chỉ cho create new video
+                    else
                     {
-                        // Lưu video tạm thời để xử lý nhận diện khuôn mặt
-                        var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
-                        Directory.CreateDirectory(uploadPath);
-                        var videoPath = Path.Combine(uploadPath, model.VideoUpload.FileName);
-                        using (var stream = new FileStream(videoPath, FileMode.Create))
-                        {
-                            await model.VideoUpload.CopyToAsync(stream);
-                        }
+                        // Nếu KHÔNG chọn ảnh -> Dùng FFmpeg cắt frame ngẫu nhiên
+                        thumbnailPath = await GenerateThumbnailFromVideo(physicalPath);
+                    }
 
-                        // Tính thời lượng video
-                        string duration = await GetVideoDuration(videoPath);
+                    // C. Xử lý AI (Tùy chọn dựa vào Checkbox)
+                    string recognitionResult = "";
+                    string celebrityFramesJson = "{}";
 
-                        // Nhận diện khuôn mặt
-                        string recognitionResult = await ProcessVideo(videoPath);
+                    if (model.HasCelebrity)
+                    {
+                        // CÓ người nổi tiếng -> Gọi AI
+                        recognitionResult = await ProcessVideo(physicalPath); // Hàm này cần nhận đường dẫn vật lý
 
-                        // Tạo video mới
-                        videoToAdd = new Video()
-                        {
-                            Id = Guid.NewGuid(),
-                            Title = model.Title,
-                            Description = model.Description,
-                            CategoryId = model.CategoryId,
-                            ChannelId = await UnitOfWork.ChannelRepo.GetChannelIdByUserId(User.GetUserId()),
-                            Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload),
-                            Duration = duration, // Lưu thời lượng
-                            VideoFile = new VideoFile
-                            {
-                                ContentType = model.VideoUpload.ContentType,
-                                Contents = await GetContentsAsync(model.VideoUpload),
-                                Extension = SD.GetFileExtension(model.VideoUpload.ContentType)
-                            },
-                            RecognizedCelebrities = recognitionResult
-                        };
-
-                        // Tính thời lượng xuất hiện của celebrities
+                        // Gọi Python để lấy JSON khung hình (nếu có logic đó)
                         var httpClient = _httpClientFactory.CreateClient();
-                        var requestBody = new { video_path = videoPath };
+                        var requestBody = new { video_path = physicalPath }; // Gửi path thật cho Python
                         var content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
-
                         try
                         {
                             var response = await httpClient.PostAsync("http://localhost:5000/process_video", content);
@@ -451,54 +393,89 @@ namespace Web_Video.Controllers
                             {
                                 var resultJson = await response.Content.ReadAsStringAsync();
                                 var framesData = JsonConvert.DeserializeObject<Dictionary<string, object>>(resultJson)["frames"];
-                                videoToAdd.CelebrityFrames = JsonConvert.SerializeObject(framesData);
-                            }
-                            else
-                            {
-                                videoToAdd.CelebrityFrames = "{}";
+                                celebrityFramesJson = JsonConvert.SerializeObject(framesData);
                             }
                         }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"API Exception: {ex.Message}");
-                            videoToAdd.CelebrityFrames = "{}";
-                        }
-
-                        // Lưu người nổi tiếng
-                        await SaveRecognizedCelebrities(videoToAdd, recognitionResult);
-
-                        UnitOfWork.VideoRepo.Add(videoToAdd);
-                        title = "Created";
-                        message = "New video has been created";
+                        catch { /* Bỏ qua lỗi AI nếu có */ }
                     }
                     else
                     {
-                        var fetchedVideo = await UnitOfWork.VideoRepo.GetByIdAsync(model.Id);
-                        if (fetchedVideo == null)
-                        {
-                            TempData["notification"] = "false;Not Found;Requested video was not found";
-                            return RedirectToAction("Index", "Channel");
-                        }
-                        fetchedVideo.Title = model.Title;
-                        fetchedVideo.Description = model.Description;
-                        fetchedVideo.CategoryId = model.CategoryId;
-                        if (model.ImageUpload != null)
-                        {
-                            fetchedVideo.Thumbnail = PhotoService.UploadPhotoLocally(model.ImageUpload, fetchedVideo.Thumbnail);
-                        }
-                        title = "Updated";
-                        message = "Video has been updated";
+                        // KHÔNG CÓ người nổi tiếng -> Bỏ qua AI
+                        recognitionResult = "Không yêu cầu nhận diện";
                     }
+
+                    // D. Lưu vào Database
+                    videoToAdd = new Video()
+                    {
+                        Id = Guid.NewGuid(),
+                        Title = model.Title,
+                        Description = model.Description,
+                        CategoryId = model.CategoryId,
+                        ChannelId = await UnitOfWork.ChannelRepo.GetChannelIdByUserId(User.GetUserId()),
+                        Thumbnail = thumbnailPath,
+                        Duration = duration,
+                        UploadDate = DateTime.UtcNow,
+                        RecognizedCelebrities = recognitionResult,
+                        CelebrityFrames = celebrityFramesJson,
+                        VideoFile = new VideoFile
+                        {
+                            Id = Guid.NewGuid(),
+                            ContentType = model.VideoUpload.ContentType,
+                            Extension = Path.GetExtension(model.VideoUpload.FileName),
+                            FilePath = $"/uploads/videos/{fileName}" // Chỉ lưu đường dẫn web tương đối
+                        }
+                    };
+
+                    // Nếu có nhận diện ra người nổi tiếng thì mới lưu vào bảng phụ
+                    if (model.HasCelebrity)
+                    {
+                        await SaveRecognizedCelebrities(videoToAdd, recognitionResult);
+                    }
+
+                    UnitOfWork.VideoRepo.Add(videoToAdd);
                     await UnitOfWork.CompleteAsync();
 
-                    TempData["notification"] = $"true;{title};{message}";
-                    return RedirectToAction("Index", "Channel");
+                    TempData["notification"] = "true;Success;Video uploaded successfully";
+                    return Json(new { redirectUrl = "/Channel/Index" });
                 }
             }
+            return Json(new { isSuccess = false, message = "Invalid Data" });
+        }
+        // THÊM HÀM MỚI TRONG VideoController.cs ĐỂ CẮT THUMBNAIL
+        private async Task<string> GenerateThumbnailFromVideo(string videoPhysicalPath)
+        {
+            try
+            {
+                string webRootPath = Directory.GetCurrentDirectory() + "\\wwwroot";
+                string thumbFolder = Path.Combine(webRootPath, "images", "thumbnails");
+                if (!Directory.Exists(thumbFolder)) Directory.CreateDirectory(thumbFolder);
 
-            // Nếu không hợp lệ, trả về view với lỗi
-            model.CategoryDropdown = await GetCategoryDropdownAsync();
-            return View(model);
+                string thumbFileName = Guid.NewGuid().ToString() + ".jpg";
+                string thumbPhysicalPath = Path.Combine(thumbFolder, thumbFileName);
+
+                // Cấu hình đường dẫn FFmpeg (Đảm bảo đường dẫn đúng với máy bạn)
+                Xabe.FFmpeg.FFmpeg.SetExecutablesPath(@"C:\FFmpeg\ffmpeg\bin");
+
+                // Lấy thông tin video để biết độ dài
+                var mediaInfo = await FFmpeg.GetMediaInfo(videoPhysicalPath);
+
+                // Chọn thời điểm cắt: 20% đầu video hoặc 5s (để tránh màn hình đen ở giây 0)
+                double videoDuration = mediaInfo.Duration.TotalSeconds;
+                double captureTime = videoDuration > 10 ? 5 : 1;
+
+                // Thực hiện cắt ảnh
+                IConversion conversion = await FFmpeg.Conversions.FromSnippet.Snapshot(
+                    videoPhysicalPath, thumbPhysicalPath, TimeSpan.FromSeconds(captureTime)
+                );
+                await conversion.Start();
+
+                return $"/images/thumbnails/{thumbFileName}"; // Trả về đường dẫn web
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi tạo thumbnail tự động: {ex.Message}");
+                return "/avatarUser/avt-default.jpg"; // Fallback nếu lỗi
+            }
         }
 
         // Phương thức tính thời lượng video
@@ -640,6 +617,23 @@ namespace Web_Video.Controllers
                 if (video == null)
                 {
                     return Json(new ApiResponse(404, message: "The requested video was not found"));
+                }
+                // Tìm VideoFile
+                var videoFile = await Context.Set<VideoFile>().FirstOrDefaultAsync(x => x.VideoId == id);
+
+                if (videoFile != null && !string.IsNullOrEmpty(videoFile.FilePath))
+                {
+                    string webRootPath = Directory.GetCurrentDirectory() + "\\wwwroot";
+                    string physicalPath = webRootPath + videoFile.FilePath.Replace("/", "\\");
+
+                    // Xóa file vật lý nếu tồn tại
+                    if (System.IO.File.Exists(physicalPath))
+                    {
+                        System.IO.File.Delete(physicalPath);
+                    }
+
+                    // Xóa record trong bảng VideoFile (nếu Cascade Delete chưa cấu hình)
+                    Context.Set<VideoFile>().Remove(videoFile);
                 }
 
                 // Xóa các bản ghi liên quan
@@ -943,20 +937,80 @@ namespace Web_Video.Controllers
         }
         private async Task<List<RecommendedVideoViewModel>> GetRecommendedVideos(Guid currentVideoId)
         {
+            string userId = User.GetUserId();
             var recommendedVideos = new List<RecommendedVideoViewModel>();
-
-            // 1. 20% liên quan đến người nổi tiếng (2 video)
-            // Lấy danh sách người nổi tiếng trong video hiện tại
-            var currentVideoCelebrities = await Context.RecognizeCelebrities
-                .Where(rc => rc.VideoId == currentVideoId)
-                .Select(rc => rc.CelebrityId)
-                .ToListAsync();
-
-            var celebrityVideos = new List<RecommendedVideoViewModel>();
-            if (currentVideoCelebrities.Any()) // Chỉ xử lý nếu video hiện tại có người nổi tiếng
+            try
             {
-                celebrityVideos = await Context.Videos
-                    .Where(x => x.Id != currentVideoId && x.RecognizeCelebrities.Any(rc => currentVideoCelebrities.Contains(rc.CelebrityId)))
+                // 1. Gọi Python API
+                var httpClient = _httpClientFactory.CreateClient();
+                var payload = new { userId = userId, currentVideoId = currentVideoId };
+                // Gọi sang Port 5001 (Service mới)
+                var response = await httpClient.PostAsJsonAsync("http://localhost:5001/api/recommend", payload);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var apiResult = await response.Content.ReadFromJsonAsync<PythonRecommendResponse>(); // Tạo class DTO bên dưới
+                    var videoIds = apiResult.recommendations;
+
+                    // 2. Query DB lấy thông tin chi tiết của các ID đó
+                    if (videoIds != null && videoIds.Count() > 0)
+                    {
+                        recommendedVideos = await Context.Videos
+                            .Where(x => videoIds.Contains(x.Id))
+                            .Include(x => x.Channel)
+                            .Include(x => x.Viewers)
+                            .Select(x => new RecommendedVideoViewModel
+                            {
+                                Id = x.Id,
+                                Title = x.Title,
+                                Thumbnail = x.Thumbnail,
+                                ChannelName = x.Channel.ChannelName,
+                                Duration = x.Duration,
+                                ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
+                                CreatedAt = x.UploadDate
+                            })
+                            .ToListAsync();
+
+                        // Sắp xếp lại theo thứ tự Python trả về (vì SQL 'IN' không giữ thứ tự)
+                        recommendedVideos = recommendedVideos
+                            .OrderBy(v => videoIds.IndexOf(v.Id))
+                            .ToList();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // 1. 20% liên quan đến người nổi tiếng (2 video)
+                // Lấy danh sách người nổi tiếng trong video hiện tại
+                var currentVideoCelebrities = await Context.RecognizeCelebrities
+                    .Where(rc => rc.VideoId == currentVideoId)
+                    .Select(rc => rc.CelebrityId)
+                    .ToListAsync();
+
+                var celebrityVideos = new List<RecommendedVideoViewModel>();
+                if (currentVideoCelebrities.Any()) // Chỉ xử lý nếu video hiện tại có người nổi tiếng
+                {
+                    celebrityVideos = await Context.Videos
+                        .Where(x => x.Id != currentVideoId && x.RecognizeCelebrities.Any(rc => currentVideoCelebrities.Contains(rc.CelebrityId)))
+                        .OrderByDescending(x => x.Viewers.Select(v => v.NumberOfVisit).Sum()) // Sắp xếp theo số lượt xem
+                        .Take(2) // Lấy 2 video
+                        .Select(x => new RecommendedVideoViewModel
+                        {
+                            Id = x.Id,
+                            Title = x.Title,
+                            Thumbnail = x.Thumbnail,
+                            ChannelName = x.Channel.ChannelName,
+                            Duration = x.Duration,
+                            ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
+                            CreatedAt = x.UploadDate
+                        })
+                        .ToListAsync();
+                }
+                recommendedVideos.AddRange(celebrityVideos);
+
+                // 2. 20% theo video có nhiều view nhất (2 video)
+                var mostViewedVideos = await Context.Videos
+                    .Where(x => x.Id != currentVideoId && !recommendedVideos.Select(v => v.Id).Contains(x.Id)) // Tránh trùng lặp
                     .OrderByDescending(x => x.Viewers.Select(v => v.NumberOfVisit).Sum()) // Sắp xếp theo số lượt xem
                     .Take(2) // Lấy 2 video
                     .Select(x => new RecommendedVideoViewModel
@@ -970,53 +1024,13 @@ namespace Web_Video.Controllers
                         CreatedAt = x.UploadDate
                     })
                     .ToListAsync();
-            }
-            recommendedVideos.AddRange(celebrityVideos);
+                recommendedVideos.AddRange(mostViewedVideos);
 
-            // 2. 20% theo video có nhiều view nhất (2 video)
-            var mostViewedVideos = await Context.Videos
-                .Where(x => x.Id != currentVideoId && !recommendedVideos.Select(v => v.Id).Contains(x.Id)) // Tránh trùng lặp
-                .OrderByDescending(x => x.Viewers.Select(v => v.NumberOfVisit).Sum()) // Sắp xếp theo số lượt xem
-                .Take(2) // Lấy 2 video
-                .Select(x => new RecommendedVideoViewModel
-                {
-                    Id = x.Id,
-                    Title = x.Title,
-                    Thumbnail = x.Thumbnail,
-                    ChannelName = x.Channel.ChannelName,
-                    Duration = x.Duration,
-                    ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
-                    CreatedAt = x.UploadDate
-                })
-                .ToListAsync();
-            recommendedVideos.AddRange(mostViewedVideos);
-
-            // 3. 20% theo video mới nhất (2 video)
-            var latestVideos = await Context.Videos
-                .Where(x => x.Id != currentVideoId && !recommendedVideos.Select(v => v.Id).Contains(x.Id)) // Tránh trùng lặp
-                .OrderByDescending(x => x.UploadDate) // Sắp xếp theo ngày đăng mới nhất
-                .Take(2) // Lấy 2 video
-                .Select(x => new RecommendedVideoViewModel
-                {
-                    Id = x.Id,
-                    Title = x.Title,
-                    Thumbnail = x.Thumbnail,
-                    ChannelName = x.Channel.ChannelName,
-                    Duration = x.Duration,
-                    ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
-                    CreatedAt = x.UploadDate
-                })
-                .ToListAsync();
-            recommendedVideos.AddRange(latestVideos);
-
-            // 4. 40% ngẫu nhiên (4 video)
-            var remainingCount = 10 - recommendedVideos.Count; // Số video còn lại cần lấy (tối đa 4)
-            if (remainingCount > 0)
-            {
-                var randomVideos = await Context.Videos
+                // 3. 20% theo video mới nhất (2 video)
+                var latestVideos = await Context.Videos
                     .Where(x => x.Id != currentVideoId && !recommendedVideos.Select(v => v.Id).Contains(x.Id)) // Tránh trùng lặp
-                    .OrderBy(x => Guid.NewGuid()) // Sắp xếp ngẫu nhiên
-                    .Take(remainingCount) // Lấy số video còn lại
+                    .OrderByDescending(x => x.UploadDate) // Sắp xếp theo ngày đăng mới nhất
+                    .Take(2) // Lấy 2 video
                     .Select(x => new RecommendedVideoViewModel
                     {
                         Id = x.Id,
@@ -1028,32 +1042,71 @@ namespace Web_Video.Controllers
                         CreatedAt = x.UploadDate
                     })
                     .ToListAsync();
-                recommendedVideos.AddRange(randomVideos);
-            }
+                recommendedVideos.AddRange(latestVideos);
 
-            // Đảm bảo danh sách có đúng 10 video (nếu thiếu, bổ sung ngẫu nhiên)
-            if (recommendedVideos.Count < 10)
+                // 4. 40% ngẫu nhiên (4 video)
+                var remainingCount = 10 - recommendedVideos.Count; // Số video còn lại cần lấy (tối đa 4)
+                if (remainingCount > 0)
+                {
+                    var randomVideos = await Context.Videos
+                        .Where(x => x.Id != currentVideoId && !recommendedVideos.Select(v => v.Id).Contains(x.Id)) // Tránh trùng lặp
+                        .OrderBy(x => Guid.NewGuid()) // Sắp xếp ngẫu nhiên
+                        .Take(remainingCount) // Lấy số video còn lại
+                        .Select(x => new RecommendedVideoViewModel
+                        {
+                            Id = x.Id,
+                            Title = x.Title,
+                            Thumbnail = x.Thumbnail,
+                            ChannelName = x.Channel.ChannelName,
+                            Duration = x.Duration,
+                            ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
+                            CreatedAt = x.UploadDate
+                        })
+                        .ToListAsync();
+                    recommendedVideos.AddRange(randomVideos);
+                }
+
+                // Đảm bảo danh sách có đúng 10 video (nếu thiếu, bổ sung ngẫu nhiên)
+                if (recommendedVideos.Count < 10)
+                {
+                    var additionalCount = 10 - recommendedVideos.Count;
+                    var additionalVideos = await Context.Videos
+                        .Where(x => x.Id != currentVideoId && !recommendedVideos.Select(v => v.Id).Contains(x.Id))
+                        .OrderBy(x => Guid.NewGuid())
+                        .Take(additionalCount)
+                        .Select(x => new RecommendedVideoViewModel
+                        {
+                            Id = x.Id,
+                            Title = x.Title,
+                            Thumbnail = x.Thumbnail,
+                            ChannelName = x.Channel.ChannelName,
+                            Duration = x.Duration,
+                            ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
+                            CreatedAt = x.UploadDate
+                        })
+                        .ToListAsync();
+                    recommendedVideos.AddRange(additionalVideos);
+                }
+
+                return recommendedVideos.Take(10).ToList(); // Đảm bảo chỉ trả về 10 video
+            }
+            // Đảm bảo KHÔNG BAO GIỜ NULL (Fallback cuối cùng)
+            if (recommendedVideos.Count == 0)
             {
-                var additionalCount = 10 - recommendedVideos.Count;
-                var additionalVideos = await Context.Videos
-                    .Where(x => x.Id != currentVideoId && !recommendedVideos.Select(v => v.Id).Contains(x.Id))
-                    .OrderBy(x => Guid.NewGuid())
-                    .Take(additionalCount)
-                    .Select(x => new RecommendedVideoViewModel
-                    {
-                        Id = x.Id,
-                        Title = x.Title,
-                        Thumbnail = x.Thumbnail,
-                        ChannelName = x.Channel.ChannelName,
-                        Duration = x.Duration,
-                        ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
-                        CreatedAt = x.UploadDate
-                    })
+                recommendedVideos = await Context.Videos
+                    .OrderByDescending(v => v.UploadDate)
+                    .Take(10)
+                    .Select(x => new RecommendedVideoViewModel { /* Map properties */ })
                     .ToListAsync();
-                recommendedVideos.AddRange(additionalVideos);
             }
 
-            return recommendedVideos.Take(10).ToList(); // Đảm bảo chỉ trả về 10 video
+            return recommendedVideos;
+        }
+        // Class DTO để hứng kết quả JSON
+        public class PythonRecommendResponse
+        {
+            public string user_id { get; set; }
+            public List<Guid> recommendations { get; set; }
         }
         [HttpGet]
         public async Task<IActionResult> GetCommentsByPage(Guid videoId, int page, int pageSize)

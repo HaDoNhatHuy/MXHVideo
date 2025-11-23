@@ -1,4 +1,4 @@
-using DataAccess.Data;
+﻿using DataAccess.Data;
 using Database_Video.Entities;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -9,8 +9,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Web_Video.Extensions;
-using Web_Video.Seed;
-using Web_Video.Services.IServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +17,7 @@ builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
 builder.AddApplicationServices();
 builder.AddAuthenticationServices();
 
-// Th�m CORS
+// Thêm CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", builder =>
@@ -42,7 +40,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-app.UseCors("AllowAll"); // Th�m CORS middleware
+app.UseCors("AllowAll"); // Thêm CORS middleware
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -52,25 +50,35 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+// Gọi hàm Seed Data
 await InitializeContextAsync();
+
 app.Run();
 
 async Task InitializeContextAsync()
 {
-    using var scope = app.Services.CreateScope();
-    var services = scope.ServiceProvider;
-    try
+    using (var scope = app.Services.CreateScope())
     {
-        var context = scope.ServiceProvider.GetService<DataContext>();
-        var userManager = scope.ServiceProvider.GetService<UserManager<AppUser>>();
-        var roleManager = scope.ServiceProvider.GetService<RoleManager<AppRole>>();
-        var photoService = scope.ServiceProvider.GetService<IPhotoService>();
-        var webHostEnvironment = scope.ServiceProvider.GetService<IWebHostEnvironment>();
-        await ContextInitializer.InitializeAsync(context, userManager, roleManager, photoService, webHostEnvironment);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating the data");
+        var services = scope.ServiceProvider;
+        try
+        {
+            var context = services.GetRequiredService<DataContext>();
+            var userManager = services.GetRequiredService<UserManager<AppUser>>();
+
+            // --- THÊM DÒNG NÀY: Lấy RoleManager ---
+            var roleManager = services.GetRequiredService<RoleManager<AppRole>>();
+
+            var env = services.GetRequiredService<IWebHostEnvironment>();
+
+            // --- CẬP NHẬT DÒNG NÀY: Truyền roleManager vào Constructor ---
+            var seeder = new AdvancedDataSeeder(context, userManager, roleManager, env);
+
+            await seeder.SeedAllAsync();
+        }
+        catch (Exception ex)
+        {
+            var logger = services.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "An error occurred while seeding the database.");
+        }
     }
 }
