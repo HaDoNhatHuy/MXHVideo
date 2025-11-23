@@ -10,16 +10,19 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using Web_Video.Extensions;
 
 namespace Web_Video.Controllers
 {
     public class SearchController : CoreController
     {
         private readonly DataContext _context;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public SearchController(DataContext context)
+        public SearchController(DataContext context, IHttpClientFactory httpClientFactory)
         {
             _context = context;
+            _httpClientFactory = httpClientFactory;
         }
 
         // ViewModel để chứa kết quả tìm kiếm
@@ -27,39 +30,120 @@ namespace Web_Video.Controllers
         {
             public List<Video> Videos { get; set; } = new List<Video>();
             public List<Channel> Channels { get; set; } = new List<Channel>();
+            // THÊM MỚI: Luôn chứa video đề xuất
+            public List<Video> RecommendedVideos { get; set; } = new List<Video>();
         }
 
         // Xử lý yêu cầu GET: /Search?query=...
+        // Helper Class để hứng kết quả JSON từ Python
+        public class PythonRecommendResponse
+        {
+            public string user_id { get; set; }
+            public List<Guid> recommendations { get; set; }
+        }
+
         [HttpGet]
         public async Task<IActionResult> Index(string query)
         {
             var viewModel = new SearchViewModel();
+            ViewData["Query"] = query;
+            string userId = User.Identity.IsAuthenticated ? User.GetUserId() : "";
 
-            if (string.IsNullOrWhiteSpace(query))
+            // 1. TÌM KIẾM CHÍNH XÁC (SEARCH INTENT)
+            if (!string.IsNullOrWhiteSpace(query))
             {
-                ViewData["Query"] = "Không có từ khóa tìm kiếm";
-                return View(viewModel);
+                // Tìm Video khớp tiêu đề hoặc tên kênh
+                viewModel.Videos = await Context.Videos
+                    .Include(v => v.Category)
+                    .Include(v => v.Channel)
+                    .Where(v => v.Title.Contains(query) || v.Channel.ChannelName.Contains(query))
+                    .OrderByDescending(v => v.Views) // Ưu tiên video nhiều view
+                    .Take(20) // Giới hạn 20 kết quả tìm kiếm đầu tiên
+                    .ToListAsync();
+
+                // Tìm Channel khớp tên
+                viewModel.Channels = await Context.Channels
+                    .Include(c => c.Subscribers)
+                    .Where(c => c.ChannelName.Contains(query))
+                    .Take(5)
+                    .ToListAsync();
             }
 
-            // Tìm kiếm video
-            var videos = await _context.Videos
-                .Include(v => v.Category)
-                .Include(v => v.Channel)
-                .Where(v => (v.Title != null && v.Title.ToLower().Contains(query.ToLower())) ||
-                            (v.Channel != null && v.Channel.ChannelName != null && v.Channel.ChannelName.ToLower().Contains(query.ToLower())))
-                .ToListAsync();
+            // 2. LẤY DANH SÁCH ĐỀ XUẤT (RECOMMENDATION ENGINE)
+            // Mục tiêu: Lấp đầy trang và gợi ý thêm nội dung
+            try
+            {
+                var httpClient = _httpClientFactory.CreateClient();
+                httpClient.Timeout = TimeSpan.FromSeconds(2); // Timeout nhanh để không làm chậm trang
 
-            // Tìm kiếm kênh
-            var channels = await _context.Channels
-                .Where(c => c.ChannelName != null && c.ChannelName.ToLower().Contains(query.ToLower()))
-                .ToListAsync();
+                // Gọi Python API (dùng logic tối ưu ở câu trả lời trước)
+                var payload = new { userId = userId, currentVideoId = (Guid?)null };
+                var response = await httpClient.PostAsJsonAsync("http://localhost:5001/api/recommend", payload);
 
-            viewModel.Videos = videos ?? new List<Video>();
-            viewModel.Channels = channels ?? new List<Channel>();
+                if (response.IsSuccessStatusCode)
+                {
+                    var apiResult = await response.Content.ReadFromJsonAsync<PythonRecommendResponse>();
+                    var videoIds = apiResult.recommendations;
 
-            ViewData["Query"] = query;
-            Console.WriteLine($"Search GET: Query='{query}', Videos={videos.Count}, Channels={channels.Count}");
+                    if (videoIds != null && videoIds.Any())
+                    {
+                        // Lấy chi tiết video từ DB
+                        var recVideos = await Context.Videos
+                            .Include(x => x.Channel)
+                            .Include(x => x.Viewers) // Để tính view nếu cần
+                            .Where(x => videoIds.Contains(x.Id))
+                            .ToListAsync();
+
+                        // Sắp xếp lại theo thứ tự Python trả về (độ ưu tiên)
+                        viewModel.RecommendedVideos = videoIds
+                            .Join(recVideos, id => id, v => v.Id, (id, v) => v)
+                            .ToList();
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Nếu Python lỗi, Fallback về Random
+                viewModel.RecommendedVideos = await Context.Videos
+                    .Include(v => v.Channel)
+                    .OrderBy(x => Guid.NewGuid()) // Random
+                    .Take(12)
+                    .ToListAsync();
+            }
+
+            // 3. LỌC TRÙNG LẶP
+            // Loại bỏ những video đã xuất hiện trong kết quả tìm kiếm ra khỏi danh sách đề xuất
+            if (viewModel.Videos.Any())
+            {
+                var searchResultIds = viewModel.Videos.Select(v => v.Id).ToHashSet();
+                viewModel.RecommendedVideos = viewModel.RecommendedVideos
+                    .Where(v => !searchResultIds.Contains(v.Id))
+                    .Take(12) // Lấy 12 video đề xuất
+                    .ToList();
+            }
+
+            // Nếu không tìm thấy gì cả, và Python cũng tạch -> Đảm bảo không null
+            if (viewModel.RecommendedVideos == null) viewModel.RecommendedVideos = new List<Video>();
+
+            // Cờ hiển thị giao diện (nếu tìm không ra thì báo Fallback)
+            ViewBag.IsFallback = (viewModel.Videos.Count == 0 && viewModel.Channels.Count == 0);
+
             return View(viewModel);
+        }
+
+        private async Task<IActionResult> LoadFallbackResults(string message)
+        {
+            ViewData["Query"] = message;
+            ViewBag.IsFallback = true; // Cờ quan trọng để JS biết mà load recommend
+
+            // Lấy random video làm đề xuất ban đầu
+            var fallbackVideos = await _context.Videos
+                .Include(v => v.Channel).Include(v => v.Category)
+                .OrderBy(r => Guid.NewGuid())
+                .Take(12)
+                .ToListAsync();
+
+            return View("Index", new SearchViewModel { Videos = fallbackVideos, Channels = new List<Channel>() });
         }
 
         [HttpPost]

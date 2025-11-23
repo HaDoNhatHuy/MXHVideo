@@ -33,27 +33,32 @@ namespace Web_Video.Controllers
         {
             _httpClientFactory = httpClientFactory;
         }
+        // SỬA METHOD WATCH: Bỏ dòng gọi GetRecommendedVideos, để trống list
         [HttpGet]
         public async Task<IActionResult> Watch(Guid id, Guid? playlistId = null)
         {
-            // Sử dụng phương thức hiệu quả với projections
-            var toReturn = await GetVideoWatch_VMWithProjections(id, playlistId); // <=== TRUYỀN playlistId
-
+            var toReturn = await GetVideoWatch_VMWithProjections(id, playlistId);
             if (toReturn != null)
             {
-                // Lấy danh sách video đề xuất
-                toReturn.RecommendedVideos = await GetRecommendedVideos(id);
+                // KHÔNG GỌI PYTHON Ở ĐÂY NỮA. Để list rỗng, Frontend sẽ tự gọi API trên.
+                toReturn.RecommendedVideos = new List<RecommendedVideoViewModel>();
 
-                var userIpAddress = Request.HttpContext.Connection.RemoteIpAddress.ToString();
-                await UnitOfWork.VideoViewRepo.HandleVideoViewAsync(User.GetUserId(), id, userIpAddress);
+                // Ghi log view (Async)
+                _ = UnitOfWork.VideoViewRepo.HandleVideoViewAsync(User.GetUserId(), id, HttpContext.Connection.RemoteIpAddress.ToString());
                 await UnitOfWork.CompleteAsync();
 
                 return View(toReturn);
             }
-            TempData["notification"] = "false;Not Found;Requested video was not found";
             return RedirectToAction("Index", "Home");
         }
-
+        // THÊM API NÀY ĐỂ TRANG WATCH GỌI AJAX
+        [HttpGet]
+        public async Task<IActionResult> GetRecommendedVideosAPI(Guid videoId)
+        {
+            // Logic gọi Python chuyển vào đây để không chặn UI thread lúc load trang
+            var results = await GetRecommendedVideos(videoId);
+            return Json(results);
+        }
         [HttpPost]
         [HttpGet] // Thêm để hỗ trợ sendBeacon
         public async Task<IActionResult> UpdateProgress(Guid videoId, float progressSeconds)
@@ -956,6 +961,7 @@ namespace Web_Video.Controllers
                     if (videoIds != null && videoIds.Count() > 0)
                     {
                         recommendedVideos = await Context.Videos
+                            .Where(x => x.Id != currentVideoId)
                             .Where(x => videoIds.Contains(x.Id))
                             .Include(x => x.Channel)
                             .Include(x => x.Viewers)

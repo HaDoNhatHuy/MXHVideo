@@ -1125,6 +1125,59 @@
             // Hoặc focus về button mở modal
             $('[data-target="#addToPlaylistModal"]').focus();
         });
+            // --- AJAX LAZY LOAD GỢI Ý ---
+        loadRecommendedVideos();
         });
+                function loadRecommendedVideos() {
+            // Hiển thị Skeleton/Spinner ở cột bên phải trước
+            const $container = $('.single-video-right .col-md-12').first();
+            // Lưu ý: Selector này tùy thuộc vào cấu trúc HTML hiện tại của bạn, đảm bảo trỏ đúng div chứa list video
+
+            $container.html('<div class="text-center py-5"><div class="spinner-border text-danger"></div><p class="mt-2 text-muted">Đang tìm video liên quan...</p></div>');
+
+            $.ajax({
+                url: '/Video/GetRecommendedVideosAPI',
+                type: 'GET',
+                data: { videoId: '@Model.Id' },
+                success: function(data) {
+                    $container.empty(); // Xóa spinner
+
+                    if (data && data.length > 0) {
+                        let html = '';
+                        // Render Title "Up Next"
+                        html += `
+                        <div class="main-title">
+                            <h6>Tiếp theo</h6>
+                        </div>`;
+
+                        data.forEach(v => {
+                            html += `
+                            <div class="video-card video-card-list">
+                                <div class="video-card-image">
+                                    <a class="play-icon" href="/Video/Watch/${v.id}"><i class="fas fa-play-circle"></i></a>
+                                    <a href="/Video/Watch/${v.id}"><img class="img-fluid" src="${v.thumbnail}" alt="${v.title}"></a>
+                                    <div class="time">${v.duration}</div>
+                                </div>
+                                <div class="video-card-body">
+                                    <div class="video-title"><a href="/Video/Watch/${v.id}">${v.title}</a></div>
+                                    <div class="video-page text-success">${v.channelName} <i class="fas fa-check-circle text-success"></i></div>
+                                    <div class="video-view">${formatView(v.viewersCount)} views • ${timeAgo(v.createdAt)}</div>
+                                </div>
+                            </div>`;
+                        });
+                        $container.append(html);
+                    }
+                },
+                error: function() {
+                    $container.html('<p class="text-center text-danger">Không thể tải đề xuất.</p>');
+                }
+            });
+        }
+                // Hàm phụ trợ (nếu chưa có)
+        function formatView(views) {
+            if(views >= 1000000) return (views/1000000).toFixed(1) + 'M';
+            if(views >= 1000) return (views/1000).toFixed(1) + 'K';
+            return views;
+        }
     </script>
 }

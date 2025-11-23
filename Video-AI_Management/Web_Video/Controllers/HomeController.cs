@@ -18,6 +18,7 @@ using Web_Video.ViewModels;
 using Web_Video.ViewModels.Channel;
 using Web_Video.ViewModels.Home;
 using WebVideo.Utility;
+using static Web_Video.Controllers.VideoController;
 
 namespace Web_Video.Controllers
 {
@@ -87,64 +88,84 @@ namespace Web_Video.Controllers
                 return Json(new ApiResponse(200, result: new PaginatedResult<VideoForHomeGridDto>(items, items.TotalItemsCount, items.PageNumber, items.PageSize, items.TotalPages)));
             }
 
-            // NẾU LÀ TRANG CHỦ MẶC ĐỊNH -> GỌI AI PYTHON ĐỂ CÁ NHÂN HÓA
             try
             {
-                string userId = User.GetUserId();
-                var httpClient = _httpClientFactory.CreateClient(); // Cần inject IHttpClientFactory vào HomeController
+                string userId = User.Identity.IsAuthenticated ? User.GetUserId() : "";
 
-                // Gọi Python API: Chỉ gửi UserID, không gửi currentVideoId (vì đang ở Home)
+                // Gọi Python API mới (Port 5001)
+                var httpClient = _httpClientFactory.CreateClient();
                 var payload = new { userId = userId, currentVideoId = (Guid?)null };
+
+                // Timeout ngắn thôi, nếu Python chậm thì fallback ngay lập tức
+                httpClient.Timeout = TimeSpan.FromSeconds(2);
+
                 var response = await httpClient.PostAsJsonAsync("http://localhost:5001/api/recommend", payload);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var apiResult = await response.Content.ReadFromJsonAsync<Web_Video.Controllers.VideoController.PythonRecommendResponse>();
+                    var apiResult = await response.Content.ReadFromJsonAsync<PythonRecommendResponse>();
                     var videoIds = apiResult.recommendations;
 
                     if (videoIds != null && videoIds.Any())
                     {
-                        // Query DB lấy video theo danh sách ID từ Python trả về
-                        var personalizedVideos = await Context.Videos
+                        // Lấy data từ DB dựa trên ID trả về từ Python
+                        // QUAN TRỌNG: Phải giữ đúng thứ tự mà Python đã sắp xếp (SVD/Random)
+                        var videosFromDb = await Context.Videos
                             .Include(x => x.Channel)
-                            .Include(x => x.Category)
                             .Where(x => videoIds.Contains(x.Id))
+                            .ToListAsync();
+
+                        // Sắp xếp lại list DB theo thứ tự của list ID từ Python
+                        var orderedVideos = videoIds
+                            .Join(videosFromDb, id => id, v => v.Id, (id, v) => v)
                             .Select(x => new VideoForHomeGridDto
                             {
                                 Id = x.Id,
+                                Title = x.Title,
                                 Thumbnail = x.Thumbnail,
                                 Duration = x.Duration ?? "0:00",
-                                Title = x.Title,
-                                Description = x.Description,
-                                CreatedAt = x.UploadDate,
                                 ChannelName = x.Channel.ChannelName,
-                                ChannelId = x.Channel.Id,
-                                CategoryId = x.Category.Id,
-                                Views = x.Viewers.Sum(v => v.NumberOfVisit), // Sửa lại cách tính view
+                                Views = x.Views ?? 0, // Lưu ý: Đã fix logic View
                                 CreatedAtTimeAgo = SD.TimeAgo(x.UploadDate)
                             })
-                            .ToListAsync();
-
-                        // Sắp xếp lại theo thứ tự Python trả về (quan trọng để giữ độ ưu tiên)
-                        personalizedVideos = personalizedVideos
-                            .OrderBy(v => videoIds.IndexOf(v.Id))
                             .ToList();
 
-                        // Chuyển đổi sang PaginatedResult (Giả lập trang 1, full size vì đây là list gợi ý)
-                        var result = new PaginatedResult<VideoForHomeGridDto>(personalizedVideos, personalizedVideos.Count, 1, parameters.PageSize, 1);
-                        return Json(new ApiResponse(200, result: result));
+                        // Pagination giả lập (vì Python đã trả về list đã sort)
+                        var pagedData = orderedVideos
+                            .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                            .Take(parameters.PageSize)
+                            .ToList();
+
+                        return Json(new ApiResponse(200, result: new PaginatedResult<VideoForHomeGridDto>(
+                            pagedData, orderedVideos.Count, parameters.PageNumber, parameters.PageSize, 1)));
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Lỗi AI Home Recommendation: {ex.Message}");
-                // Fallback về logic cũ nếu AI lỗi
+                // Log lỗi nhưng không chặn user -> Chạy xuống Fallback
             }
 
-            // FALLBACK: Nếu AI lỗi hoặc chưa có data, dùng logic cũ (Lấy mới nhất)
-            var defaultItems = await UnitOfWork.VideoRepo.GetVideosForHomeGridAsync(parameters);
-            return Json(new ApiResponse(200, result: new PaginatedResult<VideoForHomeGridDto>(defaultItems, defaultItems.TotalItemsCount, defaultItems.PageNumber, defaultItems.PageSize, defaultItems.TotalPages)));
+            // FALLBACK: Nếu Python lỗi hoặc User mới tinh -> Lấy Random từ DB thay vì lấy mới nhất
+            var randomVideos = await Context.Videos
+                .Include(x => x.Channel)
+                .OrderBy(x => Guid.NewGuid()) // Random native SQL
+                .Take(parameters.PageSize)
+                .Select(x => new VideoForHomeGridDto
+                {
+                    /* Map properties... */
+                    Id = x.Id,
+                    Title = x.Title,
+                    Thumbnail = x.Thumbnail,
+                    Duration = x.Duration ?? "0:00",
+                    ChannelName = x.Channel.ChannelName,
+                    Views = x.Views ?? 0,
+                    CreatedAtTimeAgo = SD.TimeAgo(x.UploadDate)
+                })
+                .ToListAsync();
+
+            return Json(new ApiResponse(200, result: new PaginatedResult<VideoForHomeGridDto>(
+                randomVideos, 100, parameters.PageNumber, parameters.PageSize, 10)));
         }
         [Authorize(Roles = $"{SD.UserRole},{SD.AdminRole}")]
         [HttpGet]

@@ -51,34 +51,34 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 // Gọi hàm Seed Data
-await InitializeContextAsync();
+//await InitializeContextAsync();
 
 app.Run();
 
-async Task InitializeContextAsync()
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var services = scope.ServiceProvider;
-        try
-        {
-            var context = services.GetRequiredService<DataContext>();
-            var userManager = services.GetRequiredService<UserManager<AppUser>>();
+//async Task InitializeContextAsync()
+//{
+//    using (var scope = app.Services.CreateScope())
+//    {
+//        var services = scope.ServiceProvider;
+//        try
+//        {
+//            var context = services.GetRequiredService<DataContext>();
+//            var userManager = services.GetRequiredService<UserManager<AppUser>>();
 
-            // --- THÊM DÒNG NÀY: Lấy RoleManager ---
-            var roleManager = services.GetRequiredService<RoleManager<AppRole>>();
+//            // --- THÊM DÒNG NÀY: Lấy RoleManager ---
+//            var roleManager = services.GetRequiredService<RoleManager<AppRole>>();
 
-            var env = services.GetRequiredService<IWebHostEnvironment>();
+//            var env = services.GetRequiredService<IWebHostEnvironment>();
 
-            // --- CẬP NHẬT DÒNG NÀY: Truyền roleManager vào Constructor ---
-            var seeder = new AdvancedDataSeeder(context, userManager, roleManager, env);
+//            // --- CẬP NHẬT DÒNG NÀY: Truyền roleManager vào Constructor ---
+//            var seeder = new AdvancedDataSeeder(context, userManager, roleManager, env);
 
-            await seeder.SeedAllAsync();
-        }
-        catch (Exception ex)
-        {
-            var logger = services.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "An error occurred while seeding the database.");
-        }
-    }
-}
+//            await seeder.SeedAllAsync();
+//        }
+//        catch (Exception ex)
+//        {
+//            var logger = services.GetRequiredService<ILogger<Program>>();
+//            logger.LogError(ex, "An error occurred while seeding the database.");
+//        }
+//    }
+//}
