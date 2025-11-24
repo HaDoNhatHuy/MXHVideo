@@ -82,22 +82,22 @@ namespace Web_Video.Controllers
         public async Task<IActionResult> GetVideosForHomeGrid(HomeParameters parameters)
         {
             // NẾU CÓ TÌM KIẾM HOẶC CHỌN CATEGORY -> Dùng logic cũ (filter)
-            if (!string.IsNullOrEmpty(parameters.SearchBy) || parameters.CategoryId != Guid.Empty)
+            if (!string.IsNullOrEmpty(parameters.SearchBy) && parameters.SearchBy.ToLower() != "all" || parameters.CategoryId != Guid.Empty)
             {
                 var items = await UnitOfWork.VideoRepo.GetVideosForHomeGridAsync(parameters);
-                return Json(new ApiResponse(200, result: new PaginatedResult<VideoForHomeGridDto>(items, items.TotalItemsCount, items.PageNumber, items.PageSize, items.TotalPages)));
+                return Json(new ApiResponse(200, result: new PaginatedResult<VideoForHomeGridDto>(items,
+                    items.TotalItemsCount, items.PageNumber, items.PageSize, items.TotalPages)));
             }
 
+            // --- BƯỚC 1: GỌI HỆ THỐNG GỢI Ý CÁ NHÂN HÓA (PYTHON AI) ---
             try
             {
                 string userId = User.Identity.IsAuthenticated ? User.GetUserId() : "";
-
-                // Gọi Python API mới (Port 5001)
                 var httpClient = _httpClientFactory.CreateClient();
-                var payload = new { userId = userId, currentVideoId = (Guid?)null };
 
-                // Timeout ngắn thôi, nếu Python chậm thì fallback ngay lập tức
-                httpClient.Timeout = TimeSpan.FromSeconds(2);
+                var payload = new { userId = userId, currentVideoId = (Guid?)null };
+                // FIX P3: Tăng Timeout từ 2 lên 4 giây để tăng độ tin cậy
+                httpClient.Timeout = TimeSpan.FromSeconds(4); // <--- ĐÃ SỬA
 
                 var response = await httpClient.PostAsJsonAsync("http://localhost:5001/api/recommend", payload);
 
@@ -109,9 +109,9 @@ namespace Web_Video.Controllers
                     if (videoIds != null && videoIds.Any())
                     {
                         // Lấy data từ DB dựa trên ID trả về từ Python
-                        // QUAN TRỌNG: Phải giữ đúng thứ tự mà Python đã sắp xếp (SVD/Random)
                         var videosFromDb = await Context.Videos
                             .Include(x => x.Channel)
+                            .Include(x => x.Viewers)
                             .Where(x => videoIds.Contains(x.Id))
                             .ToListAsync();
 
@@ -125,47 +125,55 @@ namespace Web_Video.Controllers
                                 Thumbnail = x.Thumbnail,
                                 Duration = x.Duration ?? "0:00",
                                 ChannelName = x.Channel.ChannelName,
-                                Views = x.Views ?? 0, // Lưu ý: Đã fix logic View
+                                // FIX P1: Tính Views bằng SUM(NumberOfVisit)
+                                Views = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
                                 CreatedAtTimeAgo = SD.TimeAgo(x.UploadDate)
                             })
                             .ToList();
 
-                        // Pagination giả lập (vì Python đã trả về list đã sort)
+                        // Pagination giả lập
                         var pagedData = orderedVideos
                             .Skip((parameters.PageNumber - 1) * parameters.PageSize)
                             .Take(parameters.PageSize)
                             .ToList();
 
+                        // Trả về kết quả AI (số lượng trang chỉ là 1 vì AI đã trả về đủ list)
                         return Json(new ApiResponse(200, result: new PaginatedResult<VideoForHomeGridDto>(
                             pagedData, orderedVideos.Count, parameters.PageNumber, parameters.PageSize, 1)));
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Log lỗi nhưng không chặn user -> Chạy xuống Fallback
             }
 
-            // FALLBACK: Nếu Python lỗi hoặc User mới tinh -> Lấy Random từ DB thay vì lấy mới nhất
+            // --- BƯỚC 2: FALLBACK (Nếu Python lỗi hoặc User mới tinh) ---
+            // FIX P1 (Freshness): Sử dụng Skip + Take kết hợp Guid.NewGuid() để đảm bảo phân trang ngẫu nhiên cho Fallback.
+            var totalFallbackItems = await Context.Videos.CountAsync();
+
             var randomVideos = await Context.Videos
                 .Include(x => x.Channel)
                 .OrderBy(x => Guid.NewGuid()) // Random native SQL
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize) // Phân trang cho Fallback
                 .Take(parameters.PageSize)
                 .Select(x => new VideoForHomeGridDto
                 {
-                    /* Map properties... */
                     Id = x.Id,
                     Title = x.Title,
                     Thumbnail = x.Thumbnail,
                     Duration = x.Duration ?? "0:00",
                     ChannelName = x.Channel.ChannelName,
-                    Views = x.Views ?? 0,
+                    // FIX P1: Tính Views bằng SUM(NumberOfVisit)
+                    Views = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
                     CreatedAtTimeAgo = SD.TimeAgo(x.UploadDate)
                 })
                 .ToListAsync();
 
+            var totalPages = (int)Math.Ceiling((double)totalFallbackItems / parameters.PageSize);
+
             return Json(new ApiResponse(200, result: new PaginatedResult<VideoForHomeGridDto>(
-                randomVideos, 100, parameters.PageNumber, parameters.PageSize, 10)));
+                randomVideos, totalFallbackItems, parameters.PageNumber, parameters.PageSize, totalPages)));
         }
         [Authorize(Roles = $"{SD.UserRole},{SD.AdminRole}")]
         [HttpGet]

@@ -944,27 +944,33 @@ namespace Web_Video.Controllers
         {
             string userId = User.GetUserId();
             var recommendedVideos = new List<RecommendedVideoViewModel>();
+
             try
             {
-                // 1. Gọi Python API
+                // 1. Gọi Python API [11]
                 var httpClient = _httpClientFactory.CreateClient();
+                // FIX P3: Tăng Timeout từ 2 lên 4 giây
+                httpClient.Timeout = TimeSpan.FromSeconds(4);
+
                 var payload = new { userId = userId, currentVideoId = currentVideoId };
                 // Gọi sang Port 5001 (Service mới)
                 var response = await httpClient.PostAsJsonAsync("http://localhost:5001/api/recommend", payload);
-
                 if (response.IsSuccessStatusCode)
                 {
-                    var apiResult = await response.Content.ReadFromJsonAsync<PythonRecommendResponse>(); // Tạo class DTO bên dưới
+                    var apiResult = await response.Content.ReadFromJsonAsync<PythonRecommendResponse>();
                     var videoIds = apiResult.recommendations;
-
-                    // 2. Query DB lấy thông tin chi tiết của các ID đó
+                    // 2. Query DB lấy thông tin chi tiết của các ID đó [12]
                     if (videoIds != null && videoIds.Count() > 0)
                     {
-                        recommendedVideos = await Context.Videos
-                            .Where(x => x.Id != currentVideoId)
+                        var videosFromDb = await Context.Videos
                             .Where(x => videoIds.Contains(x.Id))
                             .Include(x => x.Channel)
                             .Include(x => x.Viewers)
+                            .ToListAsync();
+
+                        // Ánh xạ và sắp xếp lại theo thứ tự Python trả về [13]
+                        recommendedVideos = videoIds
+                            .Join(videosFromDb, id => id, v => v.Id, (id, v) => v)
                             .Select(x => new RecommendedVideoViewModel
                             {
                                 Id = x.Id,
@@ -972,34 +978,31 @@ namespace Web_Video.Controllers
                                 Thumbnail = x.Thumbnail,
                                 ChannelName = x.Channel.ChannelName,
                                 Duration = x.Duration,
+                                // FIX P1: Tính Views bằng SUM(NumberOfVisit)
                                 ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
                                 CreatedAt = x.UploadDate
                             })
-                            .ToListAsync();
-
-                        // Sắp xếp lại theo thứ tự Python trả về (vì SQL 'IN' không giữ thứ tự)
-                        recommendedVideos = recommendedVideos
-                            .OrderBy(v => videoIds.IndexOf(v.Id))
                             .ToList();
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // 1. 20% liên quan đến người nổi tiếng (2 video)
-                // Lấy danh sách người nổi tiếng trong video hiện tại
+                // --- LOGIC FALLBACK KHI PYTHON LỖI (20/20/20/40) ---
+
+                // 1. 20% liên quan đến người nổi tiếng (2 video) [14-16]
                 var currentVideoCelebrities = await Context.RecognizeCelebrities
                     .Where(rc => rc.VideoId == currentVideoId)
                     .Select(rc => rc.CelebrityId)
                     .ToListAsync();
-
                 var celebrityVideos = new List<RecommendedVideoViewModel>();
-                if (currentVideoCelebrities.Any()) // Chỉ xử lý nếu video hiện tại có người nổi tiếng
+                if (currentVideoCelebrities.Any())
                 {
                     celebrityVideos = await Context.Videos
-                        .Where(x => x.Id != currentVideoId && x.RecognizeCelebrities.Any(rc => currentVideoCelebrities.Contains(rc.CelebrityId)))
-                        .OrderByDescending(x => x.Viewers.Select(v => v.NumberOfVisit).Sum()) // Sắp xếp theo số lượt xem
-                        .Take(2) // Lấy 2 video
+                        .Where(x => x.Id != currentVideoId && x.RecognizeCelebrities.Any(rc =>
+                            currentVideoCelebrities.Contains(rc.CelebrityId)))
+                        .OrderByDescending(x => x.Viewers.Select(v => v.NumberOfVisit).Sum())
+                        .Take(2)
                         .Select(x => new RecommendedVideoViewModel
                         {
                             Id = x.Id,
@@ -1007,18 +1010,18 @@ namespace Web_Video.Controllers
                             Thumbnail = x.Thumbnail,
                             ChannelName = x.Channel.ChannelName,
                             Duration = x.Duration,
-                            ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
+                            ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(), // FIX: Tính Views
                             CreatedAt = x.UploadDate
                         })
                         .ToListAsync();
                 }
                 recommendedVideos.AddRange(celebrityVideos);
 
-                // 2. 20% theo video có nhiều view nhất (2 video)
+                // 2. 20% theo video có nhiều view nhất (2 video) [16-18]
                 var mostViewedVideos = await Context.Videos
-                    .Where(x => x.Id != currentVideoId && !recommendedVideos.Select(v => v.Id).Contains(x.Id)) // Tránh trùng lặp
-                    .OrderByDescending(x => x.Viewers.Select(v => v.NumberOfVisit).Sum()) // Sắp xếp theo số lượt xem
-                    .Take(2) // Lấy 2 video
+                    .Where(x => x.Id != currentVideoId && !recommendedVideos.Select(v => v.Id).Contains(x.Id))
+                    .OrderByDescending(x => x.Viewers.Select(v => v.NumberOfVisit).Sum())
+                    .Take(2)
                     .Select(x => new RecommendedVideoViewModel
                     {
                         Id = x.Id,
@@ -1026,17 +1029,17 @@ namespace Web_Video.Controllers
                         Thumbnail = x.Thumbnail,
                         ChannelName = x.Channel.ChannelName,
                         Duration = x.Duration,
-                        ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
+                        ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(), // FIX: Tính Views
                         CreatedAt = x.UploadDate
                     })
                     .ToListAsync();
                 recommendedVideos.AddRange(mostViewedVideos);
 
-                // 3. 20% theo video mới nhất (2 video)
+                // 3. 20% theo video mới nhất (2 video) [18-20]
                 var latestVideos = await Context.Videos
-                    .Where(x => x.Id != currentVideoId && !recommendedVideos.Select(v => v.Id).Contains(x.Id)) // Tránh trùng lặp
-                    .OrderByDescending(x => x.UploadDate) // Sắp xếp theo ngày đăng mới nhất
-                    .Take(2) // Lấy 2 video
+                    .Where(x => x.Id != currentVideoId && !recommendedVideos.Select(v => v.Id).Contains(x.Id))
+                    .OrderByDescending(x => x.UploadDate)
+                    .Take(2)
                     .Select(x => new RecommendedVideoViewModel
                     {
                         Id = x.Id,
@@ -1044,20 +1047,20 @@ namespace Web_Video.Controllers
                         Thumbnail = x.Thumbnail,
                         ChannelName = x.Channel.ChannelName,
                         Duration = x.Duration,
-                        ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
+                        ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(), // FIX: Tính Views
                         CreatedAt = x.UploadDate
                     })
                     .ToListAsync();
                 recommendedVideos.AddRange(latestVideos);
 
-                // 4. 40% ngẫu nhiên (4 video)
-                var remainingCount = 10 - recommendedVideos.Count; // Số video còn lại cần lấy (tối đa 4)
+                // 4. 40% ngẫu nhiên (4 video) [20-23]
+                var remainingCount = 10 - recommendedVideos.Count;
                 if (remainingCount > 0)
                 {
                     var randomVideos = await Context.Videos
-                        .Where(x => x.Id != currentVideoId && !recommendedVideos.Select(v => v.Id).Contains(x.Id)) // Tránh trùng lặp
+                        .Where(x => x.Id != currentVideoId && !recommendedVideos.Select(v => v.Id).Contains(x.Id))
                         .OrderBy(x => Guid.NewGuid()) // Sắp xếp ngẫu nhiên
-                        .Take(remainingCount) // Lấy số video còn lại
+                        .Take(remainingCount)
                         .Select(x => new RecommendedVideoViewModel
                         {
                             Id = x.Id,
@@ -1065,47 +1068,56 @@ namespace Web_Video.Controllers
                             Thumbnail = x.Thumbnail,
                             ChannelName = x.Channel.ChannelName,
                             Duration = x.Duration,
-                            ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
+                            ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(), // FIX: Tính Views
                             CreatedAt = x.UploadDate
                         })
                         .ToListAsync();
                     recommendedVideos.AddRange(randomVideos);
                 }
 
-                // Đảm bảo danh sách có đúng 10 video (nếu thiếu, bổ sung ngẫu nhiên)
+                // Đảm bảo danh sách có đủ 10 video (Fallback cuối cùng) [22-24]
                 if (recommendedVideos.Count < 10)
                 {
                     var additionalCount = 10 - recommendedVideos.Count;
                     var additionalVideos = await Context.Videos
-                        .Where(x => x.Id != currentVideoId && !recommendedVideos.Select(v => v.Id).Contains(x.Id))
-                        .OrderBy(x => Guid.NewGuid())
-                        .Take(additionalCount)
-                        .Select(x => new RecommendedVideoViewModel
-                        {
-                            Id = x.Id,
-                            Title = x.Title,
-                            Thumbnail = x.Thumbnail,
-                            ChannelName = x.Channel.ChannelName,
-                            Duration = x.Duration,
-                            ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
-                            CreatedAt = x.UploadDate
-                        })
-                        .ToListAsync();
+                       .Where(x => !recommendedVideos.Select(v => v.Id).Contains(x.Id))
+                       .OrderByDescending(v => v.UploadDate) // Ưu tiên video mới nhất
+                       .Take(additionalCount)
+                       .Select(x => new RecommendedVideoViewModel
+                       {
+                           Id = x.Id,
+                           Title = x.Title,
+                           Thumbnail = x.Thumbnail,
+                           ChannelName = x.Channel.ChannelName,
+                           Duration = x.Duration,
+                           ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
+                           CreatedAt = x.UploadDate
+                       })
+                       .ToListAsync();
                     recommendedVideos.AddRange(additionalVideos);
                 }
 
-                return recommendedVideos.Take(10).ToList(); // Đảm bảo chỉ trả về 10 video
+                return recommendedVideos.Take(10).ToList();
             }
-            // Đảm bảo KHÔNG BAO GIỜ NULL (Fallback cuối cùng)
+
+            // Đảm bảo KHÔNG BAO GIỜ NULL (Fallback cuối cùng nếu có lỗi nặng) [24]
             if (recommendedVideos.Count == 0)
             {
                 recommendedVideos = await Context.Videos
                     .OrderByDescending(v => v.UploadDate)
                     .Take(10)
-                    .Select(x => new RecommendedVideoViewModel { /* Map properties */ })
+                     .Select(x => new RecommendedVideoViewModel
+                     {
+                         Id = x.Id,
+                         Title = x.Title,
+                         Thumbnail = x.Thumbnail,
+                         ChannelName = x.Channel.ChannelName,
+                         Duration = x.Duration,
+                         ViewersCount = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
+                         CreatedAt = x.UploadDate
+                     })
                     .ToListAsync();
             }
-
             return recommendedVideos;
         }
         // Class DTO để hứng kết quả JSON

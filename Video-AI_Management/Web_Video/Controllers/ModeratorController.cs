@@ -86,7 +86,7 @@ namespace Web_Video.Controllers
 
             return View(reports);
         }
-        [Authorize(Roles = $"{SD.AdminRole}")]
+        [Authorize(Roles = $"{SD.ModeratorRole}")]
         [HttpPost]
         public async Task<IActionResult> ToggleBlur(Guid videoId, bool activate, string celebrityName)
         {

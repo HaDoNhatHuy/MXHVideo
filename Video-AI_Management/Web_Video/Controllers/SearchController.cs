@@ -11,6 +11,8 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Web_Video.Extensions;
+using WebVideo.Utility;
+using Database_Video.DTOs; // Cần thiết cho việc tính Views
 
 namespace Web_Video.Controllers
 {
@@ -30,11 +32,10 @@ namespace Web_Video.Controllers
         {
             public List<Video> Videos { get; set; } = new List<Video>();
             public List<Channel> Channels { get; set; } = new List<Channel>();
-            // THÊM MỚI: Luôn chứa video đề xuất
+            // LUÔN CHỨA video đề xuất
             public List<Video> RecommendedVideos { get; set; } = new List<Video>();
         }
 
-        // Xử lý yêu cầu GET: /Search?query=...
         // Helper Class để hứng kết quả JSON từ Python
         public class PythonRecommendResponse
         {
@@ -42,44 +43,18 @@ namespace Web_Video.Controllers
             public List<Guid> recommendations { get; set; }
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Index(string query)
+        // --- HÀM HELPER LẤY VIDEO ĐỀ XUẤT (TÁI SỬ DỤNG) ---
+        private async Task<List<Video>> GetRecommendationsAsync(string userId, Guid? currentVideoId = null)
         {
-            var viewModel = new SearchViewModel();
-            ViewData["Query"] = query;
-            string userId = User.Identity.IsAuthenticated ? User.GetUserId() : "";
+            const int TIMEOUT_SECONDS = 4; // FIX P3: Tăng Timeout cho độ tin cậy
 
-            // 1. TÌM KIẾM CHÍNH XÁC (SEARCH INTENT)
-            if (!string.IsNullOrWhiteSpace(query))
-            {
-                // Tìm Video khớp tiêu đề hoặc tên kênh
-                viewModel.Videos = await Context.Videos
-                    .Include(v => v.Category)
-                    .Include(v => v.Channel)
-                    .Where(v => v.Title.Contains(query) || v.Channel.ChannelName.Contains(query))
-                    .OrderByDescending(v => v.Views) // Ưu tiên video nhiều view
-                    .Take(20) // Giới hạn 20 kết quả tìm kiếm đầu tiên
-                    .ToListAsync();
-
-                // Tìm Channel khớp tên
-                viewModel.Channels = await Context.Channels
-                    .Include(c => c.Subscribers)
-                    .Where(c => c.ChannelName.Contains(query))
-                    .Take(5)
-                    .ToListAsync();
-            }
-
-            // 2. LẤY DANH SÁCH ĐỀ XUẤT (RECOMMENDATION ENGINE)
-            // Mục tiêu: Lấp đầy trang và gợi ý thêm nội dung
             try
             {
                 var httpClient = _httpClientFactory.CreateClient();
-                httpClient.Timeout = TimeSpan.FromSeconds(2); // Timeout nhanh để không làm chậm trang
+                httpClient.Timeout = TimeSpan.FromSeconds(TIMEOUT_SECONDS);
+                var payload = new { userId = userId, currentVideoId = currentVideoId };
 
-                // Gọi Python API (dùng logic tối ưu ở câu trả lời trước)
-                var payload = new { userId = userId, currentVideoId = (Guid?)null };
                 var response = await httpClient.PostAsJsonAsync("http://localhost:5001/api/recommend", payload);
-
                 if (response.IsSuccessStatusCode)
                 {
                     var apiResult = await response.Content.ReadFromJsonAsync<PythonRecommendResponse>();
@@ -90,29 +65,79 @@ namespace Web_Video.Controllers
                         // Lấy chi tiết video từ DB
                         var recVideos = await Context.Videos
                             .Include(x => x.Channel)
-                            .Include(x => x.Viewers) // Để tính view nếu cần
+                            .Include(x => x.Viewers)
                             .Where(x => videoIds.Contains(x.Id))
                             .ToListAsync();
 
-                        // Sắp xếp lại theo thứ tự Python trả về (độ ưu tiên)
-                        viewModel.RecommendedVideos = videoIds
+                        // Sắp xếp lại theo thứ tự Python trả về và ánh xạ để có data tính views
+                        var orderedVideos = videoIds
                             .Join(recVideos, id => id, v => v.Id, (id, v) => v)
+                            .Select(v => new Video // Cần trả về Entity Video để khớp với ViewModel
+                            {
+                                Id = v.Id,
+                                Title = v.Title,
+                                Description = v.Description,
+                                Thumbnail = v.Thumbnail,
+                                UploadDate = v.UploadDate,
+                                Duration = v.Duration,
+                                // Phải include Channel và Category trước khi truy cập
+                                Channel = v.Channel,
+                                Category = v.Category,
+                                Views = v.Viewers.Select(vv => vv.NumberOfVisit).Sum(), // Tính Views tổng
+                            })
+                            .Take(12)
                             .ToList();
+
+                        // Chuyển lại về Entity Video (với các trường navigation đã được load)
+                        return recVideos.Where(v => orderedVideos.Select(o => o.Id).Contains(v.Id)).ToList();
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Nếu Python lỗi, Fallback về Random
-                viewModel.RecommendedVideos = await Context.Videos
+                Console.WriteLine($"[Search Rec Fallback] Lỗi Python/Timeout: {ex.Message}");
+                // Fallback: Nếu Python lỗi, lấy Random từ DB
+                return await Context.Videos
                     .Include(v => v.Channel)
-                    .OrderBy(x => Guid.NewGuid()) // Random
+                    .Include(v => v.Category)
+                    .Include(v => v.Viewers)
+                    .OrderBy(x => Guid.NewGuid())
                     .Take(12)
                     .ToListAsync();
             }
+            return new List<Video>();
+        }
+
+        // Xử lý yêu cầu GET: /Search?query=...
+        [HttpGet]
+        public async Task<IActionResult> Index(string query)
+        {
+            var viewModel = new SearchViewModel();
+            ViewData["Query"] = query;
+            string userId = User.Identity.IsAuthenticated ? User.GetUserId() : "";
+
+            // 1. TÌM KIẾM CHÍNH XÁC (SEARCH INTENT)
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                viewModel.Videos = await Context.Videos
+                    .Include(v => v.Category)
+                    .Include(v => v.Channel)
+                    .Where(v => v.Title.Contains(query) || v.Channel.ChannelName.Contains(query))
+                    .OrderByDescending(v => v.Views)
+                    .Take(20)
+                    .ToListAsync();
+
+                viewModel.Channels = await Context.Channels
+                    .Include(c => c.Subscribers)
+                    .Where(c => c.ChannelName.Contains(query))
+                    .Take(5)
+                    .ToListAsync();
+            }
+
+            // 2. LẤY DANH SÁCH ĐỀ XUẤT (RECOMMENDATION ENGINE)
+            viewModel.RecommendedVideos = await GetRecommendationsAsync(userId);
 
             // 3. LỌC TRÙNG LẶP
-            // Loại bỏ những video đã xuất hiện trong kết quả tìm kiếm ra khỏi danh sách đề xuất
             if (viewModel.Videos.Any())
             {
                 var searchResultIds = viewModel.Videos.Select(v => v.Id).ToHashSet();
@@ -122,56 +147,26 @@ namespace Web_Video.Controllers
                     .ToList();
             }
 
-            // Nếu không tìm thấy gì cả, và Python cũng tạch -> Đảm bảo không null
-            if (viewModel.RecommendedVideos == null) viewModel.RecommendedVideos = new List<Video>();
-
-            // Cờ hiển thị giao diện (nếu tìm không ra thì báo Fallback)
+            // Cờ hiển thị giao diện (dùng cho View)
             ViewBag.IsFallback = (viewModel.Videos.Count == 0 && viewModel.Channels.Count == 0);
-
             return View(viewModel);
         }
 
-        private async Task<IActionResult> LoadFallbackResults(string message)
-        {
-            ViewData["Query"] = message;
-            ViewBag.IsFallback = true; // Cờ quan trọng để JS biết mà load recommend
-
-            // Lấy random video làm đề xuất ban đầu
-            var fallbackVideos = await _context.Videos
-                .Include(v => v.Channel).Include(v => v.Category)
-                .OrderBy(r => Guid.NewGuid())
-                .Take(12)
-                .ToListAsync();
-
-            return View("Index", new SearchViewModel { Videos = fallbackVideos, Channels = new List<Channel>() });
-        }
-
+        // --- CẬP NHẬT SearchByImage ---
         [HttpPost]
         public async Task<IActionResult> SearchByImage(IFormFile image)
         {
-            if (image == null || image.Length == 0)
-            {
-                ViewData["Query"] = "Hình ảnh không hợp lệ";
-                Console.WriteLine("SearchByImage: Invalid image");
-                return View("Index", new SearchViewModel());
-            }
+            var viewModel = new SearchViewModel();
+            string userId = User.Identity.IsAuthenticated ? User.GetUserId() : "";
+            ViewBag.IsFallback = false;
 
-            // Kiểm tra kích thước file (giới hạn 5MB)
-            if (image.Length > 5 * 1024 * 1024)
+            // Kiểm tra File Size/Format (giữ nguyên logic kiểm tra)
+            if (image == null || image.Length == 0 || image.Length > 5 * 1024 * 1024 || !new[] { ".jpg", ".jpeg", ".png" }.Contains(Path.GetExtension(image.FileName).ToLowerInvariant()))
             {
-                ViewData["Query"] = "Hình ảnh quá lớn (giới hạn 5MB)";
-                Console.WriteLine("SearchByImage: Image too large");
-                return View("Index", new SearchViewModel());
-            }
-
-            // Kiểm tra định dạng ảnh (jpg, png, jpeg)
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
-            var extension = Path.GetExtension(image.FileName).ToLowerInvariant();
-            if (!allowedExtensions.Contains(extension))
-            {
-                ViewData["Query"] = "Định dạng file không được hỗ trợ";
-                Console.WriteLine("SearchByImage: Unsupported file format");
-                return View("Index", new SearchViewModel());
+                ViewData["Query"] = "Hình ảnh không hợp lệ hoặc quá lớn (giới hạn 5MB)";
+                ViewBag.IsFallback = true;
+                viewModel.RecommendedVideos = await GetRecommendationsAsync(userId);
+                return View("Index", viewModel);
             }
 
             // Chuyển đổi hình ảnh sang base64
@@ -182,61 +177,77 @@ namespace Web_Video.Controllers
                 imageBase64 = Convert.ToBase64String(memoryStream.ToArray());
             }
 
-            // Gọi API Python để nhận diện người nổi tiếng
+            List<string> recognizedCelebrities = new List<string>();
+
+            // 1. GỌI PYTHON NHẬN DIỆN (Port 5000)
             try
             {
                 var client = new HttpClient { BaseAddress = new Uri("http://localhost:5000/"), Timeout = TimeSpan.FromMinutes(5) };
                 var requestBody = new { image_base64 = imageBase64 };
                 var response = await client.PostAsJsonAsync("recognize_image", requestBody);
 
-                if (!response.IsSuccessStatusCode)
+                if (response.IsSuccessStatusCode)
                 {
-                    ViewData["Query"] = "Lỗi khi nhận diện hình ảnh";
-                    Console.WriteLine($"SearchByImage: Python API error, status={response.StatusCode}");
-                    return View("Index", new SearchViewModel());
+                    var result = await response.Content.ReadFromJsonAsync<Dictionary<string, string[]>>();
+                    recognizedCelebrities = (result?["celebrities"] ?? Array.Empty<string>()).ToList();
                 }
-
-                var result = await response.Content.ReadFromJsonAsync<Dictionary<string, string[]>>();
-                var recognizedCelebrities = result?["celebrities"] ?? new string[0];
-
-                if (recognizedCelebrities.Length == 0)
+                else
                 {
-                    ViewData["Query"] = "Không nhận diện được người nổi tiếng";
-                    Console.WriteLine("SearchByImage: No celebrities recognized");
-                    return View("Index", new SearchViewModel());
+                    ViewData["Query"] = "Lỗi khi nhận diện hình ảnh (Python API lỗi)";
+                    ViewBag.IsFallback = true;
                 }
+            }
+            catch (Exception)
+            {
+                ViewData["Query"] = "Lỗi khi xử lý tìm kiếm bằng hình ảnh (Timeout)";
+                ViewBag.IsFallback = true;
+            }
 
-                // Truy vấn video chứa bất kỳ người nổi tiếng nào được nhận diện
+            // 2. Xử lý kết quả tìm kiếm chính
+            if (recognizedCelebrities.Any())
+            {
                 var celebIds = await _context.Celebrities
                     .Where(c => recognizedCelebrities.Contains(c.Name))
                     .Select(c => c.Id)
                     .ToListAsync();
 
-                var videos = await _context.Videos
+                viewModel.Videos = await _context.Videos
                     .Include(v => v.Category)
                     .Include(v => v.Channel)
                     .Where(v => v.RecognizeCelebrities.Any(rc => celebIds.Contains(rc.CelebrityId ?? Guid.Empty)))
                     .ToListAsync();
 
-                // Tùy chọn: Truy vấn kênh (nếu kênh liên kết với người nổi tiếng)
-                var channels = new List<Channel>(); // Thêm logic nếu cần
-
-                var viewModel = new SearchViewModel
-                {
-                    Videos = videos ?? new List<Video>(),
-                    Channels = channels ?? new List<Channel>()
-                };
-
                 ViewData["Query"] = $"Tìm kiếm bằng hình ảnh: {string.Join(", ", recognizedCelebrities)}";
-                Console.WriteLine($"SearchByImage: Recognized={string.Join(", ", recognizedCelebrities)}, Videos={videos.Count}, Channels={channels.Count}");
-                return View("Index", viewModel);
+
+                if (!viewModel.Videos.Any())
+                {
+                    // Trường hợp tìm được celeb nhưng DB không có video nào chứa celeb đó
+                    ViewBag.IsFallback = true;
+                }
             }
-            catch (Exception ex)
+            else if (!ViewBag.IsFallback)
             {
-                ViewData["Query"] = "Lỗi khi xử lý tìm kiếm bằng hình ảnh";
-                Console.WriteLine($"SearchByImage: Exception - {ex.Message}");
-                return View("Index", new SearchViewModel());
+                // Trường hợp Python nhận diện thành công nhưng không tìm thấy khuôn mặt nào
+                ViewData["Query"] = "Không nhận diện được người nổi tiếng";
+                ViewBag.IsFallback = true;
             }
+
+            // 3. LUÔN LẤY ĐỀ XUẤT (RECOMMENDATION ENGINE)
+            viewModel.RecommendedVideos = await GetRecommendationsAsync(userId);
+
+            // 4. LỌC TRÙNG LẶP
+            if (viewModel.Videos.Any())
+            {
+                var searchResultIds = viewModel.Videos.Select(v => v.Id).ToHashSet();
+                viewModel.RecommendedVideos = viewModel.RecommendedVideos
+                    .Where(v => !searchResultIds.Contains(v.Id))
+                    .Take(12)
+                    .ToList();
+            }
+
+            return View("Index", viewModel);
         }
+
+        // Phương thức LoadFallbackResults không còn cần thiết vì logic đã nằm trong SearchByImage và GetRecommendationsAsync
     }
 }
