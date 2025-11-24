@@ -86,7 +86,7 @@ namespace Web_Video.Controllers
 
             return View(reports);
         }
-        [Authorize(Roles = $"{SD.ModeratorRole}")]
+        [Authorize(Roles = $"{SD.AdminRole}")]
         [HttpPost]
         public async Task<IActionResult> ToggleBlur(Guid videoId, bool activate, string celebrityName)
         {
@@ -105,21 +105,26 @@ namespace Web_Video.Controllers
 
             if (!activate)
             {
-                // Nếu tắt blur: (Tùy chọn) Bạn có thể khôi phục file gốc nếu trước đó bạn đã backup
-                // Hiện tại chỉ update trạng thái
+                // Nếu tắt blur: chỉ update trạng thái
                 await context.SaveChangesAsync();
                 return Json(new ApiResponse(200, "Thành công", "Đã vô hiệu hóa làm mờ."));
             }
 
+            // LỖI 1 FIX: Kiểm tra dữ liệu frames có sẵn không
             if (string.IsNullOrWhiteSpace(video.CelebrityFrames) || video.CelebrityFrames == "{}")
                 return Json(new ApiResponse(400, message: "Chưa có dữ liệu khuôn mặt để làm mờ."));
 
-            // Lấy đường dẫn vật lý
+            // Lấy đường dẫn vật lý (Hỗ trợ cả FilePath tương đối và tuyệt đối từ Seeder)
             string webRootPath = Directory.GetCurrentDirectory() + "\\wwwroot";
             string physicalPath = webRootPath + video.VideoFile.FilePath.Replace("/", "\\");
 
             if (!System.IO.File.Exists(physicalPath))
-                return Json(new ApiResponse(404, message: "File video gốc không tìm thấy trên server."));
+            {
+                // Thử xem nếu FilePath đã là đường dẫn tuyệt đối (như khi seed)
+                physicalPath = video.VideoFile.FilePath;
+                if (!System.IO.File.Exists(physicalPath))
+                    return Json(new ApiResponse(404, message: "File video gốc không tìm thấy trên server."));
+            }
 
             var celebrityFramesJson = video.CelebrityFrames;
             var videoTitle = video.Title;
@@ -148,17 +153,17 @@ namespace Web_Video.Controllers
             try
             {
                 var client = _httpClientFactory.CreateClient();
-                client.Timeout = TimeSpan.FromMinutes(30); // Tăng timeout vì xử lý video lâu
+                client.Timeout = TimeSpan.FromMinutes(30);
 
                 // Gửi đường dẫn file thật cho Python
                 var payload = new
                 {
-                    video_path = originalPhysicalPath, // Python sẽ đọc trực tiếp file này
+                    video_path = originalPhysicalPath,
                     celebrity_frames_json = celebrityFramesJson,
                     celebrity_to_blur = celebrityName
                 };
 
-                // Gọi Python API (Lưu ý: Python code cần update để trả về output_path)
+                // Gọi Python API
                 var response = await client.PostAsJsonAsync("http://localhost:5000/blur_selected_celebrity", payload);
 
                 if (!response.IsSuccessStatusCode)
@@ -173,26 +178,34 @@ namespace Web_Video.Controllers
                 {
                     string blurredPath = resultDict["output_path"]; // File _final.mp4 do Python tạo
 
-                    // CẬP NHẬT DB: Trỏ FilePath sang file mới đã làm mờ
-                    // Hoặc: Python đã ghi đè file gốc thì không cần làm gì cả (tùy logic Python của bạn)
-
-                    // Ở đây giả sử Python tạo file mới tên là _final.mp4 nằm cùng thư mục
-                    // Chúng ta cập nhật DB để trỏ vào file mới này
-
-                    using var scope = _scopeFactory.CreateScope();
-                    var context = scope.ServiceProvider.GetRequiredService<DataContext>();
-                    var videoToUpdate = await context.Videos.Include(v => v.VideoFile).FirstOrDefaultAsync(v => v.Id == videoId);
-
-                    if (videoToUpdate?.VideoFile != null)
+                    if (System.IO.File.Exists(blurredPath))
                     {
-                        // Chuyển đường dẫn tuyệt đối thành tương đối để lưu Web
-                        string webRootPath = Directory.GetCurrentDirectory() + "\\wwwroot";
-                        string relativePath = blurredPath.Replace(webRootPath, "").Replace("\\", "/");
+                        // CẬP NHẬT DB: Trỏ VideoFile.FilePath sang file mới đã làm mờ
+                        using var scope = _scopeFactory.CreateScope();
+                        var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+                        var videoToUpdate = await context.Videos.Include(v => v.VideoFile).FirstOrDefaultAsync(v => v.Id == videoId);
 
-                        videoToUpdate.VideoFile.FilePath = relativePath;
-                        await context.SaveChangesAsync();
+                        if (videoToUpdate?.VideoFile != null)
+                        {
+                            // Chuyển đường dẫn tuyệt đối thành tương đối để lưu Web (nếu là file trong wwwroot)
+                            string webRootPath = Directory.GetCurrentDirectory() + "\\wwwroot";
+                            string relativePath = blurredPath.Replace(webRootPath, "").Replace("\\", "/");
 
-                        Console.WriteLine($"[Blur] Đã cập nhật video {videoTitle} sang file đã làm mờ.");
+                            // Nếu Python tạo file kết quả ở nơi không phải wwwroot (ví dụ: D:\ALLVIDEOS), ta lưu lại path tuyệt đối.
+                            // Nếu là file upload, ta lưu path tương đối.
+                            if (relativePath.StartsWith("/"))
+                            {
+                                videoToUpdate.VideoFile.FilePath = relativePath;
+                            }
+                            else
+                            {
+                                videoToUpdate.VideoFile.FilePath = blurredPath.Replace("\\", "/");
+                            }
+
+                            await context.SaveChangesAsync();
+
+                            Console.WriteLine($"[Blur] Đã cập nhật video {videoTitle} sang file đã làm mờ.");
+                        }
                     }
                 }
             }

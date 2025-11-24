@@ -870,6 +870,34 @@
                 moveCarousel(1);
             });
 
+        // =======================================================
+        // FIX: XỬ LÝ CLICK VÀO FRAME CARD ĐỂ TUA VIDEO
+        // =======================================================
+        $(document).on('click', '.frame-card', function() {
+            const $this = $(this);
+            const timeStr = $this.find('.frame-time').text(); // Định dạng mm:ss (ví dụ: "01:23")
+            let totalSeconds = 0;
+
+            // Chuyển đổi mm:ss sang giây
+            const timeParts = timeStr.split(':').map(Number);
+            if (timeParts.length === 2) {
+                //  = phút, [2] = giây
+                totalSeconds = timeParts * 60 + timeParts[2];
+            }
+
+            if (totalSeconds > 0) {
+                if (typeof player !== 'undefined' && player) {
+                    player.currentTime(totalSeconds);
+                    player.play();
+                    displayNotification(true, 'Tua video', `Đã tua đến ${timeStr} (${Math.floor(totalSeconds)}s).`, 'toastr');
+                } else {
+                    console.error("Video player object not found (Fix Frame Click)!");
+                }
+            }
+        });
+        // =======================================================
+
+
             // Xử lý Subscribe
             $('#subscribeBtn').on('click', function () {
                 $.ajax({

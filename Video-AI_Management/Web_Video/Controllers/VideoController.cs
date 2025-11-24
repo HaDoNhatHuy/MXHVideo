@@ -18,6 +18,7 @@ using Web_Video.Extensions;
 using Web_Video.ViewModels.Channel;
 using Web_Video.ViewModels.Video;
 using WebVideo.Utility;
+using System.Globalization;
 using Xabe.FFmpeg;
 using Microsoft.Net.Http.Headers; // Thêm namespace này
 using static Web_Video.ViewModels.Video.VideoWatchViewModel;
@@ -334,6 +335,7 @@ namespace Web_Video.Controllers
             return View(toReturn);
         }
         [HttpPost]
+        [RequestSizeLimit(100 * SD.MB)]
         public async Task<IActionResult> CreateEditVideo(VideoAddEditViewModel model)
         {
             if (ModelState.IsValid)
@@ -379,34 +381,62 @@ namespace Web_Video.Controllers
                     }
 
                     // C. Xử lý AI (Tùy chọn dựa vào Checkbox)
-                    string recognitionResult = "";
+                    string recognitionResult = "Không yêu cầu nhận diện";
                     string celebrityFramesJson = "{}";
 
                     if (model.HasCelebrity)
                     {
-                        // CÓ người nổi tiếng -> Gọi AI
-                        recognitionResult = await ProcessVideo(physicalPath); // Hàm này cần nhận đường dẫn vật lý
-
-                        // Gọi Python để lấy JSON khung hình (nếu có logic đó)
+                        // Tạo HttpClient với Timeout lớn (ví dụ 30 phút để chờ AI xử lý video dài)
                         var httpClient = _httpClientFactory.CreateClient();
-                        var requestBody = new { video_path = physicalPath }; // Gửi path thật cho Python
+                        httpClient.Timeout = TimeSpan.FromMinutes(30);
+
+                        var requestBody = new { video_path = physicalPath }; // Gửi đường dẫn tuyệt đối cho Python
                         var content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
+
                         try
                         {
+                            // Gọi API Python
                             var response = await httpClient.PostAsync("http://localhost:5000/process_video", content);
+
                             if (response.IsSuccessStatusCode)
                             {
                                 var resultJson = await response.Content.ReadAsStringAsync();
-                                var framesData = JsonConvert.DeserializeObject<Dictionary<string, object>>(resultJson)["frames"];
-                                celebrityFramesJson = JsonConvert.SerializeObject(framesData);
+
+                                // Parse JSON để lấy danh sách frames
+                                var framesObj = JsonConvert.DeserializeObject<Dictionary<string, object>>(resultJson);
+
+                                if (framesObj.ContainsKey("frames"))
+                                {
+                                    // 1. Lưu chuỗi JSON frames vào DB (để hiển thị frame và làm mờ)
+                                    var framesData = framesObj["frames"]; // Đây là Dictionary<string, List<...>>
+                                    celebrityFramesJson = JsonConvert.SerializeObject(framesData);
+
+                                    // 2. Tự động tạo chuỗi RecognizedCelebrities từ các Key trong JSON
+                                    // Chuyển đổi framesData sang Dictionary để lấy Keys
+                                    var framesDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(celebrityFramesJson);
+                                    if (framesDict != null && framesDict.Keys.Count > 0)
+                                    {
+                                        recognitionResult = "Đã nhận diện: " + string.Join(", ", framesDict.Keys);
+                                    }
+                                    else
+                                    {
+                                        recognitionResult = "Không nhận diện được nhân vật nổi tiếng.";
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // Log lỗi nếu Python trả về lỗi (ví dụ 500)
+                                Console.WriteLine($"[AI Error] Status: {response.StatusCode}");
+                                recognitionResult = "Lỗi server nhận diện AI.";
                             }
                         }
-                        catch { /* Bỏ qua lỗi AI nếu có */ }
-                    }
-                    else
-                    {
-                        // KHÔNG CÓ người nổi tiếng -> Bỏ qua AI
-                        recognitionResult = "Không yêu cầu nhận diện";
+                        catch (Exception ex)
+                        {
+                            // Log lỗi Timeout hoặc kết nối
+                            Console.WriteLine($"[AI Exception] {ex.Message}");
+                            recognitionResult = "Lỗi kết nối hoặc Timeout AI.";
+                        }
                     }
 
                     // D. Lưu vào Database
@@ -420,19 +450,22 @@ namespace Web_Video.Controllers
                         Thumbnail = thumbnailPath,
                         Duration = duration,
                         UploadDate = DateTime.UtcNow,
+
+                        // SỬ DỤNG KẾT QUẢ TỪ KHỐI CODE TRÊN
                         RecognizedCelebrities = recognitionResult,
-                        CelebrityFrames = celebrityFramesJson,
+                        CelebrityFrames = celebrityFramesJson, // Không còn bị {} nếu AI chạy thành công
+
                         VideoFile = new VideoFile
                         {
                             Id = Guid.NewGuid(),
                             ContentType = model.VideoUpload.ContentType,
                             Extension = Path.GetExtension(model.VideoUpload.FileName),
-                            FilePath = $"/uploads/videos/{fileName}" // Chỉ lưu đường dẫn web tương đối
+                            FilePath = $"/uploads/videos/{fileName}"
                         }
                     };
 
-                    // Nếu có nhận diện ra người nổi tiếng thì mới lưu vào bảng phụ
-                    if (model.HasCelebrity)
+                    // Quan trọng: Lưu Celebrity vào bảng Celebrity nếu chưa có
+                    if (model.HasCelebrity && !string.IsNullOrEmpty(recognitionResult) && recognitionResult.Contains("Đã nhận diện:"))
                     {
                         await SaveRecognizedCelebrities(videoToAdd, recognitionResult);
                     }
@@ -907,34 +940,37 @@ namespace Web_Video.Controllers
                 }
             }
 
-            if (toReturn != null && !string.IsNullOrEmpty(toReturn.CelebrityFramesJson) && toReturn.CelebrityFramesJson != "{}")
+            // LỖI 2 FIX: XỬ LÝ JSON CELEBRITY FRAMES
+            if (!string.IsNullOrEmpty(toReturn.CelebrityFramesJson) && toReturn.CelebrityFramesJson != "{}")
             {
                 try
                 {
                     var framesData = JsonConvert.DeserializeObject<Dictionary<string, List<Dictionary<string, object>>>>(toReturn.CelebrityFramesJson);
                     toReturn.CelebrityFrames = new Dictionary<string, List<CelebrityFrame>>();
+
                     foreach (var celeb in framesData)
                     {
                         var frames = new List<CelebrityFrame>();
                         foreach (var frameData in celeb.Value)
                         {
+                            // FIX QUAN TRỌNG: Dùng CultureInfo.InvariantCulture để parse số thực (Time)
                             frames.Add(new CelebrityFrame
                             {
-                                Time = Convert.ToSingle(frameData["time"]),
-                                FrameImage = frameData["frame"].ToString()
+                                Time = Convert.ToSingle(frameData["time"], System.Globalization.CultureInfo.InvariantCulture),
+                                FrameImage = frameData["frame"]?.ToString() ?? ""
                             });
                         }
                         toReturn.CelebrityFrames[celeb.Key] = frames;
                     }
                 }
-                catch (JsonException ex)
+                catch (Exception ex)
                 {
-                    Console.WriteLine($"JSON Parse Error: {ex.Message}");
-                    toReturn.CelebrityFrames = new Dictionary<string, List<CelebrityFrame>>();
+                    Console.WriteLine($"Lỗi parse frames: {ex.Message}");
                 }
             }
             else
             {
+                // Gán rỗng nếu không có dữ liệu
                 toReturn.CelebrityFrames = new Dictionary<string, List<CelebrityFrame>>();
             }
 

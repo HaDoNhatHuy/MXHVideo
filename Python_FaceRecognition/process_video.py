@@ -1,4 +1,3 @@
-# process_video.py
 import cv2
 import base64
 import os
@@ -14,35 +13,30 @@ def process_video(video_path, known_faces_dict):
 
     fps = cap.get(cv2.CAP_PROP_FPS)
     if fps == 0: fps = 30
-
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     
-    # --- THAY ĐỔI QUAN TRỌNG: Tăng tần suất nhận diện ---
-    # Thay vì int(fps) (mỗi giây 1 lần), ta lấy mỗi 5 frame (khoảng 0.15 giây)
-    # Số càng nhỏ thì càng mượt nhưng xử lý càng lâu.
+    # Xử lý mỗi 5 frame để tăng tốc độ (Skip frames)
+    # Bạn có thể giảm số này xuống (vd: 3) nếu muốn bắt dính khuôn mặt nhạy hơn
     frame_interval = 5 
-    
-    current_time = 0.0
-    celebrity_frames = {} 
-
-    print(f"Processing video: {video_path} (FPS: {fps}, Interval: {frame_interval})")
-
     frame_idx = 0
+    celebrity_frames = {}
+
+    print(f"Processing video: {video_path} (FPS: {fps})")
+
     while True:
         ret, frame = cap.read()
         if not ret: break
 
-        # Chỉ xử lý các frame nằm trong interval để tối ưu tốc độ
+        # Chỉ xử lý các frame theo interval
         if frame_idx % frame_interval == 0:
+            # Resize frame nhỏ (0.5) để nhận diện nhanh hơn
+            small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
             
-            # Resize nhỏ lại để nhận diện nhanh hơn (tùy chọn, ở đây giữ nguyên để chính xác)
-            # small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+            # Chuyển sang RGB
+            rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
             
-            # Chuyển BGR (OpenCV) sang RGB (face_recognition)
-            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            
-            face_locations = face_recognition.face_locations(rgb_frame)
-            face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+            # Detect khuôn mặt trên frame nhỏ
+            face_locations = face_recognition.face_locations(rgb_small_frame)
+            face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
 
             for i, face_encoding in enumerate(face_encodings):
                 best_match_name = "Unknown"
@@ -50,34 +44,43 @@ def process_video(video_path, known_faces_dict):
 
                 for name, known_faces in known_faces_dict.items():
                     distances = face_recognition.face_distance(known_faces, face_encoding)
-                    min_distance = min(distances)
+                    if len(distances) > 0:
+                        min_distance = min(distances)
+                        if min_distance < best_match_distance:
+                            best_match_distance = min_distance
+                            best_match_name = name
 
-                    if min_distance < best_match_distance:
-                        best_match_distance = min_distance
-                        best_match_name = name
-                
-                # Ngưỡng nhận diện (0.45 là khá chặt chẽ)
+                # --- GIỮ NGUYÊN NGƯỠNG 0.45 THEO YÊU CẦU CỦA BẠN ---
                 if best_match_distance < 0.45:
-                    loc = face_locations[i] # (top, right, bottom, left)
+                    # Scale lại tọa độ về kích thước gốc (vì nãy resize 0.5 nên giờ nhân 2)
+                    top, right, bottom, left = face_locations[i]
+                    top *= 2
+                    right *= 2
+                    bottom *= 2
+                    left *= 2
+                    loc = (top, right, bottom, left)
+
+                    # === PHẦN FIX LỖI QUAN TRỌNG ===
+                    # Luôn tạo ảnh thumbnail base64 cho frame này để trả về C#
+                    # Resize frame xuống height = 150px để nhẹ JSON, gửi qua mạng nhanh hơn
+                    h, w = frame.shape[:2]
+                    scale_preview = 150 / h
+                    preview_frame = cv2.resize(frame, (0, 0), fx=scale_preview, fy=scale_preview)
                     
-                    # Lưu ảnh base64 để hiện lên UI (chỉ lưu frame đại diện mỗi giây để nhẹ JSON)
-                    frame_base64 = ""
-                    # Chỉ convert ảnh khi cần thiết (ví dụ mỗi 1 giây mới lưu ảnh 1 lần cho UI đỡ nặng)
-                    if frame_idx % int(fps) < frame_interval: 
-                        _, buffer = cv2.imencode('.jpg', frame)
-                        if buffer is not None:
-                            frame_base64 = base64.b64encode(buffer).decode('utf-8')
-                    
+                    # Nén ảnh JPEG chất lượng 70%
+                    _, buffer = cv2.imencode('.jpg', preview_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 70])
+                    frame_base64 = base64.b64encode(buffer).decode('utf-8')
+
                     if best_match_name not in celebrity_frames:
                         celebrity_frames[best_match_name] = []
 
-                    # Tính thời gian chính xác của frame này
                     exact_time = frame_idx / fps
-
+                    
+                    # Lưu dữ liệu đầy đủ (bao gồm cả chuỗi frame base64)
                     celebrity_frames[best_match_name].append({
-                        "time": round(exact_time, 2), # Lưu số thực, không làm tròn int
+                        "time": round(exact_time, 2),
                         "loc": loc,
-                        "frame": frame_base64 # Có thể rỗng để tiết kiệm
+                        "frame": frame_base64 
                     })
 
         frame_idx += 1

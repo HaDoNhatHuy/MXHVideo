@@ -83,7 +83,10 @@ public class AdvancedDataSeeder
             var res = await _userManager.CreateAsync(admin, "123456");
             if (res.Succeeded)
             {
+                // Cấp toàn bộ quyền cho Admin
                 await _userManager.AddToRoleAsync(admin, SD.AdminRole);
+                await _userManager.AddToRoleAsync(admin, SD.ModeratorRole);
+                await _userManager.AddToRoleAsync(admin, SD.UserRole);
                 _context.Channels.Add(new Channel { AppUserId = admin.Id, ChannelName = "Admin Channel", CreatedDate = DateTime.UtcNow });
             }
         }
@@ -259,13 +262,14 @@ public class AdvancedDataSeeder
                 }
             }
 
-            // Tạo Likes (1% - 10% của Views, luôn < Views)
-            int targetLikes = (int)(targetViews * (random.Next(1, 11) / 100.0));
-            if (targetLikes >= targetViews) targetLikes = targetViews - 1;
-            if (targetLikes < 0) targetLikes = 0;
+            // 2. Random Likes: 1% đến 15% của Views (Biến động mạnh hơn)
+            double likePercentage = random.NextDouble() * (0.15 - 0.01) + 0.01; // 0.01 to 0.15
+            int targetLikes = (int)(targetViews * likePercentage);
 
-            // Giới hạn số like tối đa bằng số user hiện có (vì 1 user chỉ like 1 lần)
+            // Giới hạn like không vượt quá số user trong DB
             int maxPossibleLikes = Math.Min(targetLikes, dbUsers.Count);
+
+            // Lấy danh sách user ngẫu nhiên để like
             var potentialLikers = dbUsers.OrderBy(x => Guid.NewGuid()).Take(maxPossibleLikes).ToList();
 
             foreach (var liker in potentialLikers)
@@ -280,10 +284,10 @@ public class AdvancedDataSeeder
             if (videoCount % 20 == 0)
             {
                 Console.Write(".");
-                await _context.SaveChangesAsync(); // Lưu từng đợt
+                await _context.SaveChangesAsync(); // Lưu từng đợt để tránh tràn bộ nhớ
             }
         }
-        await _context.SaveChangesAsync(); // Lưu nốt số còn lại
+        await _context.SaveChangesAsync(); // Lưu phần còn lại
         Console.WriteLine("\n   + Đã xong phần Video/Like.");
 
 
