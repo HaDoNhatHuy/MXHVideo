@@ -15,7 +15,7 @@
    SEARCH RESULTS CONTAINER
    ======================================== */
 .youtube-search-results {
-    max-width: 1096px;
+    max-width: 1920px;
     margin: 0 auto;
     padding: 24px 24px 80px;
     background-color: var(--search-bg);

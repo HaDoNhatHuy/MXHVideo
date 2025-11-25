@@ -14,497 +14,431 @@
     <!-- Custom styles for this template-->
     @* <link href="/css_new/osahan.css" rel="stylesheet" asp-append-version="true"> *@
     <link href="/css_new/youtube-theme.css" rel="stylesheet" asp-append-version="true">
+    @* <link href="/css/site.css" rel="stylesheet" asp-append-version="true"> *@
     <!-- Owl Carousel -->
     @* <link rel="stylesheet" href="/vendor/owl-carousel/owl.carousel.css"> *@
     @* <link rel="stylesheet" href="/vendor/owl-carousel/owl.theme.css"> *@
     @await RenderSectionAsync("Css", false)
     <style>
-        /* === CÁC STYLE CŨ === */
-        #sidebarOverlay {
-            display: none;
+        /* ========================================
+           YOUTUBE MODERN THEME - LAYOUT STYLES
+           ======================================== */
+
+        :root {
+            --yt-black: #0f0f0f;
+            --yt-dark-bg: #0f0f0f;
+            --yt-sidebar-bg: #0f0f0f;
+            --yt-hover-bg: #272727;
+            --yt-hover-bg-secondary: #eee;
+            --yt-text-primary: #f1f1f1;
+            --yt-text-secondary: #aaaaaa;
+            --yt-text-black: #0f0f0f;
+            --yt-border: #3f3f3f;
+            --yt-blue: #3ea6ff;
+            --yt-white: #ffffff;
+            --yt-header-height: 56px;
+            --yt-sidebar-width: 240px;
+            --yt-sidebar-collapsed: 72px;
+        }
+
+        /* === BODY & MAIN LAYOUT === */
+        body {
+            /* background-color: var(--yt-dark-bg); */
+            background-color: var(--yt-white);
+            color: var(--yt-text-primary);
+            font-family: "Roboto", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        #wrapper {
+            display: flex;
+            min-height: calc(100vh - var(--yt-header-height));
+            padding-top: var(--yt-header-height);
+        }
+
+        /* === HEADER/NAVBAR === */
+        .navbar.osahan-nav {
+            background-color: var(--yt-white) !important;
+            /* border-bottom: 1px solid var(--yt-border); */
+            height: var(--yt-header-height);
+            padding: 0 16px;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 998;
-        }
-
-            #sidebarOverlay.active {
-                display: block;
-            }
-
-        .sidebar.hidden {
-            display: none;
-        }
-
-        .youtube-content.full-width {
-            width: 100%;
-            padding-left: 0 !important;
-        }
-
-        #searchSuggestions {
-            position: absolute;
-            top: 100%;
-            left: 0;
             right: 0;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-top: none;
-            max-height: 200px;
-            overflow-y: auto;
-            display: none;
             z-index: 1000;
-        }
-
-        .suggestion-item {
-            padding: 5px 10px;
-            cursor: pointer;
-        }
-
-            .suggestion-item:hover {
-                background-color: #f5f5f5;
-            }
-
-        #voiceSearchBtn.recording {
-            background-color: #ff4444;
-            color: #fff;
-        }
-
-        .dropdown-menu {
-            z-index: 1000;
-            min-width: 200px;
-        }
-
-        .dropdown-menu-right {
-            right: 0;
-            left: auto;
-        }
-
-        .user-dropdown-link {
             display: flex;
             align-items: center;
-            color: #333;
+            justify-content: space-between;
         }
 
-            .user-dropdown-link img {
-                width: 32px;
-                height: 32px;
+        .navbar .navbar-brand img {
+            height: 20px;
+            width: auto;
+        }
+
+        .navbar #toggleSidebarBtn {
+            color: var(--yt-text-primary);
+            background: transparent;
+            border: none;
+            padding: 8px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .navbar #toggleSidebarBtn:hover {
+                background-color: var(--yt-hover-bg-secondary);
+            }
+
+        /* === SEARCH BAR === */
+        .osahan-navbar-search {
+            flex: 0 1 732px;
+            max-width: 732px;
+            margin: 0 auto;
+        }
+
+            .osahan-navbar-search .input-group {
+                background: transparent;
+                border: 1px solid #ccc;
+                border-radius: 40px;
+                overflow: hidden;
+                height: 40px;
+            }
+
+            .osahan-navbar-search .form-control {
+                background-color: transparent;
+                border: none;
+                color: var(--yt-text-primary);
+                padding: 0 16px;
+                height: 100%;
+                font-size: 16px;
+            }
+
+                .osahan-navbar-search .form-control:focus {
+                    outline: none;
+                    box-shadow: none;
+                    border: none;
+                }
+
+                .osahan-navbar-search .form-control::placeholder {
+                    color: var(--yt-text-secondary);
+                }
+
+            .osahan-navbar-search .input-group-append {
+                display: flex;
+            }
+
+            .osahan-navbar-search .btn {
+                background-color: var(--yt-hover-bg-secondary);
+                border: none;
+                color: var(--yt-black);
+                padding: 0 20px;
+                border-radius: 0;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+                .osahan-navbar-search .btn:hover {
+                    background-color: #3f3f3f;
+                }
+
+                .osahan-navbar-search .btn:first-child {
+                    border-left: 1px solid var(--yt-border);
+                }
+
+        /* === NAVBAR RIGHT === */
+        .osahan-right-navbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .osahan-right-navbar .nav-link {
+                color: var(--yt-text-primary);
+                padding: 8px;
                 border-radius: 50%;
-                margin-right: 8px;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
             }
 
-        .channel-sidebar-list ul li a {
-            display: flex;
-            align-items: center;
-            padding: 8px 16px;
+                .osahan-right-navbar .nav-link:hover {
+                    background-color: var(--yt-hover-bg-secondary);
+                }
+
+            .osahan-right-navbar .badge {
+                position: absolute;
+                top: 4px;
+                right: 4px;
+                font-size: 10px;
+                padding: 2px 5px;
+            }
+
+        .user-dropdown-link img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        /* === SIDEBAR === */
+        .sidebar {
+            width: var(--yt-sidebar-width);
+            background-color: var(--yt-white);
+            height: calc(100vh - var(--yt-header-height));
+            position: fixed;
+            top: var(--yt-header-height);
+            left: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 12px 0;
+            transition: transform 0.3s ease, width 0.3s ease;
+            z-index: 999;
+        }
+
+            .sidebar::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            .sidebar::-webkit-scrollbar-thumb {
+                background-color: var(--yt-border);
+                border-radius: 4px;
+            }
+
+            .sidebar.hidden {
+                width: var(--yt-sidebar-collapsed);
+            }
+
+            .sidebar .nav-item {
+                list-style: none;
+            }
+
+            .sidebar .nav-link {
+                display: flex;
+                align-items: center;
+                padding: 10px 24px;
+                color: var(--yt-text-black);
+                text-decoration: none;
+                border-radius: 10px;
+                margin: 0 12px 4px 12px;
+                font-size: 14px;
+                font-weight: 500;
+                transition: background-color 0.2s;
+            }
+
+                .sidebar .nav-link:hover {
+                    background-color: var(--yt-hover-bg-secondary);
+                }
+
+                .sidebar .nav-link i {
+                    font-size: 20px;
+                    margin-right: 24px;
+                    width: 24px;
+                    text-align: center;
+                }
+
+            .sidebar .nav-item.active .nav-link {
+                background-color: var(--yt-hover-bg-secondary);
+                font-weight: 600;
+            }
+
+            .sidebar.hidden .nav-link span {
+                display: none;
+            }
+
+            .sidebar.hidden .nav-link {
+                justify-content: center;
+                padding: 16px 0;
+            }
+
+                .sidebar.hidden .nav-link i {
+                    margin-right: 0;
+                }
+
+            .sidebar h6 {
+                color: var(--yt-text-secondary);
+                font-size: 14px;
+                font-weight: 600;
+                padding: 8px 24px;
+                margin: 16px 0 8px 0;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .sidebar.hidden h6 {
+                display: none;
+            }
+
+        /* Channel subscription list */
+        .channel-sidebar-list ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
         }
 
             .channel-sidebar-list ul li a img {
                 width: 24px;
                 height: 24px;
                 border-radius: 50%;
-                margin-right: 8px;
+                margin-right: 12px;
+                object-fit: cover;
             }
 
-        .load-more-btn {
-            display: flex;
-            justify-content: center;
-            padding: 8px 16px;
-            cursor: pointer;
-            color: #606060;
+        /* === CONTENT AREA === */
+        #content-wrapper {
+            flex: 1;
+            /* margin-left: var(--yt-sidebar-width); */
+            /* padding: 24px; */
+            background-color: var(--yt-white);
+            transition: margin-left 0.3s ease;
         }
 
-            .load-more-btn:hover {
-                background-color: #f5f5f5;
-            }
-
-            .load-more-btn i {
-                margin-right: 8px;
-            }
-
-        /* === IMAGE SEARCH MODAL === */
-        #imageSearchModal .modal-dialog {
-            max-width: 500px;
-            margin: 1.75rem auto;
+        .youtube-content.full-width #content-wrapper {
+            margin-left: var(--yt-sidebar-collapsed);
         }
 
-        #imageSearchModal .modal-content {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
-            border: none;
-            overflow: hidden;
+        /* === RESPONSIVE === */
+       @@media (max-width: 992px) {
+            .sidebar
+
+        {
+            transform: translateX(-100%);
         }
 
-        #imageSearchModal .modal-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-bottom: none;
-            padding: 20px 24px;
+        .sidebar.active {
+            transform: translateX(0);
         }
 
-        #imageSearchModal .modal-title {
-            color: #fff;
-            font-weight: 600;
-            font-size: 20px;
+        #content-wrapper {
+            margin-left: 0;
         }
 
-        #imageSearchModal .close {
-            color: #fff;
-            opacity: 0.9;
-            font-size: 28px;
-        }
-
-            #imageSearchModal .close:hover {
-                opacity: 1;
-            }
-
-        #imageSearchModal .modal-body {
-            padding: 30px 24px;
-        }
-
-        .dropzone {
-            border: 3px dashed #d0d7de;
-            border-radius: 16px;
-            padding: 40px 20px;
-            text-align: center;
-            background: linear-gradient(135deg, #f8f9ff 0%, #fff5f7 100%);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative;
-        }
-
-            .dropzone.dragover {
-                border-color: #667eea;
-                background: linear-gradient(135deg, #e8eaf6 0%, #f3e5f5 100%);
-                box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
-                transform: scale(1.02);
-            }
-
-        .dropzone-icon {
-            font-size: 48px;
-            color: #667eea;
-            margin-bottom: 16px;
-        }
-
-        .dropzone-text {
-            font-size: 16px;
-            color: #2d3748;
-            margin-bottom: 20px;
-            font-weight: 500;
-        }
-
-        .dropzone-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
-            border: none;
-            padding: 12px 28px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-            .dropzone-btn:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-            }
-
-        .preview-container {
-            margin-top: 20px;
-            max-height: 250px;
-            overflow: hidden;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            display: none;
-            position: relative;
-        }
-
-            .preview-container.show {
-                display: block;
-            }
-
-        .preview-image {
+        .osahan-navbar-search {
             max-width: 100%;
-            max-height: 250px;
-            object-fit: contain;
-            border-radius: 12px;
-            margin: 0 auto;
-            display: block;
         }
 
-        .remove-image-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255,255,255,0.9);
-            border: none;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
-            .remove-image-btn:hover {
-                background: #ff4444;
-                color: #fff;
-                transform: scale(1.1);
-            }
+        @@media (max-width: 768px) {
+            .navbar
 
-        #submitImageBtn {
-            width: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            color: #fff;
-            transition: all 0.3s ease;
+        {
+            padding: 0 8px;
         }
 
-            #submitImageBtn:hover:not(:disabled) {
-                transform: translateY(-2px);
-                box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-            }
-
-            #submitImageBtn:disabled {
-                background: #cbd5e0;
-                cursor: not-allowed;
-                opacity: 0.6;
-            }
-
-        /* === LOADING INDICATOR – ĐÃ SỬA === */
-        #loadingIndicator {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-            /* Đảm bảo loading indicator luôn nằm trên hết */
-            #loadingIndicator.active {
-                display: flex;
-                opacity: 1;
-                z-index: 5004 !important; /* Cao hơn tất cả modal */
-            }
-
-            #loadingIndicator .spinner-container {
-                background: #fff;
-                padding: 40px 50px;
-                border-radius: 20px;
-                text-align: center;
-                box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-                animation: fadeInScale 0.3s ease;
-            }
-
-        @@keyframes fadeInScale {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+        .osahan-navbar-search {
+            display: none !important;
         }
 
-        #loadingIndicator .spinner-icon {
-            font-size: 48px;
-            color: #667eea;
-            animation: spin 1s linear infinite;
+        #content-wrapper {
+            padding: 16px 8px;
         }
 
-        @@keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        #loadingIndicator p {
-            color: #2d3748;
-            margin-top: 20px;
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        /* === KHÔNG ẨN BACKDROP === */
-        /* XÓA HOÀN TOÀN DÒNG NÀY */
-        .modal-backdrop {
-            display: none;
-        }
-        /* === GHI ĐÈ Z-INDEX CHO BOOTSTRAP V4.1.3 === */
-        .modal {
-            /* Modal nội dung (vd: #imageSearchModal, #logoutModal) */
-            z-index: 1050 !important;
-        }
-
-        .modal-backdrop {
-            /* Lớp phủ nền */
-            z-index: 1040 !important;
-        }
-        /* Đảm bảo Notification Modal tùy chỉnh cũng đủ cao */
-        #notificationModal {
-            z-index: 1060 !important;
         }
     </style>
 </head>
 <body id="page-top" data-page="@ViewData["CurrentPage"]">
     <div id="sidebarOverlay"></div>
     <nav class="navbar navbar-expand navbar-light bg-white static-top osahan-nav sticky-top">
-        &nbsp;&nbsp;
-        <button class="btn btn-link btn-sm text-secondary order-1 order-sm-0" id="toggleSidebarBtn">
-            <i class="fas fa-bars"></i>
-        </button> &nbsp;&nbsp;
-        <a class="navbar-brand mr-1" asp-controller="Home" asp-action="Index"><img class="img-fluid" alt="" src="/img/logo.png"></a>
-        <!-- Navbar Search -->
-        <form class="d-none d-md-inline-block form-inline ml-auto mr-0 mr-md-5 my-2 my-md-0 osahan-navbar-search" id="searchForm" method="get" asp-controller="Search" asp-action="Index">
+
+        <!-- LEFT SECTION -->
+        <div class="navbar-left d-flex align-items-center">
+            <button class="btn btn-link btn-sm text-secondary" id="toggleSidebarBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <a class="navbar-brand mr-1" asp-controller="Home" asp-action="Index">
+                <img class="img-fluid" alt="" src="/img/logo.png">
+            </a>
+        </div>
+
+
+        <!-- MIDDLE SECTION (SEARCH BAR) -->
+        <form class="form-inline osahan-navbar-search" id="searchForm"
+              method="get" asp-controller="Search" asp-action="Index">
+
             <div class="input-group">
                 <input type="text" class="form-control" id="searchInput" name="query" placeholder="Tìm kiếm...">
+
                 <div class="input-group-append">
                     <button class="btn btn-light" type="button" id="searchBtn">
                         <i class="fas fa-search"></i>
                     </button>
+
                     <button type="button" class="btn btn-light" id="voiceSearchBtn">
                         <i class="fas fa-microphone"></i>
                     </button>
-                    <!-- Nút mở modal tìm kiếm bằng hình ảnh -->
+
                     <button type="button" class="btn btn-light" data-toggle="modal" data-target="#imageSearchModal">
-                        <i class="fas fa-image" style="margin:5px;"></i>
+                        <i class="fas fa-image"></i>
                     </button>
                 </div>
+
                 <div id="searchSuggestions"></div>
             </div>
         </form>
-        <!-- Form riêng cho tìm kiếm bằng hình ảnh -->
-        <form id="imageSearchForm" method="post" asp-controller="Search" asp-action="SearchByImage" enctype="multipart/form-data" style="display: none;">
-            <input type="file" name="image" id="hiddenImageInput">
-        </form>
-        <!-- Modal chọn/kéo thả ảnh -->
-        <div class="modal fade" id="imageSearchModal" tabindex="-1" role="dialog" aria-labelledby="imageSearchModalLabel">
-            <div class="modal-dialog modal-dialog-centered" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="imageSearchModalLabel">Tìm kiếm bằng hình ảnh</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="dropzone" id="dropzone">
-                            <p class="dropzone-text">Kéo và thả ảnh vào đây hoặc nhấp để chọn ảnh</p>
-                            <button type="button" class="dropzone-btn" id="selectImageBtn">Chọn ảnh</button>
-                            <input type="file" id="imageUpload" accept="image/*" style="display: none;">
-                            <div class="preview-container" id="previewContainer">
-                                <img id="previewImage" class="preview-image" src="" alt="Ảnh xem trước">
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-primary mt-3" id="submitImageBtn" disabled>Tìm kiếm</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Loading indicator -->
-        <div id="loadingIndicator" style="display: none;">
-            <!-- Thêm style inline để đảm bảo ẩn -->
-            <div class="spinner-container">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Đang xử lý hình ảnh...</p>
-            </div>
-        </div>
-        <!-- Navbar -->
-        <ul class="navbar-nav ml-auto ml-md-0 osahan-right-navbar">
+
+
+        <!-- RIGHT SECTION -->
+        <ul class="navbar-nav osahan-right-navbar">
+
             @if (User.Identity.IsAuthenticated)
             {
-
                 <li class="nav-item mx-1">
-                    <a class="nav-link" asp-controller="Video" asp-action="CreateEditVideo" style="display:flex;gap:20px; align-items:center;">
-                        <i class="fas fa-plus-circle fa-fw"></i>
-                        <span style="margin-right:40px;">Upload Video</span>
+                    <a class="nav-link" asp-controller="Video" asp-action="CreateEditVideo"
+                       style="display:flex; gap:5px; align-items:center;margin-right:30px;">
+                        <i class="fas fa-plus-circle fa-fw"></i><pre>   </pre>Create
                     </a>
                 </li>
+
                 <li class="nav-item dropdown no-arrow mx-1">
-                    <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" data-toggle="dropdown">
                         <i class="fas fa-bell fa-fw"></i>
                         <span class="badge badge-danger">9+</span>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="alertsDropdown">
-                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-edit"></i> &nbsp; Action</a>
-                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-headphones-alt"></i> &nbsp; Another action</a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> &nbsp; Something else here</a>
+                    <div class="dropdown-menu dropdown-menu-right">
+                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-edit"></i> Action</a>
+                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-headphones-alt"></i> Another action</a>
                     </div>
-                </li>
-                <li class="nav-item dropdown no-arrow mx-1" style="padding-right:20px;">
-                    <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-envelope fa-fw"></i>
-                        <span class="badge badge-success">7</span>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="messagesDropdown">
-                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-edit"></i> &nbsp; Action</a>
-                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-headphones-alt"></i> &nbsp; Another action</a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> &nbsp; Something else here</a>
-                    </div>
-                </li>
-            }
-            @if (User.Identity.IsAuthenticated)
-            {
-                <li class="nav-item dropdown no-arrow osahan-right-navbar-user" style="margin-right:20px;">
-                    <a class="nav-link dropdown-toggle user-dropdown-link" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                </li>                
+
+                <li class="nav-item dropdown no-arrow osahan-right-navbar-user" style="margin-right:20px; margin-left:40px">
+                    <a class="nav-link dropdown-toggle user-dropdown-link" href="#" id="userDropdown" data-toggle="dropdown">
                         <img alt="Avatar" src="/avatarUser/avt-default.jpg">
                         @User.Identity.Name
                     </a>
-                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
-                        <a class="dropdown-item" asp-controller="Channel" asp-action="Index"><i class="fas fa-fw fa-user-circle"></i> &nbsp; My Account</a>
-                        <a class="dropdown-item" asp-controller="Home" asp-action="Subscriptions"><i class="fas fa-fw fa-video"></i> &nbsp; Subscriptions</a>
-                        <a class="dropdown-item" asp-controller="Settings" asp-action="Index"><i class="fas fa-fw fa-cog"></i> &nbsp; Settings</a>
-                        @if (User.IsInRole(SD.AdminRole))
-                        {
-                            <div class="dropdown-divider"></div>
-                            <h6 style="margin-left:10px;">Admin Panel</h6>
-                            <a class="dropdown-item" asp-controller="Admin" asp-action="Category"><i class="fas fa-fw fa-list"></i> &nbsp; Category</a>
-                            <a class="dropdown-item" asp-controller="Admin" asp-action="AddEditUser"><i class="fas fa-fw fa-user-shield"></i> &nbsp; User Management</a>
-                            <a class="dropdown-item" asp-controller="Admin" asp-action="AllUsers"><i class="fas fa-fw fa-user-shield"></i> &nbsp; All User</a>
-                        }
-                        @if (User.IsInRole(SD.ModeratorRole))
-                        {
-                            <div class="dropdown-divider"></div>
-                            <h6 style="margin-left:10px;">Moderator Panel</h6>
-                            <a class="dropdown-item" asp-controller="Moderator" asp-action="AllVideos"><i class="fas fa-fw fa-video"></i> &nbsp; Video Management</a>
-                            <a class="dropdown-item" asp-controller="Moderator" asp-action="AllReports"><i class="fas fa-fw fa-flag"></i> &nbsp; Reports</a>
-                        }
+                    <div class="dropdown-menu dropdown-menu-right">
+                        <a class="dropdown-item" asp-controller="Channel" asp-action="Index">
+                            <i class="fas fa-fw fa-user-circle"></i> My Account
+                        </a>
+                        <a class="dropdown-item" asp-controller="Settings" asp-action="Index">
+                            <i class="fas fa-fw fa-cog"></i> Settings
+                        </a>
                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal"><i class="fas fa-fw fa-sign-out-alt"></i> &nbsp; Logout</a>
+                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                            <i class="fas fa-fw fa-sign-out-alt"></i> Logout
+                        </a>
                     </div>
                 </li>
             }
             else
             {
                 <li class="nav-item m-2">
-                    <a asp-controller="Account" asp-action="Login" class="btn btn-secondary border-none">Đăng nhập</a>
+                    <a asp-controller="Account" asp-action="Login" class="btn btn-secondary">Đăng nhập</a>
                 </li>
             }
         </ul>
+
     </nav>
     <div id="wrapper" class="youtube-content">
         <!-- Sidebar -->
@@ -704,7 +638,7 @@
             // === LOAD DANH SÁCH KÊNH ĐĂNG KÝ ===
             if (isAuthenticated) {
                 console.log('Đang tải danh sách kênh đăng ký...');
-                // loadSubscriptions();
+                loadSubscriptions();
             }
 
             function loadSidebarSubscriptions() {

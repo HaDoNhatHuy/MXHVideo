@@ -118,14 +118,17 @@
         });
     }
 
-    // Render HTML cho video
+    // Cập nhật hàm populateVideoContainer trong home_home.js
+    // Thay thế phần code xử lý template = 'video' bằng đoạn code này:
+
     function populateVideoContainer($container, videos, template, page) {
         let html = '';
+
         if (template === 'history') {
             let currentGroup = null;
-            const groupedVideos = {}; // ✅ Nhóm video theo VideoId để tránh trùng lặp
+            const groupedVideos = {};
 
-            // ✅ Lọc trùng lặp: Chỉ giữ entry mới nhất của mỗi video
+            // Lọc trùng lặp
             videos.forEach(v => {
                 if (!groupedVideos[v.id] || new Date(v.lastVisit) > new Date(groupedVideos[v.id].lastVisit)) {
                     groupedVideos[v.id] = v;
@@ -135,136 +138,124 @@
             const uniqueVideos = Object.values(groupedVideos);
 
             uniqueVideos.forEach(v => {
-                // Thêm header cho group mới (chỉ áp dụng cho history)
+                // Header cho group mới
                 if (page === 'history' && v.groupName !== currentGroup) {
                     currentGroup = v.groupName;
-                    html += `<div class="col-12"><h6 class="group-header mt-3">${currentGroup || 'Unknown Time'}</h6></div>`;
+                    html += `<div class="col-12"><h6 class="group-header">${currentGroup || 'Unknown Time'}</h6></div>`;
                 }
 
-                // Tính % progress
                 const durationSeconds = parseDurationToSeconds(v.duration || '0:00');
                 const progressPercent = durationSeconds > 0 ? Math.min((v.progress / durationSeconds) * 100, 100) : 0;
-                const progressTime = formatSecondsToTime(v.progress);
 
                 html += `
-                    <div class="col-xl-3 col-sm-6 mb-3">
-                        <div class="video-card history-video h-100">
-                            <div class="video-card-image">
-                                <a class="video-close" href="#" data-videoview-id="${v.videoViewId}">
-                                    <i class="fas fa-times-circle"></i>
-                                </a>
-                                <a class="play-icon" href="/Video/Watch/${v.id}">
-                                    <i class="fas fa-play-circle"></i>
-                                </a>
-                                <a href="/Video/Watch/${v.id}">
-                                    <img class="img-fluid" src="${v.thumbnail || '/avatarUser/avt-default.jpg'}" alt="${v.title}">
-                                </a>
-                                <div class="time">${v.duration || '0:00'}</div>
-                            </div>
-                            ${progressPercent > 0 ? `
-                            <div class="progress" style="height: 4px;">
-                                <div class="progress-bar bg-danger" role="progressbar" 
-                                     style="width: ${progressPercent.toFixed(1)}%;" 
-                                     aria-valuenow="${progressPercent}" 
-                                     aria-valuemin="0" 
-                                     aria-valuemax="100"></div>
-                            </div>
-                            ` : ''}
-                            <div class="video-card-body">
-                                <div class="video-title">
-                                    <a href="/Video/Watch/${v.id}" class="text-truncate">${v.title || 'Untitled Video'}</a>
-                                </div>
-                                <div class="video-page text-success">
-                                    ${v.channelName || 'Unknown Channel'} 
-                                    <a title="Verified" data-bs-placement="top" data-bs-toggle="tooltip" href="#">
-                                        <i class="fas fa-check-circle text-success"></i>
-                                    </a>
-                                </div>
-                                <div class="video-view text-truncate">
-                                    ${formatView(v.views || 0)} views &nbsp;
-                                    <i class="fas fa-calendar-alt"></i> ${page === 'liked' ? '' : (v.lastVisitTimeAgo || 'Unknown')}
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
+        <div class="yt-video-card">
+          <a href="/Video/Watch/${v.id}" class="yt-video-thumbnail">
+            <img src="${v.thumbnail || '/avatarUser/avt-default.jpg'}" alt="${v.title}">
+            <span class="yt-video-duration">${v.duration || '0:00'}</span>
+            ${progressPercent > 0 ? `
+              <div class="yt-progress">
+                <div class="yt-progress-bar" style="width: ${progressPercent.toFixed(1)}%;"></div>
+              </div>
+            ` : ''}
+            <a href="#" class="video-close" data-videoview-id="${v.videoViewId}">
+              <i class="fas fa-times"></i>
+            </a>
+          </a>
+          
+          <div class="yt-video-info">
+            <div class="yt-channel-avatar">
+              <a href="/Member/Channel/${v.channelId}">
+                <img src="${v.channelAvatar || '/avatarUser/avt-default.jpg'}" alt="${v.channelName}">
+              </a>
+            </div>
+            
+            <div class="yt-video-details">
+              <div class="yt-video-title">
+                <a href="/Video/Watch/${v.id}">${v.title || 'Untitled Video'}</a>
+              </div>
+              
+              <div class="yt-channel-name">
+                <a href="/Member/Channel/${v.channelId}">${v.channelName || 'Unknown Channel'}</a>
+                <i class="fas fa-check-circle"></i>
+              </div>
+              
+              <div class="yt-video-meta">
+                ${formatView(v.views || 0)} • ${v.lastVisitTimeAgo || 'Unknown'}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
             });
 
             if (!uniqueVideos.length) {
                 html = `<div class="col-12 text-center p-3">Không có lịch sử xem nào.</div>`;
             }
-        } else {
-            // --- ĐOẠN CODE CŨ BỊ LỖI ---
-            /* html += `
-            <div class="col-xl-3 col-sm-6 mb-3">
-            <div class="video-card h-100">
-            ...
-            <div class="video-page text-success"> ... </div>
-            </div>
-            </div>`;
-            */
 
-            // --- THAY THẾ BẰNG ĐOẠN CODE MỚI NÀY ---
+        } else {
+            // ===== TEMPLATE STANDARD VIDEO (INDEX PAGE) =====
             videos.forEach(v => {
                 const durationStr = v.duration ? formatDuration(v.duration) : '0:00';
-                // Lấy avatar, nếu không có thì dùng ảnh mặc định
                 const avatarUrl = v.channelAvatar || '/avatarUser/avt-default.jpg';
+                const thumbnailUrl = v.thumbnail || '/avatarUser/avt-default.jpg';
 
                 html += `
-                <div class="col-xl-3 col-sm-6 col-12 mb-4">
-                    <div class="video-card h-100">
-                        <div class="video-card-image">
-                            <a href="/Video/Watch/${v.id}">
-                                <img class="img-fluid" src="${v.thumbnail || '/avatarUser/avt-default.jpg'}" alt="${v.title}">
-                            </a>
-                            <div class="time">${durationStr}</div>
-                            <a class="play-icon" href="/Video/Watch/${v.id}" style="display:none"><i class="fas fa-play-circle"></i></a>
-                        </div>
-                        
-                        <div class="video-card-body">
-                            <div class="video-card-avatar">
-                                <a href="/Member/Channel/${v.channelId}">
-                                    <img class="img-fluid" src="${avatarUrl}" alt="" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
-                                </a>
-                            </div>
-                            
-                            <div class="video-info">
-                                <div class="video-title">
-                                    <a href="/Video/Watch/${v.id}" title="${v.title}">${v.title || 'Untitled Video'}</a>
-                                </div>
-                                
-                                <div class="video-page">
-                                    <a href="/Member/Channel/${v.channelId}" class="text-secondary" style="font-size:14px;">
-                                        ${v.channelName || 'Unknown Channel'}
-                                        <i class="fas fa-check-circle text-secondary" style="font-size:12px; margin-left:4px;" title="Verified"></i>
-                                    </a>
-                                </div>
-                                
-                                <div class="video-view text-secondary" style="font-size:14px;">
-                                    ${formatView(v.views || 0)} • ${v.createdAtTimeAgo || 'Vừa xong'}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
+        <div class="yt-video-card">
+          <a href="/Video/Watch/${v.id}" class="yt-video-thumbnail">
+            <img src="${thumbnailUrl}" alt="${v.title}">
+            <span class="yt-video-duration">${durationStr}</span>
+          </a>
+          
+          <div class="yt-video-info">
+            <div class="yt-channel-avatar">
+              <a href="/Member/Channel/${v.channelId}">
+                <img src="${avatarUrl}" alt="${v.channelName}">
+              </a>
+            </div>
+            
+            <div class="yt-video-details">
+              <div class="yt-video-title">
+                <a href="/Video/Watch/${v.id}" title="${v.title}">
+                  ${v.title || 'Untitled Video'}
+                </a>
+              </div>
+              
+              <div class="yt-channel-name">
+                <a href="/Member/Channel/${v.channelId}">
+                  ${v.channelName || 'Unknown Channel'}
+                </a>
+                <i class="fas fa-check-circle"></i>
+              </div>
+              
+              <div class="yt-video-meta">
+                ${formatView(v.views || 0)} • ${v.createdAtTimeAgo || 'Vừa xong'}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
             });
+
             if (!videos.length) {
                 html = `<div class="col-12 text-center p-3">Không có ${page === 'liked' ? 'video đã thích' : 'video'} nào.</div>`;
             }
         }
+
         $container.append(html);
 
-        // Thêm sự kiện xóa cho history và liked
+        // Xử lý sự kiện xóa
         if (template === 'history') {
             $container.find('.video-close').on('click', function (e) {
                 e.preventDefault();
                 const videoViewId = $(this).data('videoview-id');
+
                 $.ajax({
                     url: `/Home/RemoveHistory?videoViewId=${videoViewId}`,
                     type: 'POST',
                     success: function () {
-                        $(this).closest('.col-xl-3').remove();
-                        // Kiểm tra nếu container rỗng
-                        if ($container.find('.video-card').length === 0) {
+                        $(this).closest('.yt-video-card').remove();
+
+                        if ($container.find('.yt-video-card').length === 0) {
                             $container.append('<div class="col-12 text-center p-3">Không có lịch sử xem nào.</div>');
                         }
                     }.bind(this),
@@ -277,12 +268,14 @@
             $container.find('.video-close').on('click', function (e) {
                 e.preventDefault();
                 const videoId = $(this).data('video-id');
+
                 $.ajax({
                     url: `/Home/RemoveLike?videoId=${videoId}`,
                     type: 'POST',
                     success: function () {
-                        $(this).closest('.col-xl-3').remove();
-                        if ($container.find('.video-card').length === 0) {
+                        $(this).closest('.yt-video-card').remove();
+
+                        if ($container.find('.yt-video-card').length === 0) {
                             $container.append('<div class="col-12 text-center p-3">Không có video đã thích nào.</div>');
                         }
                     }.bind(this),

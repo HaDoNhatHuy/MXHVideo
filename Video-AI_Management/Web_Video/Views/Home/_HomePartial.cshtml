@@ -1,66 +1,80 @@
 ﻿@model Web_Video.ViewModels.Home.HomeViewModel
 
-<div class="top-category section-padding mb-3">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="category-nav-wrapper">
-                <button type="button" class="category-nav-btn prev-btn" aria-label="Previous">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <div class="category-tabs-container">
-                    <div class="category-tabs">
-                        @foreach (var category in Model.CategoryDropdown)
-                        {
-                            <button type="button"
-                                    class="category-tab @(category.Value == "0" ? "active" : "")"
-                                    data-category-id="@category.Value">
-                                @category.Text
-                            </button>
-                        }
-                    </div>
-                </div>
-                <button type="button" class="category-nav-btn next-btn" aria-label="Next">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
+<!-- Category Filter Bar -->
+<div class="yt-category-bar">
+    <div class="category-nav-wrapper">
+        <button type="button" class="category-nav-btn prev-btn" aria-label="Previous">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+
+        <div class="category-tabs-container">
+            <div class="category-tabs">
+                @foreach (var category in Model.CategoryDropdown)
+                {
+                    <button type="button"
+                            class="category-tab @(category.Value == "0" ? "active" : "")"
+                            data-category-id="@category.Value">
+                        @category.Text
+                    </button>
+                }
             </div>
         </div>
+
+        <button type="button" class="category-nav-btn next-btn" aria-label="Next">
+            <i class="fas fa-chevron-right"></i>
+        </button>
     </div>
 </div>
 
-<div class="video-block section-padding">
-    <div class="row" id="videosTableBody">
-        <!-- Nội dung sẽ được tải động bằng JavaScript -->
+<!-- Video Grid -->
+<div class="yt-video-grid" id="videosTableBody">
+    <!-- Videos will be loaded here dynamically -->
+</div>
+
+<!-- Loading Indicator -->
+<div id="index-loading-indicator" style="display:none;">
+    <div class="yt-loading">
+        <div class="spinner-border text-light" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+        <p>Đang tải video...</p>
     </div>
 </div>
 
-@* <script src="./vendor/jquery/jquery.min.js"></script> *@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
 <script>
-        $(document).ready(function () {
+    $(document).ready(function () {
         const $tabsContainer = $('.category-tabs-container');
+        const $tabs = $('.category-tabs');
         const $prevBtn = $('.prev-btn');
         const $nextBtn = $('.next-btn');
-        const scrollAmount = 200; // Khoảng cách cuộn mỗi lần
+        const scrollAmount = 200;
 
         function updateButtons() {
             if (!$tabsContainer.length) return;
-            const maxScrollLeft = $tabsContainer[0].scrollWidth - $tabsContainer.outerWidth();
-            $prevBtn.toggleClass('disabled', $tabsContainer.scrollLeft() <= 0);
-            $nextBtn.toggleClass('disabled', $tabsContainer.scrollLeft() >= maxScrollLeft - 1);
+
+            const scrollLeft = $tabsContainer.scrollLeft();
+            const maxScrollLeft = $tabs[0].scrollWidth - $tabsContainer.outerWidth();
+
+            $prevBtn.toggleClass('disabled', scrollLeft <= 0);
+            $nextBtn.toggleClass('disabled', scrollLeft >= maxScrollLeft - 1);
         }
 
         $prevBtn.on('click', function () {
             if (!$tabsContainer.is(':animated') && !$prevBtn.hasClass('disabled')) {
-                $tabsContainer.animate({ scrollLeft: $tabsContainer.scrollLeft() - scrollAmount }, 300, updateButtons);
+                $tabsContainer.animate({
+                    scrollLeft: $tabsContainer.scrollLeft() - scrollAmount
+                }, 300, updateButtons);
             }
         });
 
         $nextBtn.on('click', function () {
             if (!$tabsContainer.is(':animated') && !$nextBtn.hasClass('disabled')) {
-                const maxScrollLeft = $tabsContainer[0].scrollWidth - $tabsContainer.outerWidth();
+                const maxScrollLeft = $tabs[0].scrollWidth - $tabsContainer.outerWidth();
                 if ($tabsContainer.scrollLeft() < maxScrollLeft) {
-                    $tabsContainer.animate({ scrollLeft: $tabsContainer.scrollLeft() + scrollAmount }, 300, updateButtons);
+                    $tabsContainer.animate({
+                        scrollLeft: $tabsContainer.scrollLeft() + scrollAmount
+                    }, 300, updateButtons);
                 }
             }
         });

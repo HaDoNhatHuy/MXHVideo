@@ -5,7 +5,6 @@
     ViewData["CurrentPage"] = "Index";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-
 @if (!User.Identity.IsAuthenticated)
 {
     <div class="text-center pt-4">
@@ -16,11 +15,11 @@ else
 {
     <partial name="_HomePartial" model="Model" />
 }
-
 @section Css {
     <link rel="stylesheet" href="~/css/home_home.css" asp-append-version="true">
 }
 @section Scripts {
+
     @* <script src="./vendor/jquery/jquery.min.js"></script> *@
     <script src="~/js/site.js"></script>
     <!-- Include utils trước -->
