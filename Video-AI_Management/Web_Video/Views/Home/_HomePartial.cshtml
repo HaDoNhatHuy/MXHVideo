@@ -1,6 +1,6 @@
 ﻿@model Web_Video.ViewModels.Home.HomeViewModel
 
-<div class="top-category section-padding mb-1">
+<div class="top-category section-padding mb-3">
     <div class="row">
         <div class="col-md-12">
             <div class="category-nav-wrapper">
@@ -11,7 +11,9 @@
                     <div class="category-tabs">
                         @foreach (var category in Model.CategoryDropdown)
                         {
-                            <button type="button" class="btn category-tab @(category.Value == "0" ? "active" : "")" data-category-id="@category.Value">
+                            <button type="button"
+                                    class="category-tab @(category.Value == "0" ? "active" : "")"
+                                    data-category-id="@category.Value">
                                 @category.Text
                             </button>
                         }
@@ -21,11 +23,6 @@
                     <i class="fas fa-chevron-right"></i>
                 </button>
             </div>
-            @*  <div class="btn-group d-flex flex-wrap gap-2 p-3" role="group">
-                <button type="button" class="btn btn-outline-secondary youtube-filter-btn active" data-filter="all">Tất cả</button>
-                <button type="button" class="btn btn-outline-secondary youtube-filter-btn" data-filter="myChannel">Kênh của tôi</button>
-                <button type="button" class="btn btn-outline-secondary youtube-filter-btn" data-filter="published">Đã xuất bản</button>
-            </div> *@
         </div>
     </div>
 </div>
@@ -35,125 +32,6 @@
         <!-- Nội dung sẽ được tải động bằng JavaScript -->
     </div>
 </div>
-
-<style>
-    .youtube-filter-btn {
-        border-radius: 20px;
-        font-size: 14px;
-        padding: 5px 12px;
-    }
-
-        .youtube-filter-btn.active {
-            background-color: #ff516b;
-            color: #fff;
-            border-color: #ff516b;
-        }
-
-        .youtube-filter-btn:hover {
-            background-color: #e0e0e0;
-        }
-
-    .form-control {
-        border-radius: 20px;
-        padding: 5px 12px;
-    }
-
-    /* Thiết kế category tabs với nút điều hướng */
-    .category-nav-wrapper {
-        display: flex;
-        align-items: center;
-        position: relative;
-        padding: 10px 0;
-    }
-
-    .category-nav-btn {
-        background-color: #f8f8f8;
-        border: 1px solid #ddd;
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        opacity: 0.7;
-        margin: 0 5px;
-    }
-
-        .category-nav-btn:hover {
-            background-color: #e0e0e0;
-            opacity: 1;
-        }
-
-        .category-nav-btn.disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-
-    .category-tabs-container {
-        flex-grow: 1;
-        overflow-x: auto; /* cho phép cuộn ngang */
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none; /* ẩn scrollbar trên Firefox */
-        -ms-overflow-style: none; /* ẩn scrollbar trên IE/Edge */
-    }
-
-        .category-tabs-container::-webkit-scrollbar {
-            display: none; /* ẩn scrollbar trên Chrome/Safari */
-        }
-
-    .category-tabs {
-        display: flex;
-        gap: 8px;
-        padding: 0 5px;
-    }
-
-
-    .category-tab {
-        background-color: #f8f8f8;
-        border: 1px solid #ddd;
-        border-radius: 20px;
-        padding: 6px 15px;
-        font-size: 14px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        white-space: nowrap;
-    }
-
-        .category-tab.active {
-            background-color: #ff516b;
-            color: #fff;
-            border-color: #ff516b;
-        }
-
-        .category-tab:hover {
-            background-color: #e0e0e0;
-            border-color: #ccc;
-        }
-
-    /* Responsive */
-    @@media (max-width: 768px) {
-        .category-nav-btn
-
-    {
-        display: none; /* Ẩn nút trên màn hình nhỏ */
-    }
-
-    .category-tabs {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-
-        .category-tabs::-webkit-scrollbar {
-            display: none;
-        }
-
-    }
-</style>
 
 @* <script src="./vendor/jquery/jquery.min.js"></script> *@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

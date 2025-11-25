@@ -1,0 +1,997 @@
+﻿/* ========================================
+   YOUTUBE WATCH PAGE - Modern Design
+   ======================================== */
+
+:root {
+    --yt-watch-bg: #0f0f0f;
+    --yt-watch-text: #f1f1f1;
+    --yt-watch-text-secondary: #aaaaaa;
+    --yt-watch-divider: #ffffff1a;
+    --yt-watch-hover: #ffffff1a;
+}
+
+/* ========================================
+   WATCH PAGE LAYOUT
+   ======================================== */
+.video-block.watch-page {
+    background-color: #0f0f0f;
+    min-height: calc(100vh - 56px);
+    padding: 24px 0 0;
+}
+
+    .video-block.watch-page .container-fluid {
+        max-width: 1920px;
+        padding: 0 24px;
+    }
+
+/* ========================================
+   VIDEO PLAYER CONTAINER
+   ======================================== */
+.single-video-left {
+    margin-bottom: 12px;
+}
+
+.single-video {
+    position: relative;
+    width: 100%;
+    background-color: #000;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* Video.js Custom Styling */
+.video-js {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    font-family: 'Roboto', Arial, sans-serif;
+}
+
+    .video-js .vjs-big-play-button {
+        width: 68px;
+        height: 48px;
+        line-height: 48px;
+        border-radius: 8px;
+        background-color: rgba(0, 0, 0, 0.8);
+        border: none;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        transition: background-color 0.2s;
+    }
+
+    .video-js:hover .vjs-big-play-button {
+        background-color: rgba(255, 0, 0, 0.9);
+    }
+
+    .video-js .vjs-control-bar {
+        background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%);
+        height: 48px;
+    }
+
+    .video-js .vjs-progress-control {
+        position: absolute;
+        bottom: 48px;
+        left: 0;
+        right: 0;
+        height: 5px;
+    }
+
+    .video-js .vjs-progress-holder {
+        height: 5px;
+        background-color: rgba(255,255,255,0.2);
+    }
+
+    .video-js .vjs-play-progress {
+        background-color: #ff0000;
+    }
+
+    .video-js .vjs-load-progress {
+        background-color: rgba(255,255,255,0.4);
+    }
+
+    .video-js .vjs-play-progress::before {
+        content: '';
+        position: absolute;
+        right: -6px;
+        top: -3.5px;
+        width: 12px;
+        height: 12px;
+        background-color: #ff0000;
+        border-radius: 50%;
+    }
+
+/* ========================================
+   VIDEO TITLE & METADATA
+   ======================================== */
+.single-video-title {
+    margin-bottom: 12px;
+}
+
+    .single-video-title h2 {
+        font-size: 20px;
+        font-weight: 400;
+        line-height: 28px;
+        color: #f1f1f1;
+        margin: 0;
+        padding: 0;
+    }
+
+        .single-video-title h2 a {
+            color: #f1f1f1;
+        }
+
+    .single-video-title p {
+        font-size: 14px;
+        color: #aaaaaa;
+        margin: 4px 0 0;
+    }
+
+/* ========================================
+   CHANNEL INFO & ACTION BUTTONS
+   ======================================== */
+.single-video-author {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #ffffff1a;
+    margin-bottom: 12px;
+}
+
+    .single-video-author .channel-info-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+    }
+
+    .single-video-author img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .single-video-author .channel-text {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .single-video-author strong {
+        font-size: 16px;
+        font-weight: 500;
+        color: #f1f1f1;
+        margin-bottom: 2px;
+    }
+
+    .single-video-author small {
+        font-size: 12px;
+        color: #aaaaaa;
+    }
+
+    /* Action Buttons Container */
+    .single-video-author .float-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+    }
+
+/* Subscribe Button */
+#subscribeBtn {
+    height: 36px;
+    padding: 0 16px;
+    background-color: #f1f1f1;
+    color: #0f0f0f;
+    border: none;
+    border-radius: 18px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+
+    #subscribeBtn:hover {
+        background-color: #d9d9d9;
+    }
+
+    #subscribeBtn.subscribed {
+        background-color: #272727;
+        color: #f1f1f1;
+    }
+
+        #subscribeBtn.subscribed:hover {
+            background-color: #3f3f3f;
+        }
+
+/* Like/Dislike Buttons Group */
+.action-buttons-group {
+    display: flex;
+    background-color: #272727;
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+    .action-buttons-group .btn {
+        height: 36px;
+        padding: 0 16px;
+        background-color: transparent;
+        border: none;
+        color: #f1f1f1;
+        font-size: 14px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+        border-radius: 0;
+    }
+
+        .action-buttons-group .btn:hover {
+            background-color: #3f3f3f;
+        }
+
+        .action-buttons-group .btn.btn-primary {
+            background-color: transparent;
+            color: #3ea6ff;
+        }
+
+        .action-buttons-group .btn i {
+            font-size: 18px;
+        }
+
+        .action-buttons-group .btn span {
+            font-size: 14px;
+        }
+
+#likeBtn {
+    border-right: 1px solid #ffffff1a;
+}
+
+/* Share, Download, More Buttons */
+.btn-outline-primary {
+    height: 36px;
+    padding: 0 16px;
+    background-color: #272727;
+    border: none;
+    border-radius: 18px;
+    color: #f1f1f1;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+    .btn-outline-primary:hover {
+        background-color: #3f3f3f;
+        color: #f1f1f1;
+    }
+
+    .btn-outline-primary i {
+        font-size: 18px;
+    }
+
+/* Dropdown Menu */
+.btn-group .dropdown-menu {
+    background-color: #282828;
+    border: 1px solid #ffffff1a;
+    border-radius: 8px;
+    padding: 8px 0;
+    margin-top: 8px;
+    min-width: 200px;
+}
+
+.btn-group .dropdown-item {
+    padding: 10px 16px;
+    color: #f1f1f1;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+    .btn-group .dropdown-item:hover {
+        background-color: #3f3f3f;
+        color: #f1f1f1;
+    }
+
+    .btn-group .dropdown-item i {
+        width: 20px;
+        margin-right: 12px;
+        font-size: 16px;
+    }
+
+/* ========================================
+   VIDEO DESCRIPTION BOX
+   ======================================== */
+.single-video-info-content {
+    background-color: #272727;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+    .single-video-info-content:hover {
+        background-color: #3f3f3f;
+    }
+
+    .single-video-info-content h6 {
+        font-size: 14px;
+        font-weight: 500;
+        color: #f1f1f1;
+        margin: 0 0 8px;
+    }
+
+    .single-video-info-content p {
+        font-size: 14px;
+        line-height: 20px;
+        color: #f1f1f1;
+        margin: 0;
+        white-space: pre-wrap;
+    }
+
+.description-content {
+    max-height: 80px;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+    .description-content.expanded {
+        max-height: none;
+    }
+
+.show-more-btn {
+    color: #f1f1f1;
+    font-size: 14px;
+    font-weight: 500;
+    background: none;
+    border: none;
+    padding: 8px 0 0;
+    cursor: pointer;
+    display: block;
+    width: 100%;
+    text-align: left;
+}
+
+    .show-more-btn:hover {
+        text-decoration: underline;
+    }
+
+/* Category & Tags */
+.single-video-info-content .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+    .single-video-info-content .tags span {
+        display: inline-block;
+    }
+
+    .single-video-info-content .tags a {
+        color: #3ea6ff;
+        font-size: 14px;
+        font-weight: 400;
+        padding: 4px 12px;
+        background-color: #263850;
+        border-radius: 8px;
+        transition: background 0.2s;
+    }
+
+        .single-video-info-content .tags a:hover {
+            background-color: #2e4a67;
+        }
+
+/* ========================================
+   CELEBRITY FRAMES CAROUSEL
+   ======================================== */
+.frame-carousel {
+    position: relative;
+    margin: 16px 0;
+}
+
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    background-color: #272727;
+    border: 1px solid #ffffff1a;
+    border-radius: 50%;
+    color: #f1f1f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    transition: background 0.2s;
+}
+
+    .carousel-btn:hover {
+        background-color: #3f3f3f;
+    }
+
+    .carousel-btn.prev {
+        left: 0;
+    }
+
+    .carousel-btn.next {
+        right: 0;
+    }
+
+.carousel-content {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding: 8px 48px;
+    scrollbar-width: none;
+}
+
+    .carousel-content::-webkit-scrollbar {
+        display: none;
+    }
+
+.frame-card {
+    flex-shrink: 0;
+    width: 120px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+    .frame-card:hover {
+        transform: scale(1.05);
+    }
+
+.frame-image {
+    width: 120px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 8px;
+    background-color: #272727;
+}
+
+.frame-time {
+    text-align: center;
+    font-size: 12px;
+    color: #aaaaaa;
+    margin-top: 4px;
+}
+
+/* ========================================
+   COMMENTS SECTION
+   ======================================== */
+.comments-section {
+    background-color: transparent;
+    padding: 24px 0;
+}
+
+.comments-header {
+    font-size: 20px;
+    font-weight: 400;
+    color: #f1f1f1;
+    margin-bottom: 24px;
+}
+
+/* Comment Input */
+.comment-input {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #ffffff1a;
+}
+
+    .comment-input img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .comment-input form {
+        flex: 1;
+    }
+
+    .comment-input input {
+        width: 100%;
+        background-color: transparent;
+        border: none;
+        border-bottom: 1px solid #ffffff1a;
+        color: #f1f1f1;
+        font-size: 14px;
+        padding: 8px 0;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+        .comment-input input:focus {
+            border-bottom-color: #f1f1f1;
+        }
+
+        .comment-input input::placeholder {
+            color: #717171;
+        }
+
+.comment-actions {
+    display: none;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+    .comment-actions.show {
+        display: flex;
+    }
+
+    .comment-actions button {
+        height: 36px;
+        padding: 0 16px;
+        border-radius: 18px;
+        border: none;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+.btn-cancel {
+    background-color: transparent;
+    color: #f1f1f1;
+}
+
+    .btn-cancel:hover {
+        background-color: #3f3f3f;
+    }
+
+.btn-comment {
+    background-color: #3ea6ff;
+    color: #0f0f0f;
+}
+
+    .btn-comment:hover {
+        background-color: #4fb3ff;
+    }
+
+    .btn-comment:disabled {
+        background-color: #263850;
+        color: #717171;
+        cursor: not-allowed;
+    }
+
+/* Comment Item */
+.comment-item {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    position: relative;
+}
+
+    .comment-item img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+.comment-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.comment-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.comment-author {
+    font-size: 13px;
+    font-weight: 500;
+    color: #f1f1f1;
+}
+
+.comment-time {
+    font-size: 12px;
+    color: #aaaaaa;
+}
+
+.edited-label {
+    font-size: 12px;
+    color: #aaaaaa;
+    margin-left: 4px;
+}
+
+.comment-text {
+    font-size: 14px;
+    line-height: 20px;
+    color: #f1f1f1;
+    margin: 0;
+    word-wrap: break-word;
+}
+
+/* Comment Actions (Edit/Delete) */
+.comment-actions-wrapper {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+.btn-more-actions {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: #aaaaaa;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s;
+}
+
+.comment-item:hover .btn-more-actions {
+    opacity: 1;
+}
+
+.btn-more-actions:hover {
+    background-color: #3f3f3f;
+    color: #f1f1f1;
+}
+
+.comment-actions-menu {
+    position: absolute;
+    right: 0;
+    top: 36px;
+    background-color: #282828;
+    border: 1px solid #ffffff1a;
+    border-radius: 8px;
+    padding: 8px 0;
+    min-width: 150px;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+    .comment-actions-menu button {
+        width: 100%;
+        padding: 10px 16px;
+        background: none;
+        border: none;
+        text-align: left;
+        color: #f1f1f1;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+        .comment-actions-menu button:hover {
+            background-color: #3f3f3f;
+        }
+
+/* Load More Button */
+.load-more-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: transparent;
+    border: none;
+    color: #3ea6ff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+    .load-more-btn:hover {
+        background-color: #3f3f3f;
+    }
+
+/* ========================================
+   RECOMMENDED VIDEOS SIDEBAR
+   ======================================== */
+.single-video-right {
+    padding-left: 24px;
+}
+
+    .single-video-right .main-title h6 {
+        font-size: 16px;
+        font-weight: 500;
+        color: #f1f1f1;
+        margin-bottom: 16px;
+    }
+
+/* Video Card List (Sidebar) */
+.video-card-list {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+    .video-card-list:hover {
+        background-color: #272727;
+    }
+
+    .video-card-list .video-card-image {
+        position: relative;
+        flex-shrink: 0;
+        width: 168px;
+        height: 94px;
+        border-radius: 8px;
+        overflow: hidden;
+        background-color: #272727;
+    }
+
+        .video-card-list .video-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .video-card-list .time {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        background-color: rgba(0,0,0,0.8);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 2px 4px;
+        border-radius: 2px;
+    }
+
+    .video-card-list .play-icon {
+        display: none;
+    }
+
+    .video-card-list .video-card-body {
+        flex: 1;
+        min-width: 0;
+        padding: 0;
+    }
+
+    .video-card-list .video-title {
+        margin-bottom: 4px;
+    }
+
+        .video-card-list .video-title a {
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 20px;
+            color: #f1f1f1;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+    .video-card-list .video-page {
+        font-size: 12px;
+        color: #aaaaaa;
+        margin-bottom: 2px;
+    }
+
+    .video-card-list .video-view {
+        font-size: 12px;
+        color: #aaaaaa;
+    }
+
+    .video-card-list .right-action {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .video-card-list:hover .right-action {
+        opacity: 1;
+    }
+
+    .video-card-list .right-action-link {
+        width: 32px;
+        height: 32px;
+        background-color: #272727;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f1f1f1;
+        transition: background 0.2s;
+    }
+
+        .video-card-list .right-action-link:hover {
+            background-color: #3f3f3f;
+        }
+
+/* ========================================
+   PLAYLIST IN WATCH PAGE
+   ======================================== */
+.watch-playlist-container {
+    background-color: #272727;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.watch-playlist-header {
+    padding: 16px;
+    background-color: #3f3f3f;
+    border-bottom: 1px solid #ffffff1a;
+}
+
+    .watch-playlist-header h6 {
+        font-size: 16px;
+        font-weight: 500;
+        color: #f1f1f1;
+        margin: 0 0 4px;
+    }
+
+.watch-playlist-info {
+    font-size: 12px;
+    color: #aaaaaa;
+}
+
+.watch-playlist-videos {
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #717171 transparent;
+}
+
+    .watch-playlist-videos::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .watch-playlist-videos::-webkit-scrollbar-thumb {
+        background-color: #717171;
+        border-radius: 4px;
+    }
+
+.playlist-video-item {
+    display: flex;
+    gap: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+}
+
+    .playlist-video-item:hover {
+        background-color: #3f3f3f;
+    }
+
+    .playlist-video-item.current {
+        background-color: #065fd4;
+    }
+
+    .playlist-video-item .video-index {
+        flex-shrink: 0;
+        width: 20px;
+        font-size: 12px;
+        color: #aaaaaa;
+        text-align: center;
+    }
+
+    .playlist-video-item.current .video-index {
+        color: #fff;
+    }
+
+    .playlist-video-item .video-thumbnail {
+        position: relative;
+        flex-shrink: 0;
+        width: 100px;
+        height: 56px;
+        border-radius: 4px;
+        overflow: hidden;
+        background-color: #0f0f0f;
+    }
+
+        .playlist-video-item .video-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .playlist-video-item .video-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .playlist-video-item .video-title {
+        font-size: 13px;
+        font-weight: 400;
+        color: #f1f1f1;
+        line-height: 18px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        margin-bottom: 2px;
+    }
+
+    .playlist-video-item .video-channel {
+        font-size: 12px;
+        color: #aaaaaa;
+    }
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 1024px) {
+    .video-block.watch-page .container-fluid {
+        padding: 0 16px;
+    }
+
+    .single-video-right {
+        padding-left: 0;
+        margin-top: 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    .single-video-author {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+        .single-video-author .float-right {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+    .action-buttons-group .btn span {
+        display: none;
+    }
+
+    .btn-outline-primary span {
+        display: none;
+    }
+
+    .video-card-list .video-card-image {
+        width: 120px;
+        height: 68px;
+    }
+}
+
+@media (max-width: 480px) {
+    .single-video-title h2 {
+        font-size: 16px;
+        line-height: 22px;
+    }
+
+    #subscribeBtn {
+        font-size: 13px;
+        padding: 0 12px;
+    }
+
+    .action-buttons-group .btn,
+    .btn-outline-primary {
+        padding: 0 12px;
+    }
+
+    .comment-input,
+    .comment-item {
+        gap: 12px;
+    }
+
+        .comment-input img,
+        .comment-item img {
+            width: 32px;
+            height: 32px;
+        }
+}

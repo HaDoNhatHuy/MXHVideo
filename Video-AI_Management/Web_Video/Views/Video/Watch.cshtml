@@ -32,48 +32,67 @@
                 </div>
                 <!-- Thông tin kênh và nút hành động -->
                 <div class="single-video-author box mb-3">
-                    <div class="float-right">
+                    <div class="channel-info-wrapper">
+                        <img class="img-fluid" src="@Model.ChannelAvatar" alt="@Model.ChannelName Avatar">
+                        <div class="channel-text">
+                            <p>
+                                <a href="@Url.Action("Channel", "Member", new { id = Model.ChannelId })">
+                                    <strong>@Model.ChannelName</strong>
+                                </a>
+                                <span title="" data-placement="top" data-toggle="tooltip" data-original-title="Verified">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                </span>
+                            </p>
+                            <small>@SD.FormatView(Model.SubscribersCount) subscribers</small>
+                        </div>
                         @if (User.GetUserChannelId() != Model.ChannelId.ToString())
                         {
-                            <button id="subscribeBtn" class="btn @(Model.IsSubscribed ? "btn-secondary subscribed" : "btn-danger")">
-                                @(Model.IsSubscribed ? "Subscribed" : "Subscribe") <strong>@SD.FormatView(Model.SubscribersCount)</strong>
+                            <button id="subscribeBtn" class="btn @(Model.IsSubscribed ? "subscribed" : "")">
+                                @(Model.IsSubscribed ? "Subscribed" : "Subscribe")
                             </button>
                         }
-                        <button class="btn @(Model.IsLiked ? "btn-primary" : "btn-outline-primary")" id="likeBtn" onclick="likeDislike('likeBtn', 'like')">
-                            <i class="fas fa-thumbs-up"></i> <span>@SD.FormatView(Model.LikesCount)</span>
-                        </button>
-                        <button class="btn @(Model.IsDisiked ? "btn-primary" : "btn-outline-primary")" id="dislikeBtn" onclick="likeDislike('dislikeBtn', 'dislike')">
-                            <i class="fas fa-thumbs-down"></i> <span>@(Model.DislikesCount > 0 ? SD.FormatView(Model.DislikesCount) : "")</span>
-                        </button>
+                    </div>
+
+                    <div class="float-right">
+                        <div class="action-buttons-group">
+                            <button class="btn @(Model.IsLiked ? "btn-primary" : "")" id="likeBtn" onclick="likeDislike('likeBtn', 'like')">
+                                <i class="fas fa-thumbs-up"></i>
+                                <span>@SD.FormatView(Model.LikesCount)</span>
+                            </button>
+                            <button class="btn @(Model.IsDisiked ? "btn-primary" : "")" id="dislikeBtn" onclick="likeDislike('dislikeBtn', 'dislike')">
+                                <i class="fas fa-thumbs-down"></i>
+                                <span>@(Model.DislikesCount > 0 ? SD.FormatView(Model.DislikesCount) : "")</span>
+                            </button>
+                        </div>
+
                         <button class="btn btn-outline-primary" id="shareBtn" onclick="shareVideo()">
-                            <i class="fas fa-share"></i> Share
+                            <i class="fas fa-share"></i>
+                            <span>Share</span>
                         </button>
+
                         <form method="post" style="display: inline;">
                             <button asp-action="DownloadVideoFile" asp-route-videoId="@Model.Id" type="submit" class="btn btn-outline-primary">
-                                <i class="fas fa-download"></i> Download
+                                <i class="fas fa-download"></i>
+                                <span>Download</span>
                             </button>
                         </form>
+
                         <div class="btn-group">
                             <button class="btn btn-outline-primary" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
                             <div class="dropdown-menu dropdown-menu-right">
                                 <a class="dropdown-item" href="#" data-toggle="modal" data-target="#addToPlaylistModal" onclick="loadUserPlaylistsForModal('@Model.Id')">
-                                    <i class="fas fa-fw fa-plus"></i> Add to Playlist
+                                    <i class="fas fa-plus"></i>
+                                    Add to Playlist
                                 </a>
                                 <a class="dropdown-item" href="#" data-toggle="modal" data-target="#reportModal">
-                                    <i class="fas fa-fw fa-flag"></i>
+                                    <i class="fas fa-flag"></i>
                                     Report
                                 </a>
                             </div>
                         </div>
                     </div>
-                    <img class="img-fluid" src="@Model.ChannelAvatar" alt="@Model.ChannelName Avatar">
-                    <p>
-                        <a href="@Url.Action("Channel", "Member", new { id = Model.ChannelId })"><strong>@Model.ChannelName</strong></a>
-                        <span title="" data-placement="top" data-toggle="tooltip" data-original-title="Verified"><i class="fas fa-check-circle text-success"></i></span>
-                    </p>
-                    <small>Published on @SD.TimeAgo(Model.CreatedAt)</small>
                 </div>
                 <!-- Thông tin video và mô tả -->
                 <div class="single-video-info-content box mb-3">
@@ -293,95 +312,9 @@
 </div>
 
 @section Css {
-    <link href="/css/video-watch.css" rel="stylesheet" />
+    <link href="/css/youtube-watch.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://vjs.zencdn.net/8.6.0/video-js.css" />
-    <style>
-        .video-js {
-            border-radius: 4px;
-            overflow: hidden;
-            width: 100%;
-            height: auto;
-        }
-
-        .vjs-big-play-button {
-            margin: auto;
-        }
-
-        .frame-carousel {
-            position: relative;
-            display: flex;
-            align-items: center;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-
-        .carousel-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            font-size: 16px;
-            cursor: pointer;
-            z-index: 10;
-            transition: background 0.3s;
-        }
-
-            .carousel-btn:hover {
-                background: rgba(0, 0, 0, 0.8);
-            }
-
-            .carousel-btn.prev {
-                left: 10px;
-            }
-
-            .carousel-btn.next {
-                right: 10px;
-            }
-
-        .carousel-content {
-            display: flex;
-            overflow-x: auto;
-            scroll-behavior: smooth;
-            padding: 0 50px; /* Để tránh nút che frames */
-            gap: 10px;
-        }
-
-        .frame-card {
-            flex: 0 0 auto;
-            min-width: 150px;
-            text-align: center;
-        }
-
-        .frame-image {
-            width: 100%;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 4px;
-        }
-
-        .frame-time {
-            font-size: 12px;
-            margin: 5px 0;
-            color: #666;
-        }
-
-        .modal-content {
-            border-radius: 8px;
-        }
-
-        .modal-header {
-            border-bottom: 1px solid #e5e5e5;
-        }
-
-        .modal-body {
-            padding: 20px;
-        }
-    </style>
+    
 }
 
 @section Scripts {
