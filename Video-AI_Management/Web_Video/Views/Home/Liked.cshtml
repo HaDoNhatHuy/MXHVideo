@@ -1,92 +1,38 @@
 ﻿@model Web_Video.ViewModels.Home.HomeViewModel
-
 @{
     ViewData["Title"] = "Video đã thích";
     ViewData["CurrentPage"] = "Liked";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="video-block section-padding">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="main-title">
-                <div class="btn-group float-right right-action">
-                    <a href="#" class="right-action-link text-gray" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Sort by <i class="fa fa-caret-down" aria-hidden="true"></i>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-right">
-                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> &nbsp; Top Rated</a>
-                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-signal"></i> &nbsp; Viewed</a>
-                        <a class="dropdown-item" href="#"><i class="fas fa-fw fa-times-circle"></i> &nbsp; Close</a>
-                    </div>
+<div class="video-block section-padding" data-page="liked">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="library-header">
+                    <h1>Video đã thích</h1>
                 </div>
-                <h6>Video đã thích</h6>
             </div>
-        </div>
-        <div id="likedContainer" class="row">
-            <!-- Nội dung sẽ được tải động bằng JavaScript -->
+            <div class="col-md-12">
+                <div id="likedContainer">
+                    <!-- Nội dung sẽ được tải động bằng JavaScript -->
+                </div>
+                <div id="liked-loading-indicator" style="display:none;">
+                    <div class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    Đang tải...
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 @section Css {
-    @* <link rel="stylesheet" href="~/css_new/osahan.css" asp-append-version="true"> *@
-    <style>
-        /* Progress bar cho Liked */
-        .video-card .progress {
-            height: 4px;
-            margin: 0;
-            border-radius: 0;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .video-card .progress-bar {
-            background-color: #ff0000;
-        }
-
-        /* Nút xóa Liked */
-        .video-close {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            color: #fff;
-            background: rgba(0, 0, 0, 0.8);
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            transition: all 0.2s;
-            border: none;
-            cursor: pointer;
-        }
-
-        .video-card:hover .video-close {
-            display: flex;
-        }
-
-        .video-close:hover {
-            background: rgba(0, 0, 0, 0.95);
-            transform: scale(1.1);
-        }
-
-        /* Group header */
-        .group-header {
-            font-size: 16px;
-            font-weight: 500;
-            color: #0f0f0f;
-            padding: 12px 0;
-            border-bottom: 1px solid #e5e5e5;
-        }
-    </style>
+    <link rel="stylesheet" href="~/css/history_liked.css" asp-append-version="true">
 }
 
 @section Scripts {
     <script src="~/js/site.js"></script>
-    <!-- Include utils trước -->
-    @* <script src="/js/home_utils.js"></script>
-    <script src="/js/home_liked.js"></script> *@
-    <script src="/js/home_home.js"></script>
+    <script src="~/js/home_home.js"></script>
 }
