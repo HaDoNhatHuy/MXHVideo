@@ -1,9 +1,14 @@
 ﻿/* ========================================
+
    YOUTUBE THEME - Modern Design System
+
    ======================================== */
+
+
 
 :root {
     /* YouTube Colors */
+
     --yt-red: #ff0000;
     --yt-black: #0f0f0f;
     --yt-white: #ffffff;
@@ -15,12 +20,14 @@
     --yt-gray-500: #606060;
     --yt-gray-900: #0f0f0f;
     /* Spacing */
+
     --yt-spacing-xs: 4px;
     --yt-spacing-sm: 8px;
     --yt-spacing-md: 12px;
     --yt-spacing-lg: 16px;
     --yt-spacing-xl: 24px;
     /* Typography */
+
     --yt-font-primary: 'Roboto', Arial, sans-serif;
     --yt-font-size-xs: 11px;
     --yt-font-size-sm: 12px;
@@ -29,17 +36,25 @@
     --yt-font-size-xl: 18px;
     --yt-font-size-2xl: 20px;
     /* Shadows */
+
     --yt-shadow-sm: 0 1px 2px rgba(0,0,0,0.1);
     --yt-shadow-md: 0 2px 5px rgba(0,0,0,0.1);
     --yt-shadow-lg: 0 4px 10px rgba(0,0,0,0.15);
 }
 
+
+
 /* ========================================
+
    BASE RESET
+
    ======================================== */
+
 * {
     box-sizing: border-box;
 }
+
+
 
 body {
     font-family: var(--yt-font-primary);
@@ -51,18 +66,27 @@ body {
     line-height: 1.4;
 }
 
+
+
 a {
     color: inherit;
     text-decoration: none;
 }
 
+
+
     a:hover {
         text-decoration: none;
     }
 
+
+
 /* ========================================
+
    NAVBAR - YouTube Style
+
    ======================================== */
+
 .navbar.osahan-nav {
     background-color: var(--yt-white) !important;
     border-bottom: 1px solid var(--yt-gray-200);
@@ -75,6 +99,8 @@ a {
     z-index: 2000;
 }
 
+
+
 .navbar-brand {
     display: flex;
     align-items: center;
@@ -82,12 +108,17 @@ a {
     margin-right: 0;
 }
 
+
+
     .navbar-brand img {
         height: 20px;
         width: auto;
     }
 
+
+
 /* Hamburger Button */
+
 #toggleSidebarBtn {
     width: 40px;
     height: 40px;
@@ -102,21 +133,30 @@ a {
     transition: background 0.2s;
 }
 
+
+
     #toggleSidebarBtn:hover {
         background-color: rgba(0,0,0,0.05);
     }
 
+
+
 /* Search Bar - YouTube Style */
+
 .osahan-navbar-search {
     flex: 1;
-    max-width: 640px;
-    margin: 0 40px;
+    max-width: 600px;
+    margin: 0 20px;
 }
+
+
 
     .osahan-navbar-search .input-group {
         display: flex;
         height: 40px;
     }
+
+
 
     .osahan-navbar-search .form-control {
         height: 40px;
@@ -128,15 +168,21 @@ a {
         box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
     }
 
+
+
         .osahan-navbar-search .form-control:focus {
             border-color: #1c62b9;
             outline: none;
             box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
         }
 
+
+
     .osahan-navbar-search .input-group-append {
         display: flex;
     }
+
+
 
     .osahan-navbar-search .btn {
         height: 40px;
@@ -151,15 +197,21 @@ a {
         transition: background 0.2s;
     }
 
+
+
         .osahan-navbar-search .btn:first-child {
             border-radius: 0 40px 40px 0;
             border-left: none;
         }
 
+
+
         .osahan-navbar-search .btn:hover {
             background-color: #f0f0f0;
             border-color: #c0c0c0;
         }
+
+
 
         #voiceSearchBtn,
         .osahan-navbar-search .btn[data-target="#imageSearchModal"] {
@@ -172,16 +224,23 @@ a {
             background-color: #f8f8f8;
         }
 
+
+
 /* Right Navbar Icons */
+
 .osahan-right-navbar {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 15px;
 }
+
+
 
     .osahan-right-navbar .nav-item {
         margin: 0;
     }
+
+
 
     .osahan-right-navbar .nav-link {
         width: 40px;
@@ -195,9 +254,13 @@ a {
         transition: background 0.2s;
     }
 
+
+
         .osahan-right-navbar .nav-link:hover {
             background-color: rgba(0,0,0,0.05);
         }
+
+
 
     .osahan-right-navbar .badge {
         position: absolute;
@@ -215,7 +278,10 @@ a {
         padding: 0 4px;
     }
 
+
+
 /* User Dropdown */
+
 .user-dropdown-link {
     display: flex;
     align-items: center;
@@ -224,9 +290,13 @@ a {
     transition: background 0.2s;
 }
 
+
+
     .user-dropdown-link:hover {
         background-color: rgba(0,0,0,0.05);
     }
+
+
 
     .user-dropdown-link img {
         width: 32px;
@@ -236,9 +306,14 @@ a {
         object-fit: cover;
     }
 
+
+
 /* ========================================
+
    SIDEBAR - YouTube Style
+
    ======================================== */
+
 .sidebar {
     position: fixed;
     top: 56px;
@@ -254,26 +329,38 @@ a {
     scrollbar-color: #909090 transparent;
 }
 
+
+
     .sidebar::-webkit-scrollbar {
         width: 8px;
     }
 
+
+
     .sidebar::-webkit-scrollbar-track {
         background: transparent;
     }
+
+
 
     .sidebar::-webkit-scrollbar-thumb {
         background-color: #909090;
         border-radius: 4px;
     }
 
+
+
     .sidebar.hidden {
         transform: translateX(-240px);
     }
 
+
+
     .sidebar .nav-item {
         margin: 0;
     }
+
+
 
     .sidebar .nav-link {
         display: flex;
@@ -287,9 +374,13 @@ a {
         position: relative;
     }
 
+
+
         .sidebar .nav-link:hover {
             background-color: rgba(0,0,0,0.05);
         }
+
+
 
         .sidebar .nav-link i {
             width: 24px;
@@ -301,10 +392,14 @@ a {
             justify-content: center;
         }
 
+
+
     .sidebar .nav-item.active .nav-link {
         background-color: rgba(0,0,0,0.1);
         font-weight: 500;
     }
+
+
 
         .sidebar .nav-item.active .nav-link::before {
             content: '';
@@ -316,7 +411,10 @@ a {
             background-color: var(--yt-red);
         }
 
+
+
 /* Sidebar Sections */
+
 .channel-sidebar-list h6 {
     font-size: var(--yt-font-size-xs);
     font-weight: 500;
@@ -327,12 +425,17 @@ a {
     letter-spacing: 0.5px;
 }
 
+
+
 .channel-sidebar-list hr {
     margin: 12px 0;
     border-top: 1px solid var(--yt-gray-200);
 }
 
+
+
 /* Sidebar Overlay (Mobile) */
+
 #sidebarOverlay {
     display: none;
     position: fixed;
@@ -344,71 +447,142 @@ a {
     z-index: 999;
 }
 
+
+
     #sidebarOverlay.active {
         display: block;
     }
 
+
+
 /* ========================================
+
    MAIN CONTENT AREA
+
    ======================================== */
+
 .youtube-content {
     margin-left: 240px;
-    padding-top: 56px;
+    /*padding-top: 56px;*/
+
     min-height: 100vh;
     transition: margin-left 0.3s ease;
 }
+
+
 
     .youtube-content.full-width {
         margin-left: 0;
     }
 
+
+
 #content-wrapper {
     width: 100%;
 }
+
+
 
     #content-wrapper .container-fluid {
         max-width: 1920px;
         padding: 24px;
     }
 
+
+
 /* ========================================
+
    VIDEO CARDS - YouTube Grid Style
+
    ======================================== */
+
 .video-block {
     padding: 0;
 }
 
+
+
     .video-block .row {
         margin: 0 -8px;
     }
+
+
 
         .video-block .row > [class*='col-'] {
             padding: 0 8px;
             margin-bottom: 40px;
         }
 
+/*
+
 .video-card {
+
     display: flex;
+
     flex-direction: column;
+
     cursor: pointer;
+
     background: transparent;
+
+    border: none;
+
+    border-radius: 0;
+
+    box-shadow: none;
+
+    transition: none;
+
+}*/
+
+.video-card {
+    background: transparent;
+    box-shadow: none;
     border: none;
     border-radius: 0;
-    box-shadow: none;
+    margin-bottom: 20px;
     transition: none;
 }
 
+
+
+    /*.video-card:hover {
+
+        transform: none;
+
+    }*/
+
     .video-card:hover {
         transform: none;
+        box-shadow: none;
     }
 
-.video-card-image {
+
+
+/*.video-card-image {
+
     position: relative;
+
     width: 100%;
-    padding-top: 56.25%; /* 16:9 */
-    overflow: hidden;
+
+    padding-top: 56.25%;*/ /* 16:9 */
+
+/*overflow: hidden;
+
     border-radius: 12px;
+
     background-color: var(--yt-gray-100);
+
+}*/
+
+/* Container ảnh thumbnail */
+.video-card-image {
+    border-radius: 12px; /* Bo góc chuẩn 2024 */
+    overflow: hidden;
+    background-color: #e5e5e5;
+    position: relative; /* Quan trọng để định vị thời lượng */
+    width: 100%;
+    padding-top: 56.25%; /* Tỷ lệ 16:9 */
 }
 
     .video-card-image img {
@@ -418,106 +592,256 @@ a {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: border-radius 0.2s;
+        display: block;
     }
+
+/* Thời lượng video - Đặt góc dưới phải */
+.time {
+    position: absolute;
+    bottom: 6px; /* Cách đáy 6px */
+    right: 6px; /* Cách phải 6px */
+    background-color: rgba(0, 0, 0, 0.8); /* Nền đen trong suốt */
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 4px; /* Padding gọn gàng */
+    border-radius: 4px;
+    line-height: 1; /* Fix chiều cao dòng */
+    z-index: 2; /* Nằm trên ảnh */
+    pointer-events: none; /* Không chặn click vào ảnh */
+}
+
+
 
 .video-card:hover .video-card-image img {
     border-radius: 0;
 }
 
+
+
 .play-icon {
     display: none;
 }
 
+
+
+/* Thời lượng video - Đặt góc dưới phải */
 .time {
     position: absolute;
-    bottom: 4px;
-    right: 4px;
-    background-color: rgba(0,0,0,0.8);
-    color: var(--yt-white);
+    bottom: 6px; /* Cách đáy 6px */
+    right: 6px; /* Cách phải 6px */
+    background-color: rgba(0, 0, 0, 0.8); /* Nền đen trong suốt */
+    color: #fff;
     font-size: 12px;
     font-weight: 500;
-    padding: 3px 4px;
-    border-radius: 2px;
-    line-height: 12px;
+    padding: 3px 4px; /* Padding gọn gàng */
+    border-radius: 4px;
+    line-height: 1; /* Fix chiều cao dòng */
+    z-index: 2; /* Nằm trên ảnh */
+    pointer-events: none; /* Không chặn click vào ảnh */
 }
+
+
+
+/*.video-card-body {
+
+    display: flex;
+
+    padding: 12px 0 0;
+
+    gap: 12px;
+
+}*/
 
 .video-card-body {
     display: flex;
-    padding: 12px 0 0;
-    gap: 12px;
+    padding: 12px 0 0 0;
+    gap: 12px; /* Khoảng cách giữa Avatar và Chữ */
 }
 
-    .video-card-body .channel-avatar {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        object-fit: cover;
-        flex-shrink: 0;
-    }
+.video-card-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+
+
+.video-card-body .channel-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+
+
+/*.video-info {
+
+    flex: 1;
+
+    min-width: 0;
+
+}
+
+*/
+
+/* Phần chứa text bên phải avatar */
 
 .video-info {
     flex: 1;
-    min-width: 0;
+    min-width: 0; /* Quan trọng để text-truncate hoạt động */
+
+    display: flex;
+    flex-direction: column;
 }
+
+/*.video-title {
+
+    margin-bottom: 4px;
+
+}*/
+
+/* Sửa tiêu đề: Màu đen, tối đa 2 dòng */
 
 .video-title {
     margin-bottom: 4px;
+    line-height: 1.4rem;
 }
 
-    .video-title a {
+
+
+    /*.video-title a {
+
         font-size: 14px;
+
         font-weight: 500;
+
         line-height: 20px;
+
         color: var(--yt-gray-900);
+
         display: -webkit-box;
+
         -webkit-line-clamp: 2;
+
+        -webkit-box-orient: vertical;
+
+        overflow: hidden;
+
+        text-overflow: ellipsis;
+
+    }*/
+
+    .video-title a {
+        color: #0f0f0f; /* Màu đen chuẩn YouTube */
+
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        display: -webkit-box;
+        -webkit-line-clamp: 2; /* Giới hạn 2 dòng */
+
         -webkit-box-orient: vertical;
         overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: normal; /* Cho phép xuống dòng */
     }
+
+
 
         .video-title a:hover {
             color: var(--yt-gray-900);
         }
 
-.video-page {
+
+
+/*.video-page {
+
     font-size: 12px;
+
     line-height: 18px;
+
     color: var(--yt-gray-500);
+
     font-weight: 400;
+
     margin-bottom: 2px;
+
+}*/
+
+/* Sửa tên kênh và metadata: Màu xám, font nhỏ */
+
+.video-page, .video-view {
+    font-size: 14px;
+    color: #606060; /* Màu xám chuẩn */
+
+    line-height: 1.2rem;
+    font-weight: 400;
 }
+
+
+
+    /* .video-page a {
+
+        color: var(--yt-gray-500);
+
+    }*/
 
     .video-page a {
-        color: var(--yt-gray-500);
+        color: #606060;
+        text-decoration: none;
     }
 
-.video-view {
+        .video-page a:hover {
+            color: #0f0f0f;
+        }
+
+
+
+    /*.video-view {
+
     font-size: 12px;
+
     line-height: 18px;
+
     color: var(--yt-gray-500);
+
     font-weight: 400;
-}
+
+}*/
+
+
 
     .video-view i {
         display: none;
     }
 
+
+
 /* ========================================
+
    CATEGORY TABS - YouTube Style
+
    ======================================== */
+
 .top-category {
     padding: 0 0 16px;
     margin: 0;
     border-bottom: 1px solid var(--yt-gray-200);
 }
 
+
+
 .category-nav-wrapper {
     display: flex;
     align-items: center;
     position: relative;
 }
+
+
 
 .category-nav-btn {
     width: 32px;
@@ -535,15 +859,21 @@ a {
     z-index: 1;
 }
 
+
+
     .category-nav-btn:hover {
         background-color: var(--yt-gray-100);
     }
+
+
 
     .category-nav-btn.disabled {
         opacity: 0.3;
         cursor: not-allowed;
         pointer-events: none;
     }
+
+
 
 .category-tabs-container {
     flex: 1;
@@ -554,15 +884,21 @@ a {
     margin: 0 8px;
 }
 
+
+
     .category-tabs-container::-webkit-scrollbar {
         display: none;
     }
+
+
 
 .category-tabs {
     display: flex;
     gap: 12px;
     padding: 0;
 }
+
+
 
 .category-tab {
     flex-shrink: 0;
@@ -578,18 +914,27 @@ a {
     transition: background 0.2s;
 }
 
+
+
     .category-tab:hover {
         background-color: rgba(0,0,0,0.1);
     }
+
+
 
     .category-tab.active {
         background-color: var(--yt-gray-900);
         color: var(--yt-white);
     }
 
+
+
 /* ========================================
+
    BUTTONS - YouTube Style
+
    ======================================== */
+
 .btn {
     font-family: var(--yt-font-primary);
     font-size: 14px;
@@ -601,32 +946,46 @@ a {
     transition: all 0.2s;
 }
 
+
+
 .btn-primary {
     background-color: #065fd4;
     color: white;
 }
 
+
+
     .btn-primary:hover {
         background-color: #004ba8;
     }
+
+
 
 .btn-danger {
     background-color: var(--yt-red);
     color: white;
 }
 
+
+
     .btn-danger:hover {
         background-color: #cc0000;
     }
+
+
 
 .btn-secondary {
     background-color: rgba(0,0,0,0.05);
     color: var(--yt-gray-900);
 }
 
+
+
     .btn-secondary:hover {
         background-color: rgba(0,0,0,0.1);
     }
+
+
 
 .btn-outline-primary,
 .btn-outline-danger {
@@ -634,58 +993,88 @@ a {
     border: 1px solid currentColor;
 }
 
+
+
 .btn-outline-primary {
     color: #065fd4;
 }
+
+
 
 .btn-outline-danger {
     color: var(--yt-red);
 }
 
+
+
 /* ========================================
+
    RESPONSIVE - Mobile First
+
    ======================================== */
+
 @media (max-width: 992px) {
+
     .sidebar {
         transform: translateX(-240px);
     }
+
+
 
         .sidebar.active {
             transform: translateX(0);
         }
 
+
+
     .youtube-content {
         margin-left: 0;
     }
+
+
 
     .osahan-navbar-search {
         display: none;
     }
 }
 
+
+
 @media (max-width: 768px) {
+
     .navbar.osahan-nav {
         padding: 0 8px;
     }
 
+
+
     .osahan-right-navbar .nav-link span {
         display: none;
     }
+
+
 
     .video-block .row > [class*='col-'] {
         margin-bottom: 24px;
     }
 }
 
+
+
 @media (max-width: 576px) {
+
     .category-tabs {
         gap: 8px;
     }
+
+
 
     .category-tab {
         padding: 6px 10px;
         font-size: 13px;
     }
+
+
 
     #content-wrapper .container-fluid {
         padding: 16px 8px;

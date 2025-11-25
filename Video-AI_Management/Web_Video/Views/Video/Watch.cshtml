@@ -815,7 +815,7 @@
             const timeParts = timeStr.split(':').map(Number);
             if (timeParts.length === 2) {
                 //  = phút, [2] = giây
-                totalSeconds = timeParts * 60 + timeParts[2];
+                totalSeconds = timeParts * 60 + timeParts[11];
             }
 
             if (totalSeconds > 0) {

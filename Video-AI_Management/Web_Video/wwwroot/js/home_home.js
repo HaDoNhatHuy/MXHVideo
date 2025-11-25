@@ -193,31 +193,59 @@
                 html = `<div class="col-12 text-center p-3">Không có lịch sử xem nào.</div>`;
             }
         } else {
+            // --- ĐOẠN CODE CŨ BỊ LỖI ---
+            /* html += `
+            <div class="col-xl-3 col-sm-6 mb-3">
+            <div class="video-card h-100">
+            ...
+            <div class="video-page text-success"> ... </div>
+            </div>
+            </div>`;
+            */
+
+            // --- THAY THẾ BẰNG ĐOẠN CODE MỚI NÀY ---
             videos.forEach(v => {
-                const durationStr = v.duration ? formatDuration(v.duration) : '3:50';
+                const durationStr = v.duration ? formatDuration(v.duration) : '0:00';
+                // Lấy avatar, nếu không có thì dùng ảnh mặc định
+                const avatarUrl = v.channelAvatar || '/avatarUser/avt-default.jpg';
+
                 html += `
-                    <div class="col-xl-3 col-sm-6 mb-3">
-                        <div class="video-card h-100">
-                            <div class="video-card-image">
-                                <a class="play-icon" href="/Video/Watch/${v.id}"><i class="fas fa-play-circle"></i></a>
-                                <a href="/Video/Watch/${v.id}">
-                                    <img class="img-fluid" src="${v.thumbnail || '/avatarUser/avt-default.jpg'}" alt="Video Thumbnail">
+                <div class="col-xl-3 col-sm-6 col-12 mb-4">
+                    <div class="video-card h-100">
+                        <div class="video-card-image">
+                            <a href="/Video/Watch/${v.id}">
+                                <img class="img-fluid" src="${v.thumbnail || '/avatarUser/avt-default.jpg'}" alt="${v.title}">
+                            </a>
+                            <div class="time">${durationStr}</div>
+                            <a class="play-icon" href="/Video/Watch/${v.id}" style="display:none"><i class="fas fa-play-circle"></i></a>
+                        </div>
+                        
+                        <div class="video-card-body">
+                            <div class="video-card-avatar">
+                                <a href="/Member/Channel/${v.channelId}">
+                                    <img class="img-fluid" src="${avatarUrl}" alt="" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
                                 </a>
-                                <div class="time">${durationStr}</div>
                             </div>
-                            <div class="video-card-body">
+                            
+                            <div class="video-info">
                                 <div class="video-title">
-                                    <a href="/Video/Watch/${v.id}" class="text-truncate">${v.title || 'Untitled Video'}</a>
+                                    <a href="/Video/Watch/${v.id}" title="${v.title}">${v.title || 'Untitled Video'}</a>
                                 </div>
-                                <div class="video-page text-success">
-                                    ${v.channelName || 'Unknown Channel'} <a title="" data-bs-placement="top" data-bs-toggle="tooltip" href="#" data-bs-original-title="Verified"><i class="fas fa-check-circle text-success"></i></a>
+                                
+                                <div class="video-page">
+                                    <a href="/Member/Channel/${v.channelId}" class="text-secondary" style="font-size:14px;">
+                                        ${v.channelName || 'Unknown Channel'}
+                                        <i class="fas fa-check-circle text-secondary" style="font-size:12px; margin-left:4px;" title="Verified"></i>
+                                    </a>
                                 </div>
-                                <div class="video-view text-truncate">
-                                    ${formatView(v.views || 0)} &nbsp;<i class="fas fa-calendar-alt"></i> ${v.createdAtTimeAgo || 'Unknown Time'}
+                                
+                                <div class="video-view text-secondary" style="font-size:14px;">
+                                    ${formatView(v.views || 0)} • ${v.createdAtTimeAgo || 'Vừa xong'}
                                 </div>
                             </div>
                         </div>
-                    </div>`;
+                    </div>
+                </div>`;
             });
             if (!videos.length) {
                 html = `<div class="col-12 text-center p-3">Không có ${page === 'liked' ? 'video đã thích' : 'video'} nào.</div>`;

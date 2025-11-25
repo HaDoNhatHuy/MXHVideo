@@ -127,7 +127,8 @@ namespace Web_Video.Controllers
                                 ChannelName = x.Channel.ChannelName,
                                 // FIX P1: Tính Views bằng SUM(NumberOfVisit)
                                 Views = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
-                                CreatedAtTimeAgo = SD.TimeAgo(x.UploadDate)
+                                CreatedAtTimeAgo = SD.TimeAgo(x.UploadDate),
+                                ChannelAvatar = x.Channel.ChannelPicture ?? "/avatarUser/avt-default.jpg"
                             })
                             .ToList();
 
@@ -174,6 +175,47 @@ namespace Web_Video.Controllers
 
             return Json(new ApiResponse(200, result: new PaginatedResult<VideoForHomeGridDto>(
                 randomVideos, totalFallbackItems, parameters.PageNumber, parameters.PageSize, totalPages)));
+        }
+        [Authorize(Roles = $"{SD.UserRole},{SD.AdminRole}")]
+        [HttpGet]
+        public async Task<IActionResult> GetSubscriptions(int pageNumber = 1, int pageSize = 12)
+        {
+            var userId = User.GetUserId();
+
+            // Lấy danh sách các kênh mà user này đã đăng ký
+            var query = Context.Subscribes
+                .Include(s => s.Channel) // Include thông tin kênh
+                .ThenInclude(c => c.Videos) // Include video để đếm số lượng
+                .Where(s => s.AppUserId == userId)
+                .Select(s => new
+                {
+                    Id = s.ChannelId,
+                    ChannelName = s.Channel.ChannelName,
+                    Thumbnail = s.Channel.ChannelPicture, // Ảnh đại diện kênh
+                    VideosCount = s.Channel.Videos.Count() // Số lượng video
+                });
+
+            var totalItems = await query.CountAsync();
+
+            var items = await query
+                .OrderBy(x => x.ChannelName) // Sắp xếp theo tên
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+            // Trả về format chuẩn giống các API khác
+            var paginatedResults = new PaginatedResult<object>(items, totalItems, pageNumber, pageSize, totalPages);
+
+            // Thêm currentPage vào result để JS xử lý logic "Xem thêm"
+            return Json(new ApiResponse(200, result: new
+            {
+                items = paginatedResults.Items,
+                totalPages = paginatedResults.TotalPages,
+                currentPage = paginatedResults.PageNumber,
+                totalItemsCount = paginatedResults.TotalItemsCount
+            }));
         }
         [Authorize(Roles = $"{SD.UserRole},{SD.AdminRole}")]
         [HttpGet]

@@ -8,6 +8,21 @@
 @section Css {
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="/css/youtube-search.css" rel="stylesheet" />
+    <style>
+        /* FIX MÀU NỀN ĐEN */
+        .youtube-search-results {
+            /* Đảm bảo nội dung search luôn có nền sáng */
+            background-color: #f9f9f9 !important;
+            color: #030303;
+            /* Có thể cần reset màu nền cho body nếu search.css đã thay đổi nó */
+        }
+        /* Nếu search results hiển thị video card kiểu list, đảm bảo nền trắng */
+        .video-card {
+            background-color: #ffffff !important;
+            border-radius: 8px; /* Thêm bo góc để đẹp hơn */
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05); /* Thêm bóng nhẹ */
+        }
+    </style>
 }
 
 <div class="youtube-search-results">

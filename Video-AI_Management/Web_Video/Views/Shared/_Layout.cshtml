@@ -349,7 +349,9 @@
 
         /* === KHÔNG ẨN BACKDROP === */
         /* XÓA HOÀN TOÀN DÒNG NÀY */
-        .modal-backdrop { display: none; }
+        .modal-backdrop {
+            display: none;
+        }
         /* === GHI ĐÈ Z-INDEX CHO BOOTSTRAP V4.1.3 === */
         .modal {
             /* Modal nội dung (vd: #imageSearchModal, #logoutModal) */
@@ -358,7 +360,7 @@
 
         .modal-backdrop {
             /* Lớp phủ nền */
-            z-index: 1040 !important; 
+            z-index: 1040 !important;
         }
         /* Đảm bảo Notification Modal tùy chỉnh cũng đủ cao */
         #notificationModal {
@@ -387,7 +389,7 @@
                     </button>
                     <!-- Nút mở modal tìm kiếm bằng hình ảnh -->
                     <button type="button" class="btn btn-light" data-toggle="modal" data-target="#imageSearchModal">
-                        <i class="fas fa-image"></i>
+                        <i class="fas fa-image" style="margin:5px;"></i>
                     </button>
                 </div>
                 <div id="searchSuggestions"></div>
@@ -435,9 +437,9 @@
             {
 
                 <li class="nav-item mx-1">
-                    <a class="nav-link" asp-controller="Video" asp-action="CreateEditVideo">
+                    <a class="nav-link" asp-controller="Video" asp-action="CreateEditVideo" style="display:flex;gap:20px; align-items:center;">
                         <i class="fas fa-plus-circle fa-fw"></i>
-                        Upload Video
+                        <span style="margin-right:40px;">Upload Video</span>
                     </a>
                 </li>
                 <li class="nav-item dropdown no-arrow mx-1">
@@ -452,7 +454,7 @@
                         <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> &nbsp; Something else here</a>
                     </div>
                 </li>
-                <li class="nav-item dropdown no-arrow mx-1">
+                <li class="nav-item dropdown no-arrow mx-1" style="padding-right:20px;">
                     <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="fas fa-envelope fa-fw"></i>
                         <span class="badge badge-success">7</span>
@@ -467,7 +469,7 @@
             }
             @if (User.Identity.IsAuthenticated)
             {
-                <li class="nav-item dropdown no-arrow osahan-right-navbar-user">
+                <li class="nav-item dropdown no-arrow osahan-right-navbar-user" style="margin-right:20px;">
                     <a class="nav-link dropdown-toggle user-dropdown-link" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <img alt="Avatar" src="/avatarUser/avt-default.jpg">
                         @User.Identity.Name
@@ -702,58 +704,52 @@
             // === LOAD DANH SÁCH KÊNH ĐĂNG KÝ ===
             if (isAuthenticated) {
                 console.log('Đang tải danh sách kênh đăng ký...');
-                loadSubscriptions();
+                // loadSubscriptions();
             }
 
-            function loadSubscriptions(page = 1) {
-                console.log('Tải trang:', page);
-                $.ajax({
-                    url: `/Home/GetSubscriptions?pageNumber=${page}&pageSize=5`,
-                    type: 'GET',
-                    success: function (response) {
-                        if (response.statusCode === 200 && response.result && response.result.items) {
-                            const items = response.result.items;
-                            totalSubPages = response.result.totalPages || 1;
-                            currentSubPage = response.result.currentPage || page;
+            function loadSidebarSubscriptions() {
+            // Chỉ tải 5 kênh đầu tiên cho Sidebar
+            $.ajax({
+                url: `/Home/GetSubscriptions?pageNumber=1&pageSize=5`,
+                type: 'GET',
+                success: function (response) {
+                    // Kiểm tra kỹ cấu trúc response để tránh lỗi null
+                    if (response.statusCode === 200 && response.result && response.result.items) {
+                        const items = response.result.items;
+                        subscriptionsList.empty(); // Xóa list cũ
 
-                            if (page === 1) subscriptionsList.empty();
-
-                            if (items.length === 0 && page === 1) {
-                                subscriptionsList.append('<li><span>Chưa có kênh nào</span></li>');
-                            } else {
-                                items.forEach(item => {
-                                    const channelItem = `
-                                        <li>
-                                            <a href="/Member/Channel/${item.id}">
-                                                <img class="img-fluid" alt="${item.channelName}" src="${item.channelPicture}" style="width:24px;height:24px;border-radius:50%;margin-right:8px;">
-                                                ${item.channelName}
-                                            </a>
-                                        </li>`;
-                                    subscriptionsList.append(channelItem);
-                                });
-                            }
-
-                            subscriptionsList.find('.load-more-btn').remove();
-
-                            if (currentSubPage < totalSubPages) {
-                                subscriptionsList.append(`
-                                    <li class="load-more-btn" style="cursor:pointer;text-align:center;padding:8px;color:#606060;">
-                                        <i class="fas fa-angle-down"></i> Xem thêm
-                                    </li>
-                                `);
-                                subscriptionsList.find('.load-more-btn').on('click', function () {
-                                    loadSubscriptions(currentSubPage + 1);
-                                });
-                            }
+                        if (items.length === 0) {
+                            subscriptionsList.append('<li class="nav-item"><span class="nav-link">Chưa đăng ký kênh nào</span></li>');
                         } else {
-                            subscriptionsList.append('<li><span>Lỗi tải dữ liệu</span></li>');
+                            items.forEach(item => {
+                                const channelItem = `
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/Member/Channel/${item.id}">
+                                        <img class="img-fluid rounded-circle mr-2" alt="${item.channelName}" src="${item.thumbnail || '/avatarUser/avt-default.jpg'}"
+                                        style="width:24px;height:24px;object-fit:cover;">
+                                        <span>${item.channelName}</span>
+                                    </a>
+                                </li>`;
+                                subscriptionsList.append(channelItem);
+                            });
+
+                            // Link xem tất cả
+                            subscriptionsList.append(`
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/Home/Subscriptions">
+                                        <i class="fas fa-angle-down mr-2"></i>
+                                        <span>Xem tất cả</span>
+                                    </a>
+                                </li>
+                            `);
                         }
-                    },
-                    error: function () {
-                        subscriptionsList.append('<li><span>Lỗi kết nối</span></li>');
                     }
-                });
-            }
+                },
+                error: function () {
+                    console.log("Không tải được danh sách đăng ký (Sidebar)");
+                }
+            });
+        }
 
             // === TÌM KIẾM GỢI Ý ===
             const searchInput = document.getElementById('searchInput');
@@ -847,10 +843,12 @@
 
             function hideLoading() {
                 const indicator = document.getElementById('loadingIndicator');
-                indicator.classList.remove('active');
-                setTimeout(() => {
-                    indicator.style.display = 'none';
-                }, 300);
+                if (indicator) { // Thêm kiểm tra null
+                    indicator.classList.remove('active');
+                    setTimeout(() => {
+                        indicator.style.display = 'none';
+                    }, 300);
+                }
             }
 
             // === TÌM KIẾM BẰNG HÌNH ẢNH ===
