@@ -22,8 +22,8 @@ namespace DataAccess.Repo
             {
                 BaseAddress = new Uri("https://api.ip2location.io")
             };
-        }        
-        public async Task HandleVideoViewAsync(string userId, Guid videoId, string ipAddress)
+        }
+        public async Task HandleVideoViewAsync(string userId, Guid videoId, string ipAddress, string referer)
         {
             // Lấy tất cả VideoView của user với video này
             var existingViews = await _context.VideoViews
@@ -35,7 +35,7 @@ namespace DataAccess.Repo
             if (!existingViews.Any())
             {
                 // Chưa có lịch sử → Tạo mới
-                await AddVideoViewAsync(userId, videoId, ipAddress);
+                await AddVideoViewAsync(userId, videoId, ipAddress, referer);
             }
             else
             {
@@ -53,13 +53,15 @@ namespace DataAccess.Repo
                 latestView.LastVisit = now;
                 latestView.IpAddress = ipAddress;
                 latestView.NumberOfVisit++; // Tăng số lần xem
+                // CẬP NHẬT REFERER CHO LƯỢT TRUY CẬP MỚI
+                latestView.RefererUrl = referer;
 
                 await _context.SaveChangesAsync();
             }
         }
 
         #region Private Methods
-        private async Task AddVideoViewAsync(string userId, Guid videoId, string ipAddress)
+        private async Task AddVideoViewAsync(string userId, Guid videoId, string ipAddress, string referer)
         {
             var ip2LocationResult = await GetIP2LocationResultAsync(ipAddress);
             var videoViewToAdd = new VideoView
@@ -74,7 +76,9 @@ namespace DataAccess.Repo
                 Is_Proxy = ip2LocationResult.Is_Proxy,
                 ProgressSeconds = 0,
                 LastVisit = DateTime.UtcNow,
-                NumberOfVisit = 1
+                NumberOfVisit = 1,
+                // LƯU REFERER VÀO DB
+                RefererUrl = referer
             };
             _context.VideoViews.Add(videoViewToAdd);
         }

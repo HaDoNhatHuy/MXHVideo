@@ -253,127 +253,159 @@ namespace Web_Video.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAnalytics(string timeFilter)
+        public async Task<IActionResult> GetAnalytics(int days = 28)
         {
-            try
+            string userId = User.GetUserId();
+            var channel = await Context.Channels
+                .Include(c => c.Videos)
+                .ThenInclude(v => v.Viewers)
+                .FirstOrDefaultAsync(c => c.AppUserId == userId);
+
+            if (channel == null)
             {
-                var userId = User.GetUserId();
-                if (string.IsNullOrEmpty(userId))
+                // Trả về dữ liệu trống nếu không có kênh
+                return Json(new ApiResponse(200, result: new
                 {
-                    return Unauthorized(new { message = "User not authenticated." });
-                }
+                    totalViews = 0,
+                    subscribers = 0,
+                    likes = 0,
+                    comments = 0,
+                    viewsChange = 0,
+                    subscribersChange = 0,
+                    likesChange = 0,
+                    commentsChange = 0,
+                    viewsOverTime = new { Labels = Array.Empty<string>(), Data = Array.Empty<int>() },
+                    trafficSources = new { Labels = Array.Empty<string>(), Data = Array.Empty<int>() }
+                }));
+            }
 
-                var channel = await _context.Channels
-                    .Include(c => c.Videos)
-                    .ThenInclude(v => v.LikeDislikes)
-                    .Include(c => c.Videos)
-                    .ThenInclude(v => v.Comments)
-                    .Include(c => c.Subscribers)
-                    .FirstOrDefaultAsync(c => c.AppUserId == userId);
+            DateTime endDate = DateTime.UtcNow.Date;
+            DateTime startDate = endDate.AddDays(-days);
 
-                if (channel == null)
+            // Khởi tạo các list/dictionary cần thiết
+            var viewsOverTimeLabels = new List<string>();
+            var viewsOverTimeData = new List<int>();
+            var trafficSourceCounts = new Dictionary<string, int>
+    {
+        {"Direct", 0}, {"Search", 0}, {"Social", 0}, {"External Website", 0}, {"Other", 0}
+    };
+
+            // Lấy toàn bộ lượt xem của kênh trong khoảng thời gian để xử lý 2 biểu đồ
+            var allChannelViews = await Context.VideoViews
+                .Include(vv => vv.Video)
+                .Where(vv => vv.Video.ChannelId == channel.Id && vv.ViewDate >= startDate)
+                .ToListAsync();
+
+            // ===============================================
+            // 1. BIỂU ĐỒ LƯỢT XEM THEO THỜI GIAN (Views Over Time)
+            // ===============================================
+
+            int groupByDays = (days > 90) ? 30 : 1;
+
+            for (var date = startDate.Date; date < endDate; date = date.AddDays(groupByDays))
+            {
+                var nextDate = date.AddDays(groupByDays);
+
+                // Nhãn
+                viewsOverTimeLabels.Add(groupByDays > 1 ? date.ToString("MMM yyyy") : date.ToString("MMM d"));
+
+                // Tính tổng lượt xem thực tế từ VideoViews trong khoảng thời gian này
+                var viewsInPeriod = allChannelViews
+                    .Where(vv => vv.ViewDate >= date && vv.ViewDate < nextDate)
+                    .Sum(vv => vv.NumberOfVisit);
+
+                viewsOverTimeData.Add(viewsInPeriod);
+            }
+
+            // ===============================================
+            // 2. BIỂU ĐỒ NGUỒN LƯU LƯỢNG TRUY CẬP (Traffic Sources)
+            // ===============================================
+
+            foreach (var view in allChannelViews)
+            {
+                string source = GetTrafficSource(view.RefererUrl);
+                int totalVisits = view.NumberOfVisit;
+
+                if (trafficSourceCounts.ContainsKey(source))
                 {
-                    return Json(new
-                    {
-                        statusCode = 200,
-                        result = new
-                        {
-                            totalViews = 0,
-                            subscribers = 0,
-                            likes = 0,
-                            comments = 0,
-                            viewsChange = 0,
-                            subscribersChange = 0,
-                            likesChange = 0,
-                            commentsChange = 0,
-                            viewsOverTime = new { Labels = new string[0], Data = new int[0] },
-                            trafficSources = new { Labels = new string[0], Data = new int[0] }
-                        }
-                    });
-                }
-
-                DateTime startDate;
-                int groupByDays;
-                switch (timeFilter?.ToLower())
-                {
-                    case "7": startDate = DateTime.UtcNow.AddDays(-7); groupByDays = 1; break;
-                    case "28": startDate = DateTime.UtcNow.AddDays(-28); groupByDays = 4; break;
-                    case "90": startDate = DateTime.UtcNow.AddDays(-90); groupByDays = 10; break;
-                    case "all": default: startDate = DateTime.MinValue; groupByDays = 30; break;
-                }
-
-                var filteredVideos = channel.Videos.Where(v => v.UploadDate >= startDate).ToList();
-                var totalViews = filteredVideos.Sum(v => v.Views ?? 0);
-                var totalLikes = filteredVideos.SelectMany(v => v.LikeDislikes).Count(ld => ld.Liked == true);
-                var totalComments = filteredVideos.SelectMany(v => v.Comments).Count();
-                var totalSubscribers = channel.Subscribers.Count;
-
-                var previousStartDate = startDate.AddMonths(-1);
-                var previousEndDate = startDate;
-                var previousVideos = channel.Videos.Where(v => v.UploadDate >= previousStartDate && v.UploadDate < previousEndDate).ToList();
-
-                var previousViews = previousVideos.Sum(v => v.Views ?? 0);
-                var previousLikes = previousVideos.SelectMany(v => v.LikeDislikes).Count(ld => ld.Liked == true);
-                var previousComments = previousVideos.SelectMany(v => v.Comments).Count();
-
-                double viewsChange = previousViews > 0 ? Math.Round(((double)(totalViews - previousViews) / previousViews) * 100, 1) : 0;
-                double subscribersChange = 0;
-                double likesChange = previousLikes > 0 ? Math.Round(((double)(totalLikes - previousLikes) / previousLikes) * 100, 1) : 0;
-                double commentsChange = previousComments > 0 ? Math.Round(((double)(totalComments - previousComments) / previousComments) * 100, 1) : 0;
-
-                var viewsOverTimeLabels = new List<string>();
-                var viewsOverTimeData = new List<int>();
-
-                if (timeFilter != "all")
-                {
-                    var endDate = DateTime.UtcNow.Date;
-                    for (var date = startDate.Date; date <= endDate; date = date.AddDays(groupByDays))
-                    {
-                        var nextDate = date.AddDays(groupByDays);
-                        viewsOverTimeLabels.Add(date.ToString("MMM d"));
-                        viewsOverTimeData.Add(filteredVideos.Where(v => v.UploadDate.Date >= date && v.UploadDate.Date < nextDate).Sum(v => v.Views ?? 0));
-                    }
+                    trafficSourceCounts[source] += totalVisits;
                 }
                 else
                 {
-                    var firstVideoDate = filteredVideos.Any() ? filteredVideos.Min(v => v.UploadDate.Date) : DateTime.UtcNow.Date;
-                    var totalDays = (DateTime.UtcNow.Date - firstVideoDate).Days;
-                    groupByDays = Math.Max(1, totalDays / 10);
-                    for (var i = 0; i <= totalDays; i += groupByDays)
-                    {
-                        var date = firstVideoDate.AddDays(i);
-                        var nextDate = date.AddDays(groupByDays);
-                        viewsOverTimeLabels.Add(date.ToString("MMM d"));
-                        viewsOverTimeData.Add(filteredVideos.Where(v => v.UploadDate.Date >= date && v.UploadDate.Date < nextDate).Sum(v => v.Views ?? 0));
-                    }
+                    trafficSourceCounts["Other"] += totalVisits;
                 }
-
-                var viewsOverTime = new { Labels = viewsOverTimeLabels, Data = viewsOverTimeData };
-                var trafficSources = new { Labels = new[] { "Direct", "Search", "External", "Social" }, Data = new[] { 40, 30, 20, 10 } };
-
-                return Json(new
-                {
-                    statusCode = 200,
-                    result = new
-                    {
-                        totalViews,
-                        subscribers = totalSubscribers,
-                        likes = totalLikes,
-                        comments = totalComments,
-                        viewsChange,
-                        subscribersChange,
-                        likesChange,
-                        commentsChange,
-                        viewsOverTime,
-                        trafficSources
-                    }
-                });
             }
-            catch (Exception ex)
+
+            var trafficSourcesLabels = trafficSourceCounts.Keys.ToList();
+            var trafficSourcesData = trafficSourceCounts.Values.ToList();
+
+            // ===============================================
+            // 3. TÍNH CÁC METRICS CƠ BẢN
+            // ===============================================
+
+            // Tính tổng lượt xem (totalViews) và các metric khác
+            long totalViews = channel.Videos.Sum(v => v.Viewers.Sum(vv => vv.NumberOfVisit));
+            int subscribers = channel.Subscribers.Count;
+
+            var videosInChannel = await Context.Videos
+                .Include(v => v.LikeDislikes)
+                .Include(v => v.Comments)
+                .Where(v => v.ChannelId == channel.Id)
+                .ToListAsync();
+
+            long totalLikes = videosInChannel.Sum(v => v.LikeDislikes.Count(ld => ld.Liked == true));
+            long totalComments = videosInChannel.Sum(v => v.Comments.Count);
+
+            // Placeholder cho Change Percentages (Giữ nguyên logic cũ nếu không có thay đổi)
+            int viewsChange = 0;
+            int subscribersChange = 0;
+            int likesChange = 0;
+            int commentsChange = 0;
+
+            var viewsOverTimeResult = new { Labels = viewsOverTimeLabels, Data = viewsOverTimeData };
+            var trafficSourcesResult = new { Labels = trafficSourcesLabels, Data = trafficSourcesData };
+
+            // Trả về kết quả
+            return Json(new ApiResponse(200, result: new
             {
-                return StatusCode(500, new { statusCode = 500, message = $"Error in GetAnalytics: {ex.Message}" });
-            }
+                totalViews = totalViews,
+                subscribers = subscribers,
+                likes = totalLikes,
+                comments = totalComments,
+                viewsChange = viewsChange,
+                subscribersChange = subscribersChange,
+                likesChange = likesChange,
+                commentsChange = commentsChange,
+                viewsOverTime = viewsOverTimeResult,
+                trafficSources = trafficSourcesResult
+            }));
         }
+        // HÀM HELPER: Phân loại Referer
+        private string GetTrafficSource(string refererUrl)
+        {
+            if (string.IsNullOrEmpty(refererUrl) || refererUrl.Equals("Direct", StringComparison.OrdinalIgnoreCase))
+                return "Direct";
+
+            string url = refererUrl.ToLower();
+
+            if (url.Contains("google.com/search") || url.Contains("bing.com") || url.Contains("yahoo.com"))
+                return "Search";
+
+            if (url.Contains("facebook.com") || url.Contains("twitter.com") || url.Contains("instagram.com") || url.Contains("linkedin.com"))
+                return "Social";
+
+            // Nếu là các trang web khác (External)
+            if (Uri.TryCreate(refererUrl, UriKind.Absolute, out Uri uri))
+            {
+                // Đảm bảo không phải là trang nội bộ (localhost/domain chính)
+                if (!uri.Host.Contains(HttpContext.Request.Host.Host) && !uri.Host.Contains("localhost"))
+                {
+                    return "External Website";
+                }
+            }
+            return "Other";
+        }
+
 
         [HttpGet]
         public async Task<IActionResult> GetVideosForChannelGrid(int pageNumber = 1, int pageSize = 10, string sortBy = "")
@@ -440,38 +472,6 @@ namespace Web_Video.Controllers
                 return StatusCode(500, new { statusCode = 500, message = $"Error: {ex.Message}" });
             }
         }
-
-        //[HttpGet]
-        //public async Task<IActionResult> GetTotalViews()
-        //{
-        //    try
-        //    {
-        //        var userId = User.GetUserId();
-        //        if (string.IsNullOrEmpty(userId))
-        //        {
-        //            return Unauthorized(new { statusCode = 401, message = "User not authenticated." });
-        //        }
-
-        //        var channel = await _context.Channels
-        //            .Include(c => c.Videos)
-        //            .Include(c => c.Subscribers)
-        //            .FirstOrDefaultAsync(c => c.AppUserId == userId);
-
-        //        if (channel == null)
-        //        {
-        //            return NotFound(new { statusCode = 404, message = "Channel not found." });
-        //        }
-
-        //        var totalViews = channel.Videos.Sum(v => v.Views ?? 0);
-        //        var subscribers = channel.Subscribers.Count;
-
-        //        return Json(new { statusCode = 200, totalViews, subscribers });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, new { statusCode = 500, message = $"Error in GetTotalViews: {ex.Message}" });
-        //    }
-        //}
         [HttpGet]
         public async Task<IActionResult> GetTotalViews()
         {

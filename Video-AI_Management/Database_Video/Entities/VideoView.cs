@@ -20,6 +20,8 @@ namespace Database_Video.Entities
         public float? ProgressSeconds { get; set; } = 0; // Thêm trường này để lưu tiến độ (tính bằng giây)
         public DateTime LastVisit { get; set; } = DateTime.Now;
         public DateTime ViewDate { get; set; } = DateTime.UtcNow.Date;  // Mới: Để phân biệt entry theo ngày
+        // THÊM TRƯỜNG REFERER MỚI
+        public string? RefererUrl { get; set; }
 
         //Navigation
         public AppUser AppUser { get; set; }

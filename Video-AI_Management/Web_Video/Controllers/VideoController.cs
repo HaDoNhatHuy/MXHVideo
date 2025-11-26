@@ -44,8 +44,12 @@ namespace Web_Video.Controllers
                 // KHÔNG GỌI PYTHON Ở ĐÂY NỮA. Để list rỗng, Frontend sẽ tự gọi API trên.
                 toReturn.RecommendedVideos = new List<RecommendedVideoViewModel>();
 
+                // Lấy Referer từ Header. Nếu không có (truy cập trực tiếp), gán là "Direct".
+                string referer = HttpContext.Request.Headers["Referer"].FirstOrDefault();
+                if (string.IsNullOrEmpty(referer)) referer = "Direct";
+
                 // Ghi log view (Async)
-                _ = UnitOfWork.VideoViewRepo.HandleVideoViewAsync(User.GetUserId(), id, HttpContext.Connection.RemoteIpAddress.ToString());
+                _ = UnitOfWork.VideoViewRepo.HandleVideoViewAsync(User.GetUserId(), id, HttpContext.Connection.RemoteIpAddress.ToString(), referer);
                 await UnitOfWork.CompleteAsync();
 
                 return View(toReturn);
@@ -67,6 +71,9 @@ namespace Web_Video.Controllers
             try
             {
                 var userId = User.GetUserId();
+                // 1. Lấy Referer (Cần thiết cho HandleVideoViewAsync)
+                string referer = Request.Headers["Referer"].FirstOrDefault();
+                if (string.IsNullOrEmpty(referer)) referer = "Direct"; // Fallback
 
                 // Lấy VideoView mới nhất (chỉ 1 entry duy nhất)
                 var videoView = await Context.VideoViews
@@ -78,7 +85,7 @@ namespace Web_Video.Controllers
                 {
                     // Nếu chưa có → tạo mới
                     var ip = Request.HttpContext.Connection.RemoteIpAddress?.ToString();
-                    await UnitOfWork.VideoViewRepo.HandleVideoViewAsync(userId, videoId, ip);
+                    await UnitOfWork.VideoViewRepo.HandleVideoViewAsync(userId, videoId, ip, referer);
                     await UnitOfWork.CompleteAsync();
 
                     // Lấy lại sau khi tạo
