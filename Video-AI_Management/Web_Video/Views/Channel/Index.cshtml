@@ -1,13 +1,19 @@
 ﻿@model Web_Video.ViewModels.Channel.ChannelAddEditViewModel
+
 @{
     ViewData["Title"] = "My Channel";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
+
 @section Css {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.css" rel="stylesheet">
-    @* <link href="/css/channelStyle.css" rel="stylesheet" /> *@
-    <link href="/css/youtube-channel.css" rel="stylesheet" />
+    <link href="/css/youtube-channel-light.css" rel="stylesheet" />
+    <style>
+        .note-editing-area {
+            color: black !important;
+        }
+    </style>
 }
 
 <!-- Spinner toàn màn hình -->
@@ -17,39 +23,42 @@
     </div>
 </div>
 
-<!-- Modal để chỉnh sửa thông tin channel -->
+<!-- Modal chỉnh sửa thông tin channel - LIGHT MODE -->
 <div class="modal fade" id="editChannelModal" tabindex="-1" aria-labelledby="editChannelModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="background-color: #282828; border: none;">
-            <div class="modal-header" style="border-bottom: 1px solid #3f3f3f;">
-                <h5 class="modal-title" style="color: #f1f1f1;">Chỉnh sửa kênh</h5>
-                <button type="button" class="btn-close btn-close-white" data-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chỉnh sửa kênh</h5>
+                <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="editChannelForm" asp-action="EditChannel" asp-controller="Channel" method="post" enctype="multipart/form-data">
                     <div class="mb-4 text-center">
-                        <img id="editAvatarPreview" src="@(string.IsNullOrEmpty(Model.AvatarUrl) ? "/avatarUser/avt-default.jpg" : Model.AvatarUrl)" alt="Avatar" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 16px;">
+                        <img id="editAvatarPreview"
+                             src="@(string.IsNullOrEmpty(Model.AvatarUrl) ? "/avatarUser/avt-default.jpg" : Model.AvatarUrl)"
+                             alt="Avatar"
+                             class="modal-avatar-preview">
                         <div>
                             <input type="file" id="editAvatarInput" name="Avatar" accept="image/*" style="display: none;">
-                            <button type="button" class="btn-custom btn-customize" onclick="document.getElementById('editAvatarInput').click()">
+                            <button type="button" class="btn-custom btn-customize mt-3" style="margin-left:130px;" onclick="document.getElementById('editAvatarInput').click()">
                                 <i class="bi bi-camera"></i>
                                 Thay đổi ảnh đại diện
                             </button>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label asp-for="Name" class="form-label" style="color: #f1f1f1;">Tên kênh</label>
-                        <input asp-for="Name" type="text" class="form-control" id="channelName" style="background-color: #3f3f3f; border: 1px solid #5f5f5f; color: #f1f1f1;">
+                        <label asp-for="Name" class="form-label">Tên kênh</label>
+                        <input asp-for="Name" type="text" class="form-control" id="channelName">
                         <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
-                        <label asp-for="About" class="form-label" style="color: #f1f1f1;">Mô tả kênh</label>
-                        <textarea asp-for="About" class="form-control AboutChannel" id="channelAbout" rows="6" style="background-color: #3f3f3f; border: 1px solid #5f5f5f; color: #f1f1f1;"></textarea>
+                        <label asp-for="About" class="form-label">Mô tả kênh</label>
+                        <textarea asp-for="About" class="form-control AboutChannel" id="channelAbout" rows="6"></textarea>
                         <span asp-validation-for="About" class="text-danger"></span>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer" style="border-top: 1px solid #3f3f3f;">
+            <div class="modal-footer">
                 <button type="button" class="btn-custom btn-manage" data-dismiss="modal">Hủy</button>
                 <button type="button" class="btn-custom btn-customize" onclick="submitEditChannelForm()">Cập nhật</button>
             </div>
@@ -59,27 +68,28 @@
 
 @if (string.IsNullOrEmpty(Model.Name) || Model.Errors.Count > 0)
 {
+    <!-- Form tạo kênh mới - LIGHT MODE -->
     <div class="channel-form-container">
         <h2>Tạo kênh của bạn</h2>
         <form asp-action="CreateChannel" method="post" enctype="multipart/form-data">
             <div class="mb-4 text-center">
-                <img id="createAvatarPreview" src="/avatarChannel/channel-default.jpg" alt="Avatar" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 16px;">
+                <img id="createAvatarPreview" src="/avatarChannel/channel-default.jpg" alt="Avatar" class="modal-avatar-preview">
                 <div>
                     <input type="file" id="createAvatarInput" name="Avatar" accept="image/*" style="display: none;">
-                    <button type="button" class="btn-custom btn-customize" onclick="document.getElementById('createAvatarInput').click()">
+                    <button type="button" class="btn-custom btn-customize mt-3" onclick="document.getElementById('createAvatarInput').click()">
                         <i class="bi bi-camera"></i>
                         Tải ảnh đại diện
                     </button>
                 </div>
             </div>
             <div class="mb-3">
-                <label asp-for="Name" class="form-label" style="color: #f1f1f1;">Tên kênh</label>
-                <input asp-for="Name" type="text" class="form-control" style="background-color: #3f3f3f; border: 1px solid #5f5f5f; color: #f1f1f1;">
+                <label asp-for="Name" class="form-label">Tên kênh</label>
+                <input asp-for="Name" type="text" class="form-control">
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
             <div class="mb-3">
-                <label asp-for="About" class="form-label" style="color: #f1f1f1;">Mô tả kênh</label>
-                <textarea asp-for="About" rows="6" class="form-control AboutChannel" style="background-color: #3f3f3f; border: 1px solid #5f5f5f; color: #f1f1f1;"></textarea>
+                <label asp-for="About" class="form-label">Mô tả kênh</label>
+                <textarea asp-for="About" rows="6" class="form-control AboutChannel"></textarea>
                 <span asp-validation-for="About" class="text-danger"></span>
             </div>
             <div class="form-actions">
@@ -93,6 +103,7 @@ else
     <!-- Channel Banner -->
     <div class="channel-banner">
         <img src="@(string.IsNullOrEmpty(Model.BannerUrl) ? "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1920" : Model.BannerUrl)" alt="Channel Banner">
+        @* <img src="@(string.IsNullOrEmpty(Model.BannerUrl) ? "/channelBackgroundImage/bg_3.jpg" : Model.BannerUrl)" alt="Channel Banner"> *@
     </div>
 
     <!-- Channel Info -->
@@ -115,7 +126,7 @@ else
                         Tùy chỉnh kênh
                     </button>
                     <a class="btn-custom btn-manage" href="@Url.Action("CreateEditVideo", "Video")">
-                        <i class="bi bi-gear"></i>
+                        <i class="bi bi-plus-lg"></i>
                         Tải video lên
                     </a>
                 </div>
@@ -204,6 +215,7 @@ else
                     </div>
                 </div>
             </div>
+
             <div class="chart-container">
                 <div class="chart-header">
                     <div class="chart-title">Lượt xem theo thời gian</div>
@@ -216,6 +228,7 @@ else
                 </div>
                 <canvas id="viewsChart" height="80"></canvas>
             </div>
+
             <div class="chart-container">
                 <div class="chart-header">
                     <div class="chart-title">Nguồn lưu lượng truy cập</div>
@@ -232,7 +245,7 @@ else
                     <p id="channelDescription">@Model.About</p>
                 </div>
                 <div class="about-section">
-                    <h3>Thống kê kênh</h3>
+                    <h3>Thông tin kênh</h3>
                     <div class="about-stats-grid">
                         <div class="stat-item">
                             <i class="bi bi-calendar-event stat-icon"></i>
@@ -275,7 +288,6 @@ else
                 </div>
             </div>
         </div>
-
     </div>
 }
 
@@ -283,25 +295,12 @@ else
     <partial name="_ValidationScriptsPartial" />
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    <!-- Nếu dùng SweetAlert, thêm dòng này -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> -->
 
     <script>
-        // Hàm hiển thị thông báo
         function displayNotification(isSuccess, title, message, type) {
             alert(`${title}: ${message}`);
-            // Nếu dùng SweetAlert (uncomment nếu đã include):
-            /*
-            Swal.fire({
-                icon: isSuccess ? 'success' : 'error',
-                title: title,
-                text: message,
-                confirmButtonText: 'OK'
-            });
-            */
         }
 
-        // Hàm confirmation để xử lý confirm dialog
         async function confirmation(message) {
             return new Promise((resolve) => {
                 const result = window.confirm(message);
@@ -310,14 +309,13 @@ else
         }
 
         let pageNumber = 1;
-        let pageSize = 10; // Số video mỗi lần tải
+        let pageSize = 10;
         let sortBy = '';
         let isLoading = false;
         let hasMoreVideos = true;
         let viewsChart, trafficChart;
 
         $(document).ready(function () {
-            // Khởi tạo summernote cho phần About
             $('.AboutChannel').summernote({
                 height: 200,
                 toolbar: [
@@ -328,15 +326,12 @@ else
                 ]
             });
 
-            // Xử lý chuyển tab
             $('.nav-tab').on('click', function () {
                 $('.nav-tab').removeClass('active');
                 $('.tab-pane').removeClass('active');
-
                 $(this).addClass('active');
                 const tabId = $(this).attr('data-tab');
                 $('#' + tabId).addClass('active');
-
                 localStorage.setItem('activeTab', '#' + tabId);
 
                 if (tabId === 'analytics') {
@@ -349,7 +344,6 @@ else
                 }
             });
 
-            // Khôi phục tab đã chọn trước đó
             var activeTab = localStorage.getItem('activeTab');
             if (activeTab) {
                 $('.nav-tab[data-tab="' + activeTab.substring(1) + '"]').click();
@@ -357,14 +351,12 @@ else
                 $('.nav-tab[data-tab="myvideos"]').click();
             }
 
-            // Xử lý infinite scroll
             $(window).on('scroll', function () {
                 if ($(window).scrollTop() + $(window).height() >= $('#videosGrid').offset().top + $('#videosGrid').outerHeight() - 100 && !isLoading && hasMoreVideos) {
                     getVideos();
                 }
             });
 
-            // Xử lý preview avatar khi upload
             $('#createAvatarInput').on('change', function (e) {
                 const file = e.target.files[0];
                 if (file) {
@@ -387,16 +379,12 @@ else
                 }
             });
 
-            // Cập nhật analytics khi thay đổi bộ lọc thời gian
             $('#timeFilter').on('change', updateAnalytics);
-
-            // Tải tổng số lượt xem và subscribers cho tab About
             getTotalViewsForAbout();
         });
 
         function getVideos() {
             if (isLoading || !hasMoreVideos) return;
-
             isLoading = true;
             $('#videosGrid').append('<div class="video-card loading-skeleton" style="height: 250px;"></div>'.repeat(pageSize));
 
@@ -410,28 +398,21 @@ else
                 },
                 success: function (data) {
                     $('.loading-skeleton').remove();
-
-                    // Kiểm tra cấu trúc response
                     if (!data || typeof data !== 'object') {
                         $('#videosGrid').append('<p>Đã xảy ra lỗi khi tải video: Phản hồi không hợp lệ.</p>');
                         hasMoreVideos = false;
                         return;
                     }
-
-                    // Kiểm tra statusCode
                     if (data.statusCode !== 200) {
                         $('#videosGrid').append(`<p>Lỗi: ${data.message || 'Không thể tải video.'}</p>`);
                         hasMoreVideos = false;
                         return;
                     }
-
-                    // Kiểm tra result
                     if (!data.result || !Array.isArray(data.result.items)) {
                         $('#videosGrid').append('<p>Đã xảy ra lỗi: Dữ liệu video không hợp lệ.</p>');
                         hasMoreVideos = false;
                         return;
                     }
-
                     const result = data.result;
                     if (result.items.length === 0) {
                         hasMoreVideos = false;
@@ -459,38 +440,28 @@ else
 
         function populateVideoGrid(videos) {
             let videoItems = '';
-
             if (videos.length > 0) {
                 videos.forEach((v) => {
-                    console.log('Video ID:', v.id); // Thêm log để debug
                     videoItems += '<div class="video-card">';
                     videoItems += '<div class="video-thumbnail-wrapper">';
-                    videoItems += `<img src="${v.thumbnail || '/images/default-thumbnail.jpg'}" alt="${v.title}" class="video-thumbnail">`;
+                    videoItems += `<a href="/Video/Watch/${v.id}"><img src="${v.thumbnail || '/images/default-thumbnail.jpg'}" alt="${v.title}" class="video-thumbnail"></a>`;
                     videoItems += `<span class="video-duration">${v.duration || '0:00'}</span>`;
-                    videoItems += '<button class="video-menu"><i class="bi bi-three-dots-vertical"></i></button>';
                     videoItems += '</div>';
+                    videoItems += '<div class="video-info-wrapper">';
                     videoItems += '<div class="video-info">';
                     videoItems += `<div class="video-title"><a href="/Video/Watch/${v.id}">${v.title}</a></div>`;
                     videoItems += `<div class="video-meta">${v.views.toLocaleString()} lượt xem • ${new Date(v.createdAt).toLocaleDateString('vi-VN')}</div>`;
+                    videoItems += '<div class="video-actions">';
+                    videoItems += `<a href="/Video/CreateEditVideo/${v.id}" class="video-action-btn" title="Chỉnh sửa"><i class="bi bi-pencil"></i></a>`;
+                    videoItems += `<button class="video-action-btn delete-video-btn" data-video-id="${v.id}" data-video-title="${v.title}" title="Xóa"><i class="bi bi-trash3"></i></button>`;
+                    videoItems += '<span class="delete-loading"><div class="spinner-border spinner-border-sm text-primary" role="status"></div></span>';
+                    videoItems += '</div>';
+                    videoItems += '</div>';
                     videoItems += '</div>';
                     videoItems += '</div>';
                 });
             }
-
             $('#videosGrid').append(videoItems);
-
-            // Xử lý menu dropdown cho video
-            $('.video-menu').off('click').on('click', function () {
-                const videoId = $(this).closest('.video-card').find('a').attr('href').split('/').pop();
-                const videoTitle = $(this).closest('.video-card').find('.video-title').text();
-                const dropdownMenu = `
-                    <ul class="dropdown-menu show" style="position: absolute; top: 40px; right: 0;">
-                        <li><a class="dropdown-item" href="/Video/CreateEditVideo/${videoId}"><i class="bi bi-pencil me-2"></i>Chỉnh sửa</a></li>
-                        <li><a class="dropdown-item delete-video-btn" href="#" data-video-id="${videoId}" data-video-title="${videoTitle}"><i class="bi bi-trash3 me-2"></i>Xóa</a></li>
-                        <span class="delete-loading"><div class="spinner-border spinner-border-sm text-primary" role="status"></div></span>
-                    </ul>`;
-                $(this).after(dropdownMenu);
-            });
         }
 
         function getTotalViewsForAbout() {
@@ -515,7 +486,6 @@ else
 
         function updateAnalytics() {
             const timeFilter = $('#timeFilter').val();
-
             $.ajax({
                 url: "/Channel/GetAnalytics",
                 type: "GET",
@@ -527,10 +497,6 @@ else
                         $('#subscribers').text('0');
                         $('#likes').text('0');
                         $('#comments').text('0');
-                        $('#viewsChange').text('+0% so với tháng trước');
-                        $('#subscribersChange').text('+0% so với tháng trước');
-                        $('#likesChange').text('+0% so với tháng trước');
-                        $('#commentsChange').text('+0% so với tháng trước');
                         return;
                     }
 
@@ -543,15 +509,12 @@ else
                     $('#likesChange').text(`+${data.result.likesChange || 0}% so với tháng trước`);
                     $('#commentsChange').text(`+${data.result.commentsChange || 0}% so với tháng trước`);
 
-                    // Hủy chart cũ nếu tồn tại
                     if (viewsChart) viewsChart.destroy();
                     if (trafficChart) trafficChart.destroy();
 
-                    // Đảm bảo dữ liệu chart hợp lệ
                     const viewsOverTime = data.result.viewsOverTime || { Labels: [], Data: [] };
                     const trafficSources = data.result.trafficSources || { Labels: [], Data: [] };
 
-                    // Tạo chart Views Over Time
                     const viewsCtx = document.getElementById('viewsChart').getContext('2d');
                     viewsChart = new Chart(viewsCtx, {
                         type: 'line',
@@ -560,8 +523,8 @@ else
                             datasets: [{
                                 label: 'Lượt xem',
                                 data: viewsOverTime.Data,
-                                borderColor: '#3ea6ff',
-                                backgroundColor: 'rgba(62, 166, 255, 0.1)',
+                                borderColor: '#065fd4',
+                                backgroundColor: 'rgba(6, 95, 212, 0.1)',
                                 fill: true,
                                 tension: 0.4,
                                 borderWidth: 2
@@ -571,33 +534,22 @@ else
                             responsive: true,
                             maintainAspectRatio: true,
                             plugins: {
-                                legend: {
-                                    display: false
-                                }
+                                legend: { display: false }
                             },
                             scales: {
                                 x: {
-                                    grid: {
-                                        color: '#3f3f3f'
-                                    },
-                                    ticks: {
-                                        color: '#aaa'
-                                    }
+                                    grid: { color: '#e5e5e5' },
+                                    ticks: { color: '#606060' }
                                 },
                                 y: {
-                                    grid: {
-                                        color: '#3f3f3f'
-                                    },
-                                    ticks: {
-                                        color: '#aaa'
-                                    },
+                                    grid: { color: '#e5e5e5' },
+                                    ticks: { color: '#606060' },
                                     beginAtZero: true
                                 }
                             }
                         }
                     });
 
-                    // Tạo chart Traffic Sources
                     const trafficCtx = document.getElementById('trafficSourcesChart').getContext('2d');
                     trafficChart = new Chart(trafficCtx, {
                         type: 'doughnut',
@@ -605,13 +557,7 @@ else
                             labels: trafficSources.Labels,
                             datasets: [{
                                 data: trafficSources.Data,
-                                backgroundColor: [
-                                    '#3ea6ff',
-                                    '#ff6b6b',
-                                    '#4ecdc4',
-                                    '#ffe66d',
-                                    '#a8dadc'
-                                ],
+                                backgroundColor: ['#065fd4', '#ff6b6b', '#4ecdc4', '#ffe66d', '#a8dadc'],
                                 borderWidth: 0
                             }]
                         },
@@ -622,11 +568,9 @@ else
                                 legend: {
                                     position: 'right',
                                     labels: {
-                                        color: '#f1f1f1',
+                                        color: '#0f0f0f',
                                         padding: 15,
-                                        font: {
-                                            size: 12
-                                        }
+                                        font: { size: 12 }
                                     }
                                 }
                             }
@@ -635,14 +579,6 @@ else
                 },
                 error: function (xhr) {
                     console.error('AJAX error:', xhr.responseText);
-                    $('#totalViews').text('0');
-                    $('#subscribers').text('0');
-                    $('#likes').text('0');
-                    $('#comments').text('0');
-                    $('#viewsChange').text('+0% so với tháng trước');
-                    $('#subscribersChange').text('+0% so với tháng trước');
-                    $('#likesChange').text('+0% so với tháng trước');
-                    $('#commentsChange').text('+0% so với tháng trước');
                 }
             });
         }
