@@ -3,7 +3,10 @@
 
 <div class="container my-4">
     <!-- Tiêu đề số lượng bình luận -->
-    <h2 class="comments-header">@SD.FormatView(Model.AvailableComments.Count()) @(Model.AvailableComments.Count() > 1 ? "Comments" : "Comment")</h2>
+    <h2 class="comments-header">
+        @SD.FormatView(Model.AvailableComments.Count())
+        @(Model.AvailableComments.Count() > 1 ? "Comments" : "Comment")
+    </h2>
 
     <!-- Ô nhập bình luận -->
     <div class="comment-input">
@@ -11,7 +14,8 @@
         <form id="create-comment-form" style="flex: 1;">
             <input type="hidden" name="PostComment.VideoId" value="@Model.PostComment.VideoId" />
             <input type="hidden" name="__RequestVerificationToken" value="@Html.AntiForgeryToken().ToString()" />
-            <input type="text" id="textComment" name="PostComment.Content" class="form-control" placeholder="Add a comment..." />
+            <input type="text" id="textComment" name="PostComment.Content"
+                   class="form-control" placeholder="Add a comment..." />
             <div class="comment-actions" id="sectionCommentBtns">
                 <button id="btnCancel" type="button" class="btn btn-cancel">Cancel</button>
                 <button id="btnComment" type="submit" class="btn btn-comment">Comment</button>
@@ -30,7 +34,10 @@
                     <div class="comment-header">
                         @if (comment.FromChannelId != Guid.Empty)
                         {
-                            <a asp-controller="Member" asp-action="Channel" asp-route-id="@comment.FromChannelId" class="comment-author">@comment.FromName</a>
+                            <a asp-controller="Member" asp-action="Channel"
+                               asp-route-id="@comment.FromChannelId" class="comment-author">
+                                @comment.FromName
+                            </a>
                         }
                         else
                         {
@@ -45,6 +52,7 @@
                         </span>
                     </div>
                     <p class="comment-text">@comment.Content</p>
+
                     @if (isOwner)
                     {
                         <div class="comment-actions-wrapper">
@@ -53,7 +61,10 @@
                             </button>
                             <div class="comment-actions-menu" id="actions-menu-@comment.Id" style="display: none;">
                                 <button class="btn btn-edit-comment" data-comment-id="@comment.Id">Edit</button>
-                                <button class="btn btn-delete-comment" data-comment-id="@comment.Id" data-video-id="@Model.PostComment.VideoId">Delete</button>
+                                <button class="btn btn-delete-comment" data-comment-id="@comment.Id"
+                                        data-video-id="@Model.PostComment.VideoId">
+                                    Delete
+                                </button>
                             </div>
                         </div>
                     }
@@ -61,5 +72,8 @@
             </div>
         }
     </div>
-    <button class="load-more-btn btn btn-link" id="loadMoreComments" style="display: none;">Load More</button>
+
+    <button class="load-more-btn btn btn-link" id="loadMoreComments" style="display: none;">
+        Load More
+    </button>
 </div>

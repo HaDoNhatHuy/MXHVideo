@@ -4,11 +4,10 @@
     ViewData["CurrentPage"] = "Watch";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-
 <div class="video-block section-padding">
     <div class="row">
         <!-- Phần video chính -->
-        <div class="col-md-8">
+        <div class="col-md-7">
             <div class="single-video-left">
                 <!-- Video Player (sử dụng Video.js) -->
                 <div class="single-video">
@@ -35,7 +34,7 @@
                     <div class="channel-info-wrapper">
                         <img class="img-fluid" src="@Model.ChannelAvatar" alt="@Model.ChannelName Avatar">
                         <div class="channel-text">
-                            <p>
+                            <p class="channelName" style="display:inline-block;margin:0px;padding-bottom:5px;">
                                 <a href="@Url.Action("Channel", "Member", new { id = Model.ChannelId })">
                                     <strong>@Model.ChannelName</strong>
                                 </a>
@@ -161,7 +160,7 @@
             </div>
         </div>
         <!-- Phần video đề xuất -->
-        <div class="col-md-4">
+        <div class="col-md-5">
             <div class="single-video-right">
                 <div class="row">
                     @if (Model.CurrentPlaylistId.HasValue)
@@ -172,7 +171,7 @@
                     @* else
                     { *@
                     <!-- PHẦN CŨ: Hiển thị Video đề xuất như bình thường -->
-                    <div class="col-md-12">
+                    @* <div class="col-md-12">
                         <div class="adblock">
                             <div class="img">
                                 Google AdSense<br>
@@ -192,50 +191,20 @@
                             </div>
                             <h6>Up Next</h6>
                         </div>
-                    </div>
-                    <div class="col-md-12">
-                        @foreach (var video in Model.RecommendedVideos)
-                        {
-                            <div class="video-card video-card-list">
-                                <div class="video-card-image">
-                                    <a class="play-icon" href="@Url.Action("Watch", "Video", new { id = video.Id })"><i class="fas fa-play-circle"></i></a>
-                                    <a href="@Url.Action("Watch", "Video", new { id = video.Id })"><img class="img-fluid" src="@video.Thumbnail" alt="@video.Title"></a>
-                                </div>
-                                <div class="video-card-body">
-                                    <div class="btn-group float-right right-action">
-                                        <a href="#" class="right-action-link text-gray" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                            <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
-                                        </a>
-                                        <div class="dropdown-menu dropdown-menu-right">
-                                            <a class="dropdown-item" href="#"><i class="fas fa-fw fa-star"></i> Top Rated</a>
-                                            <a class="dropdown-item" href="#"><i class="fas fa-fw fa-signal"></i> Viewed</a>
-                                            <a class="dropdown-item" href="#"><i class="fas fa-fw fa-times-circle"></i> Close</a>
-                                        </div>
-                                    </div>
-                                    <div class="video-title">
-                                        <a href="@Url.Action("Watch", "Video", new { id = video.Id })">@video.Title</a>
-                                    </div>
-                                    <div class="video-page text-success">
-                                        @video.ChannelName <a title="" data-placement="top" data-toggle="tooltip" href="#" data-original-title="Verified"><i class="fas fa-check-circle text-success"></i></a>
-                                    </div>
-                                    <div class="video-view">
-                                        @SD.FormatView(video.ViewersCount) views &nbsp;<i class="fas fa-calendar-alt"></i> @SD.TimeAgo(video.CreatedAt)
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                        <div class="adblock mt-0">
+                    </div> *@
+                    <!-- Container cho video đề xuất (AJAX load) -->
+                    <div id="recommendedVideosContainer"></div>
+                    @* <div class="adblock mt-0">
                             <div class="img">
                                 Google AdSense<br>
                                 336 x 280
                             </div>
-                        </div>
-                    </div>
-                    @* } *@
+                        </div> *@
                 </div>
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <!-- Playlist Modal -->
@@ -312,15 +281,479 @@
 </div>
 
 @section Css {
-    <link href="/css/youtube-watch.css" rel="stylesheet" />
+    <link href="/css/youtube-watch-light.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://vjs.zencdn.net/8.6.0/video-js.css" />
-    
+    <style>
+        /* ========================================
+                                        MODAL STYLING (Playlist & Report) - YOUTUBE LIGHT MODE
+                                        ======================================== */
+
+        :root {
+            --yt-light-bg: #ffffff;
+            --yt-light-text: #0f0f0f;
+            --yt-light-text-secondary: #606060;
+            --yt-light-border: #e0e0e0;
+            --yt-light-hover: #f2f2f2;
+            --yt-accent-blue: #065fd4;
+            --yt-accent-red: #ff0000;
+        }
+
+        /* 1. Container chung của Modal */
+        #addToPlaylistModal .modal-content,
+        #reportModal .modal-content {
+            background-color: var(--yt-light-bg); /* Nền trắng */
+            color: var(--yt-light-text); /* Màu chữ đen [2, 3] */
+            border-radius: 12px; /* Bo góc lớn [4, 5] */
+            border: 1px solid var(--yt-light-border);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            font-family: 'Roboto', sans-serif;
+        }
+
+        /* 2. Modal Header */
+        #addToPlaylistModal .modal-header,
+        #reportModal .modal-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--yt-light-border);
+        }
+
+        .modal-header .modal-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--yt-light-text);
+        }
+
+        .modal-header .close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--yt-light-text-secondary);
+            opacity: 1;
+            transition: color 0.2s;
+        }
+
+            .modal-header .close:hover {
+                color: var(--yt-light-text);
+            }
+
+        /* 3. Modal Body (Nội dung chính) */
+        #addToPlaylistModal .modal-body,
+        #reportModal .modal-body {
+            padding: 24px;
+        }
+
+        /* ----------------------------------------
+                                        POPUP PLAYLIST
+                                        ---------------------------------------- */
+
+        /* Loading Indicator */
+        #playlistLoading {
+            font-size: 14px;
+            color: var(--yt-light-text-secondary);
+        }
+
+            #playlistLoading .fas.fa-spinner {
+                color: var(--yt-accent-blue);
+                margin-right: 8px;
+            }
+
+        /* List Playlist */
+        #playlistList {
+            max-height: 250px; /* Giới hạn chiều cao cho danh sách cuộn */
+            overflow-y: auto;
+            padding-right: 8px; /* Cho khoảng trống cho scrollbar */
+        }
+
+            #playlistList ul {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            #playlistList li {
+                display: flex;
+                align-items: center;
+                padding: 8px 0;
+                cursor: pointer;
+                font-size: 15px;
+                color: var(--yt-light-text);
+            }
+
+                #playlistList li:hover {
+                    background-color: var(--yt-light-hover);
+                    border-radius: 4px;
+                }
+
+            #playlistList input[type="checkbox"] {
+                width: 20px;
+                height: 20px;
+                margin-right: 12px;
+                cursor: pointer;
+                border: 1px solid #ccc; /* Viền checkbox */
+                accent-color: var(--yt-accent-blue); /* Màu xanh accent khi checked */
+            }
+
+            #playlistList label {
+                margin: 0;
+                cursor: pointer;
+                font-weight: 400;
+            }
+
+        /* Form tạo Playlist mới */
+        #addToPlaylistModal .d-flex {
+            align-items: center;
+        }
+
+            #addToPlaylistModal .d-flex i {
+                color: var(--yt-accent-blue);
+                font-size: 18px;
+                margin-right: 12px !important;
+            }
+
+        #newPlaylistName {
+            border-radius: 4px;
+            border: 1px solid var(--yt-light-border);
+            padding: 8px 12px;
+            font-size: 14px;
+            color: var(--yt-light-text);
+        }
+
+        #btnCreateNewPlaylist {
+            background-color: var(--yt-accent-blue);
+            border-color: var(--yt-accent-blue);
+            color: white;
+            font-weight: 500;
+            border-radius: 18px; /* Nút tròn hơn */
+            padding: 6px 16px;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+            #btnCreateNewPlaylist:hover {
+                background-color: #0550c4;
+                border-color: #0550c4;
+            }
+
+
+        /* ----------------------------------------
+                                        POPUP REPORT
+                                        ---------------------------------------- */
+
+        /* Tiêu đề Form */
+        #reportModal label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--yt-light-text);
+            margin-bottom: 8px;
+        }
+
+        /* Select và Textarea */
+        #reportReason,
+        #otherReason {
+            border-radius: 4px;
+            border: 1px solid var(--yt-light-border);
+            padding: 8px 12px;
+            font-size: 14px;
+            color: var(--yt-light-text);
+            background-color: var(--yt-light-bg);
+        }
+
+        /* Khu vực chọn Celebrity */
+        #celebrityListContainer {
+            padding: 8px;
+            background-color: var(--yt-light-hover);
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .celebrity-btn {
+            border-radius: 20px;
+            font-size: 13px;
+            padding: 6px 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: 1px solid var(--yt-accent-blue);
+        }
+
+        /* Trạng thái outline */
+        .btn-outline-primary {
+            color: var(--yt-light-text);
+            background-color: transparent;
+        }
+
+        /* Trạng thái được chọn (Selected/Active) */
+        .celebrity-btn.btn-primary {
+            background-color: var(--yt-accent-blue);
+            color: white;
+            border-color: var(--yt-accent-blue);
+        }
+
+        /* Nút Submit */
+        #submitReportBtn {
+            background-color: var(--yt-accent-red);
+            border-color: var(--yt-accent-red);
+            color: white;
+            font-weight: 500;
+            border-radius: 4px; /* Hình chữ nhật, không phải pill */
+            padding: 10px 20px;
+            font-size: 15px;
+            transition: background 0.2s;
+        }
+
+            #submitReportBtn:hover {
+                background-color: #cc0000;
+                border-color: #cc0000;
+            }
+
+        /* Error Message */
+        #celebrityError {
+            display: block;
+            color: var(--yt-accent-red) !important;
+            margin-top: 4px;
+            font-size: 13px !important;
+        }
+
+        /* Utility: Gap fix for Bootstrap 4 */
+        .d-flex.gap-2 {
+            gap: 0.5rem !important; /* Custom utility class for gap */
+        }
+
+        /* ------------------------------------------------------------------
+                        KHUNG VIDEO
+                        ------------------------------------------------------------------ */
+        /* ========================================
+                           VIDEO PLAYER CONTAINER - YOUTUBE STYLE FIX
+                           ======================================== */
+
+        .single-video-left {
+            margin-bottom: 20px;
+        }
+
+        .single-video {
+            position: relative;
+            width: 100%;
+            background-color: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        /* 1. KHUNG CHÍNH CỦA VIDEO */
+        .video-js {
+            width: 100% !important;
+            height: auto !important;
+            font-family: 'Roboto', Arial, sans-serif;
+            /* Giữ nguyên màu chữ trắng */
+            color: #fff;
+        }
+
+            /* 2. NÚT PLAY LỚN (Ở GIỮA MÀN HÌNH) */
+            .video-js .vjs-big-play-button {
+                width: 100px;
+                height: 65px;
+                line-height: 60px;
+                border-radius: 10px; /* Làm tròn nút giống Youtube mobile/Shorts */
+                background-color: rgba(0, 0, 0, 0.6);
+                border: 2px solid #fff;
+                font-size: 30px;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%); /* Căn chính xác giữa tâm */
+                transition: all 0.3s ease;
+            }
+
+            .video-js:hover .vjs-big-play-button {
+                background-color: #ff0000; /* Màu đỏ YouTube */
+                border-color: #ff0000;
+            }
+
+            /* 3. THANH ĐIỀU KHIỂN (CONTROL BAR) - QUAN TRỌNG NHẤT */
+            .video-js .vjs-control-bar {
+                display: flex !important; /* Bắt buộc dùng Flex để thẳng hàng */
+                align-items: center !important; /* Căn giữa theo chiều dọc */
+                width: 100%;
+                height: 50px !important; /* Chiều cao cố định */
+                background: linear-gradient(to top, rgba(0,0,1,0.1), transparent);
+                padding: 0 10px;
+                bottom: 0;
+                opacity: 0;
+                transition: opacity 0.3s;
+            }
+
+            /* Hiện thanh control khi hover */
+            .video-js:hover .vjs-control-bar,
+            .video-js.vjs-paused .vjs-control-bar {
+                opacity: 1;
+            }
+
+            /* 4. THANH TIẾN TRÌNH (PROGRESS BAR) - ĐẨY LÊN TRÊN CÁC NÚT */
+            .video-js .vjs-progress-control {
+                position: absolute !important;
+                top: -10px !important; /* Nằm ngay trên mép thanh control */
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                height: 4px !important;
+                margin: 0 !important;
+            }
+
+                .video-js .vjs-progress-control:hover {
+                    height: 6px !important;
+                    top: -12px !important;
+                }
+
+            /* Màu thanh tiến trình */
+            .video-js .vjs-play-progress {
+                background-color: #ff0000 !important; /* Đỏ YouTube */
+            }
+
+                .video-js .vjs-play-progress::before {
+                    display: none; /* Ẩn nút tròn mặc định cho gọn */
+                }
+
+            .video-js .vjs-progress-control:hover .vjs-play-progress::before {
+                display: block; /* Chỉ hiện nút tròn khi rê chuột vào */
+                top: -3px;
+                right: -5px;
+                font-size: 13px;
+                color: #ff0000;
+            }
+
+            /* 5. CĂN CHỈNH CÁC NÚT BẤM (BUTTONS) CHO THẲNG HÀNG */
+            .video-js .vjs-button {
+                width: 40px !important; /* Kích thước nút chuẩn */
+                height: 40px !important;
+                line-height: 40px !important; /* Canh giữa icon theo chiều dọc */
+                font-size: 10px;
+                cursor: pointer;
+                outline: none;
+            }
+
+            .video-js .vjs-mute-control {
+                cursor: pointer;
+                flex: none;
+                margin-top: 10px;
+            }
+
+            /* Hiệu ứng khi rê vào nút */
+            .video-js .vjs-button:hover {
+                color: #fff;
+                text-shadow: 0 0 5px rgba(255,255,255,0.5);
+            }
+
+            /* 6. SẮP XẾP VỊ TRÍ (ORDER) - CHUẨN YOUTUBE */
+            /* Trái: Play -> Volume -> Thời gian */
+            .video-js .vjs-play-control {
+                order: 1;
+                margin-right: 5px;
+                margin-top: 10px;
+            }
+
+        vjs-remaining-time vjs-time-control vjs-control {
+            display: none !important;
+        }
+
+        .video-js .vjs-volume-panel {
+            order: 2;
+            margin-right: 10px;
+        }
+
+        /* Phần hiển thị thời gian: Gom lại cho gọn */
+        .video-js .vjs-current-time,
+        .video-js .vjs-time-divider,
+        .video-js .vjs-duration {
+            display: block !important;
+            order: 3;
+            padding: 0 2px !important;
+            font-size: 13px;
+            line-height: 50px; /* Căn giữa theo chiều cao control bar */
+            font-weight: 500;
+            width: auto !important; /* Không chiếm diện tích thừa */
+            min-width: unset;
+        }
+
+        .video-js .vjs-current-time {
+            padding-left: 0 !important;
+        }
+
+        .video-js .vjs-duration {
+            padding-right: 10px !important;
+        }
+
+        /* KHOẢNG TRỐNG (SPACER) - Đẩy các nút còn lại sang phải */
+        .video-js .vjs-spacer {
+            display: block !important;
+            flex: 1 1 auto; /* Chiếm hết khoảng trống ở giữa */
+            order: 4;
+        }
+
+        /* Phải: Settings -> PIP -> Fullscreen */
+        .video-js .vjs-playback-rate {
+            order: 5;
+        }
+
+        .video-js .vjs-subs-caps-button {
+            order: 6;
+        }
+
+        .video-js .vjs-quality-selector {
+            order: 7;
+        }
+
+        .video-js .vjs-picture-in-picture-control {
+            order: 8;
+        }
+
+        .video-js .vjs-fullscreen-control {
+            order: 9;
+            margin-left: 5px;
+        }
+
+        /* 7. MENU SETTING (Nổi lên đẹp hơn) */
+        .video-js .vjs-menu-button-popup .vjs-menu {
+            bottom: 55px !important; /* Hiện trên thanh control */
+            left: auto !important;
+            right: 0 !important; /* Canh phải */
+        }
+
+        .video-js .vjs-menu-content {
+            background-color: #ccc !important;
+            border-radius: 4px;
+            padding: 5px 0;
+        }
+
+        .vjs-menu .vjs-menu-content {
+            display: block;
+            padding: 0;
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            overflow: hidden;
+        }
+
+
+        .video-js .vjs-menu-item {
+            padding: 5px 15px;
+            text-align: left;
+            font-size: 13px;
+            text-transform: capitalize;
+            color: white;
+        }
+
+            .video-js .vjs-menu-item:hover,
+            .video-js .vjs-menu-item.vjs-selected {
+                background-color: rgba(255,255,255,0.1);
+                color: #ff0000;
+            }
+    </style>
 }
 
 @section Scripts {
     <script src="~/js/site.js"></script>
     <script src="https://vjs.zencdn.net/8.6.0/video.min.js"></script>
     <script>
+        // ====================================
+        // PHẦN 1: HÀM TOÀN CỤC (GLOBAL SCOPE)
+        // ====================================
+
         $(document).ready(function () {
             // Hàm displayNotification
             function displayNotification(isSuccess, title, message, type) {
@@ -1090,50 +1523,46 @@
         loadRecommendedVideos();
         });
                 function loadRecommendedVideos() {
-            // Hiển thị Skeleton/Spinner ở cột bên phải trước
-            const $container = $('.single-video-right .col-md-12').first();
-            // Lưu ý: Selector này tùy thuộc vào cấu trúc HTML hiện tại của bạn, đảm bảo trỏ đúng div chứa list video
+                const $container = $('#recommendedVideosContainer');
+                $container.html('<div class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-2 text-muted">Đang tìm video liên quan...</p></div>');
 
-            $container.html('<div class="text-center py-5"><div class="spinner-border text-danger"></div><p class="mt-2 text-muted">Đang tìm video liên quan...</p></div>');
-
-            $.ajax({
-                url: '/Video/GetRecommendedVideosAPI',
-                type: 'GET',
-                data: { videoId: '@Model.Id' },
-                success: function(data) {
-                    $container.empty(); // Xóa spinner
-
-                    if (data && data.length > 0) {
-                        let html = '';
-                        // Render Title "Up Next"
-                        html += `
-                        <div class="main-title">
-                            <h6>Tiếp theo</h6>
-                        </div>`;
-
-                        data.forEach(v => {
-                            html += `
-                            <div class="video-card video-card-list">
-                                <div class="video-card-image">
-                                    <a class="play-icon" href="/Video/Watch/${v.id}"><i class="fas fa-play-circle"></i></a>
-                                    <a href="/Video/Watch/${v.id}"><img class="img-fluid" src="${v.thumbnail}" alt="${v.title}"></a>
-                                    <div class="time">${v.duration}</div>
-                                </div>
-                                <div class="video-card-body">
-                                    <div class="video-title"><a href="/Video/Watch/${v.id}">${v.title}</a></div>
-                                    <div class="video-page text-success">${v.channelName} <i class="fas fa-check-circle text-success"></i></div>
-                                    <div class="video-view">${formatView(v.viewersCount)} views • ${timeAgo(v.createdAt)}</div>
-                                </div>
-                            </div>`;
-                        });
-                        $container.append(html);
+                $.ajax({
+                    url: '/Video/GetRecommendedVideosAPI',
+                    type: 'GET',
+                    data: { videoId: '@Model.Id' },
+                    success: function(data) {
+                        $container.empty();
+                        if (data && data.length > 0) {
+                            let html = '';
+                            data.forEach(v => {
+                                html += `
+                                    <div class="yt-recommended-list-card">
+                                        <div class="video-thumbnail">
+                                            <a href="/Video/Watch/${v.id}">
+                                                <img src="${v.thumbnail}" alt="${v.title}">
+                                            </a>
+                                            <div class="video-duration">${v.duration || ''}</div>
+                                        </div>
+                                        <div class="video-info">
+                                            <a href="/Video/Watch/${v.id}" class="video-title">${v.title}</a>
+                                            <div class="video-channel">${v.channelName}</div>
+                                            <div class="video-metadata">${formatView(v.viewersCount)} views • ${timeAgo(v.createdAt, new Date().toISOString())}</div>
+                                        </div>
+                                    </div>`;
+                            });
+                            $container.append(html);
+                        } else {
+                            $container.html('<p class="text-center text-muted">Không có video đề xuất.</p>');
+                        }
+                    },
+                    error: function() {
+                        $container.html('<p class="text-center text-danger">Không thể tải đề xuất.</p>');
                     }
-                },
-                error: function() {
-                    $container.html('<p class="text-center text-danger">Không thể tải đề xuất.</p>');
-                }
-            });
-        }
+                });
+            }
+
+            // Gọi hàm load recommended videos
+            // loadRecommendedVideos();
                 // Hàm phụ trợ (nếu chưa có)
         function formatView(views) {
             if(views >= 1000000) return (views/1000000).toFixed(1) + 'M';
