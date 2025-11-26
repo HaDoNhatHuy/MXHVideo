@@ -1,6 +1,7 @@
 ﻿@model Web_Video.ViewModels.Playlist.PlaylistWatchViewModel
 @{
     ViewData["Title"] = "Toàn bộ danh sách phát: " + Model.PlaylistInfo.Name;
+    ViewData["CurrentPage"] = Model.PlaylistInfo.Name;
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -182,62 +183,53 @@
 
         /* Responsive Design */
         @@media (max-width: 992px) {
-            .video-grid
+            .video-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 20px;
+            }
 
-        {
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 20px;
-        }
+            .playlist-header {
+                padding: 24px;
+            }
 
-        .playlist-header {
-            padding: 24px;
-        }
-
-        .playlist-title {
-            font-size: 26px;
-        }
-
+            .playlist-title {
+                font-size: 26px;
+            }
         }
 
         @@media (max-width: 768px) {
-            .playlist-container
+            .playlist-container {
+                padding: 20px 16px;
+            }
 
-        {
-            padding: 20px 16px;
-        }
+            .video-grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 16px;
+            }
 
-        .video-grid {
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 16px;
-        }
+            .playlist-header {
+                padding: 20px;
+                margin-bottom: 24px;
+            }
 
-        .playlist-header {
-            padding: 20px;
-            margin-bottom: 24px;
-        }
+            .playlist-title {
+                font-size: 22px;
+            }
 
-        .playlist-title {
-            font-size: 22px;
-        }
-
-        .video-title {
-            font-size: 14px;
-        }
-
+            .video-title {
+                font-size: 14px;
+            }
         }
 
         @@media (max-width: 480px) {
-            .video-grid
+            .video-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
 
-        {
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-
-        .playlist-title {
-            font-size: 20px;
-        }
-
+            .playlist-title {
+                font-size: 20px;
+            }
         }
     </style>
 }

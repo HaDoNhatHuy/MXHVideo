@@ -21,8 +21,8 @@
     @await RenderSectionAsync("Css", false)
     <style>
         /* ========================================
-           YOUTUBE MODERN THEME - LAYOUT STYLES
-           ======================================== */
+                   YOUTUBE MODERN THEME - LAYOUT STYLES
+                   ======================================== */
 
         :root {
             --yt-black: #0f0f0f;
@@ -308,43 +308,267 @@
         }
 
         /* === RESPONSIVE === */
-       @@media (max-width: 992px) {
-            .sidebar
+        @@media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
 
-        {
-            transform: translateX(-100%);
-        }
+                .sidebar.active {
+                    transform: translateX(0);
+                }
 
-        .sidebar.active {
-            transform: translateX(0);
-        }
+            #content-wrapper {
+                margin-left: 0;
+            }
 
-        #content-wrapper {
-            margin-left: 0;
-        }
-
-        .osahan-navbar-search {
-            max-width: 100%;
-        }
-
+            .osahan-navbar-search {
+                max-width: 100%;
+            }
         }
 
         @@media (max-width: 768px) {
-            .navbar
+            .navbar {
+                padding: 0 8px;
+            }
 
-        {
-            padding: 0 8px;
+            .osahan-navbar-search {
+                display: none !important;
+            }
+
+            #content-wrapper {
+                padding: 16px 8px;
+            }
+        }
+        /* Style mới cho modal chọn ảnh - ĐÃ SỬA */
+        #imageSearchModal .modal-dialog {
+            max-width: 500px;
+            margin: 1.75rem auto;
         }
 
-        .osahan-navbar-search {
-            display: none !important;
+        #imageSearchModal .modal-content {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
+            border: none;
+            overflow: hidden;
         }
 
-        #content-wrapper {
-            padding: 16px 8px;
+        #imageSearchModal .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-bottom: none;
+            padding: 20px 24px;
         }
 
+        #imageSearchModal .modal-title {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 20px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+
+        #imageSearchModal .close {
+            color: #ffffff;
+            opacity: 0.9;
+            text-shadow: none;
+            font-size: 28px;
+            font-weight: 300;
+        }
+
+            #imageSearchModal .close:hover {
+                opacity: 1;
+            }
+
+        #imageSearchModal .modal-body {
+            padding: 30px 24px;
+        }
+
+        .dropzone {
+            border: 3px dashed #d0d7de;
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #f8f9ff 0%, #fff5f7 100%);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+            .dropzone.dragover {
+                border-color: #667eea;
+                background: linear-gradient(135deg, #e8eaf6 0%, #f3e5f5 100%);
+                box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
+                transform: scale(1.02);
+            }
+
+        .dropzone-icon {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 16px;
+        }
+
+        .dropzone-text {
+            font-size: 16px;
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .dropzone-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+            .dropzone-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            }
+
+            .dropzone-btn:active {
+                transform: translateY(0);
+            }
+
+        .preview-container {
+            margin-top: 20px;
+            max-height: 250px;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: none;
+            position: relative;
+        }
+
+            .preview-container.show {
+                display: block;
+            }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 250px;
+            object-fit: contain;
+            border-radius: 12px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .remove-image-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+            .remove-image-btn:hover {
+                background: #ff4444;
+                color: #ffffff;
+                transform: scale(1.1);
+            }
+
+        #submitImageBtn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+
+            #submitImageBtn:hover:not(:disabled) {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+            }
+
+            #submitImageBtn:disabled {
+                background: linear-gradient(135deg, #cbd5e0 0%, #a0aec0 100%);
+                cursor: not-allowed;
+                opacity: 0.6;
+            }
+
+        /* Loading indicator - ĐÃ SỬA ĐỂ CĂNG GIỮA */
+        #loadingIndicator {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+            #loadingIndicator.show {
+                display: flex;
+            }
+
+            #loadingIndicator .spinner-container {
+                background: #ffffff;
+                padding: 40px 50px;
+                border-radius: 20px;
+                text-align: center;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+                animation: fadeInScale 0.3s ease;
+            }
+
+        @@keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        #loadingIndicator .spinner-icon {
+            font-size: 48px;
+            color: #667eea;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #loadingIndicator p {
+            color: #2d3748;
+            margin-top: 20px;
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 0;
+        }
+
+        /* .modal-backdrop {
+            display: none;
+        } */
     </style>
 </head>
 <body id="page-top" data-page="@ViewData["CurrentPage"]">
@@ -386,9 +610,7 @@
 
                 <div id="searchSuggestions"></div>
             </div>
-        </form>
-
-
+        </form>        
         <!-- RIGHT SECTION -->
         <ul class="navbar-nav osahan-right-navbar">
 
@@ -410,7 +632,7 @@
                         <a class="dropdown-item" href="#"><i class="fas fa-fw fa-edit"></i> Action</a>
                         <a class="dropdown-item" href="#"><i class="fas fa-fw fa-headphones-alt"></i> Another action</a>
                     </div>
-                </li>                
+                </li>
 
                 <li class="nav-item dropdown no-arrow osahan-right-navbar-user" style="margin-right:20px; margin-left:40px">
                     <a class="nav-link dropdown-toggle user-dropdown-link" href="#" id="userDropdown" data-toggle="dropdown">
@@ -449,7 +671,7 @@
                     <span>Home</span>
                 </a>
             </li>
-            <li class="nav-item">
+            <li class="nav-item @(ViewData["CurrentPage"] == "Home" ? "active" : "")">
                 <a class="nav-link" asp-controller="Home" asp-action="Index">
                     <i class="fas fa-fw fa-file-video"></i>
                     <span>Shorts</span>
@@ -472,20 +694,20 @@
                         <span>History</span>
                     </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item @(ViewData["CurrentPage"] == "Playlist" ? "active" : "")">
                     <a class="nav-link" asp-controller="Playlist" asp-action="Index">
                         <i class="fas fa-fw fa-list"></i>
                         <span>Playlists</span>
                     </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item @(ViewData["CurrentPage"] == "Your Videos" ? "active" : "")">
                     <a class="nav-link" asp-controller="Channel" asp-action="Index">
                         <i class="fas fa-fw fa-video"></i>
                         <span>Your Videos</span>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" asp-controller="Playlist" asp-action="FullList" asp-route-id="@Guid.Parse("A6EA568A-F279-4002-8C9D-801934C1BE49")">
+                <li class="nav-item @(ViewData["CurrentPage"] == "Watch Later" ? "active" : "")">
+                    <a class="nav-link" asp-controller="Playlist" asp-action="FullList" asp-route-id="@Guid.Parse("1E419162-C320-4C25-81F5-5037C387401D")">
                         <i class="fas fa-fw fa-clock"></i>
                         <span>Watch Later</span>
                     </a>
@@ -504,22 +726,22 @@
             <li class="nav-item channel-sidebar-list">
                 <h6>EXPLORE</h6>
                 <ul>
-                    <li class="nav-item">
+                    <li class="nav-item @(ViewData["CurrentPage"] == "Home" ? "active" : "")">
                         <a class="nav-link" asp-controller="Category" asp-action="Index" asp-route-categoryId="@Guid.Parse("F12B613B-5719-4FCE-83FF-E7B08ECE172B")">
                             <i class="fas fa-fw fa-music"></i> <span>Music</span>
                         </a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item @(ViewData["CurrentPage"] == "Home" ? "active" : "")">
                         <a class="nav-link" asp-controller="Category" asp-action="Index" asp-route-categoryId="@Guid.Parse("DD488F44-3BCE-4D02-998B-DF48B22B7AED")">
                             <i class="fas fa-fw fa-gamepad"></i> <span>Gaming</span>
                         </a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item @(ViewData["CurrentPage"] == "Home" ? "active" : "")">
                         <a class="nav-link" asp-controller="Category" asp-action="Index" asp-route-categoryId="@Guid.Parse("A3B68743-C049-4449-807C-C29531EE78DF")">
                             <i class="fas fa-fw fa-newspaper"></i> <span>News</span>
                         </a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item @(ViewData["CurrentPage"] == "Home" ? "active" : "")">
                         <a class="nav-link" asp-controller="Category" asp-action="Index" asp-route-categoryId="@Guid.Parse("B0B863E6-E86C-40A8-9AA1-230122EEFC61")">
                             <i class="fas fa-fw fa-dumbbell"></i> <span>Sports</span>
                         </a>
@@ -537,6 +759,47 @@
     <a class="scroll-to-top rounded" href="#page-top">
         <i class="fas fa-angle-up"></i>
     </a>
+    <!-- Form riêng cho tìm kiếm bằng hình ảnh -->
+    <form id="imageSearchForm" method="post" asp-controller="Search" asp-action="SearchByImage" enctype="multipart/form-data" style="display: none;">
+        <input type="file" name="image" id="hiddenImageInput">
+    </form>
+    <!-- Modal chọn/kéo thả ảnh -->
+    <div class="modal fade" id="imageSearchModal" tabindex="-1" role="dialog" aria-labelledby="imageSearchModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageSearchModalLabel">Tìm kiếm bằng hình ảnh</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="dropzone" id="dropzone">
+                        <p class="dropzone-text">Kéo và thả ảnh vào đây hoặc nhấp để chọn ảnh</p>
+                        <button type="button" class="dropzone-btn" id="selectImageBtn">Chọn ảnh</button>
+                        <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+
+                        <div class="preview-container" id="previewContainer">
+                            <img id="previewImage" class="preview-image" src="" alt="Ảnh xem trước">
+                            <button type="button" class="remove-image-btn" id="removeImageBtn">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary mt-3" id="submitImageBtn" disabled>Tìm kiếm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Loading indicator -->
+    <div id="loadingIndicator" style="display: none;">
+        <!-- Thêm style inline để đảm bảo ẩn -->
+        <div class="spinner-container">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Đang xử lý hình ảnh...</p>
+        </div>
+    </div>
+
     <!-- Logout Modal -->
     <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="logoutModalLabel">
         <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
@@ -638,38 +901,69 @@
             // === LOAD DANH SÁCH KÊNH ĐĂNG KÝ ===
             if (isAuthenticated) {
                 console.log('Đang tải danh sách kênh đăng ký...');
-                loadSubscriptions();
+                loadSidebarSubscriptions();
             }
 
-            function loadSidebarSubscriptions() {
-            // Chỉ tải 5 kênh đầu tiên cho Sidebar
+            function loadSidebarSubscriptions(page) {
             $.ajax({
-                url: `/Home/GetSubscriptions?pageNumber=1&pageSize=5`,
+                url: `/Home/GetSubscriptions?pageNumber=${page}&pageSize=5`,
                 type: 'GET',
                 success: function (response) {
                     // Kiểm tra kỹ cấu trúc response để tránh lỗi null
                     if (response.statusCode === 200 && response.result && response.result.items) {
                         const items = response.result.items;
-                        subscriptionsList.empty(); // Xóa list cũ
+                        currentSubPage = response.result.currentPage || page;
+                        totalSubPages = response.result.totalPages || 1;
+                        const totalItems = response.result.totalItems || 0;
 
-                        if (items.length === 0) {
+                        if (page === 1) {
+                            subscriptionsList.empty(); // Xóa list cũ chỉ khi load page 1
+                        }
+
+                        if (items.length === 0 && page === 1) {
                             subscriptionsList.append('<li class="nav-item"><span class="nav-link">Chưa đăng ký kênh nào</span></li>');
                         } else {
                             items.forEach(item => {
                                 const channelItem = `
-                                <li class="nav-item">
-                                    <a class="nav-link" href="/Member/Channel/${item.id}">
-                                        <img class="img-fluid rounded-circle mr-2" alt="${item.channelName}" src="${item.thumbnail || '/avatarUser/avt-default.jpg'}"
-                                        style="width:24px;height:24px;object-fit:cover;">
-                                        <span>${item.channelName}</span>
-                                    </a>
-                                </li>`;
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="/Member/Channel/${item.id}">
+                                            <img class="img-fluid rounded-circle mr-2" alt="${item.channelName}" src="${item.thumbnail || '/avatarUser/avt-default.jpg'}"
+                                            style="width:24px;height:24px;object-fit:cover;">
+                                            <span>${item.channelName}</span>
+                                        </a>
+                                    </li>`;
                                 subscriptionsList.append(channelItem);
                             });
+                        }
 
-                            // Link xem tất cả
+                        // Xóa nút load more hoặc xem tất cả cũ nếu có
+                        $('#loadMoreBtn, #viewAllBtn').remove();
+
+                        // Logic hiển thị nút
+                        if (totalItems >= 10) {
+                            // Nếu quá 10 kênh, hiển thị "Xem tất cả"
                             subscriptionsList.append(`
-                                <li class="nav-item">
+                                <li class="nav-item" id="viewAllBtn">
+                                    <a class="nav-link" href="/Home/Subscriptions">
+                                        <i class="fas fa-angle-down mr-2"></i>
+                                        <span>Xem tất cả</span>
+                                    </a>
+                                </li>
+                            `);
+                        } else if (currentSubPage < totalSubPages) {
+                            // Nếu <=20 và còn trang sau, hiển thị "Load More"
+                            subscriptionsList.append(`
+                                <li class="nav-item" id="loadMoreBtn">
+                                    <a class="nav-link" href="#" onclick="loadMoreSubscriptions(); return false;">
+                                        <i class="fas fa-angle-down mr-2"></i>
+                                        <span>Load More</span>
+                                    </a>
+                                </li>
+                            `);
+                        } else if (totalItems > 5) {
+                            // Nếu đã load hết và tổng >5, hiển thị "Xem tất cả" (tùy chọn)
+                            subscriptionsList.append(`
+                                <li class="nav-item" id="viewAllBtn">
                                     <a class="nav-link" href="/Home/Subscriptions">
                                         <i class="fas fa-angle-down mr-2"></i>
                                         <span>Xem tất cả</span>
@@ -684,6 +978,10 @@
                 }
             });
         }
+            // Hàm gọi load more
+        window.loadMoreSubscriptions = function () {
+            loadSidebarSubscriptions(currentSubPage + 1);
+        };
 
             // === TÌM KIẾM GỢI Ý ===
             const searchInput = document.getElementById('searchInput');
