@@ -343,6 +343,8 @@ namespace Web_Video.Controllers
         }
         [HttpPost]
         [RequestSizeLimit(100 * SD.MB)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 104857600)] // 100MB
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateEditVideo(VideoAddEditViewModel model)
         {
             if (ModelState.IsValid)

@@ -626,7 +626,7 @@
     <div class="studio-header">
         <h1 class="studio-title">@(Model.Id != Guid.Empty ? "Edit Video" : "Upload Video")</h1>
     </div>
-
+    <form id="videoAddEditForm" asp-action="CreateEditVideo" enctype="multipart/form-data">
     <!-- Layout 2 Cột -->
     <div class="upload-layout">
         <!-- CỘT TRÁI: Preview & Upload Files -->
@@ -651,7 +651,7 @@
 
         <!-- CỘT PHẢI: Metadata Form -->
         <div class="upload-metadata-section">
-            <form id="videoAddEditForm" asp-action="CreateEditVideo" enctype="multipart/form-data">
+            
                 <input id="videoId" hidden asp-for="Id" />
                 <input id="imageUrl" asp-for="ImageUrl" hidden />
 
@@ -744,9 +744,10 @@
                     <a class="btn-studio-back" asp-controller="Channel" asp-action="Index">Cancel</a>
                     <button class="btn-studio-save" type="submit">Save</button>
                 </div>
-            </form>
+            
         </div>
     </div>
+    </form>
 </div>
 
 @section Scripts {
