@@ -1,4 +1,5 @@
 ﻿@model Web_Video.ViewModels.Video.VideoAddEditViewModel
+
 @{
     ViewData["CurrentPage"] = "Upload Video";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -7,461 +8,243 @@
 @section Css {
     <!-- Summernote CSS -->
     <link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.css" rel="stylesheet">
-    <!-- THÊM DÒNG NÀY -->
+    <!-- YouTube Theme CSS -->
     <link href="/css_new/youtube-theme.css" rel="stylesheet" />
+
     <style>
+        /* ===== YOUTUBE STUDIO LIGHT MODE ===== */
         body {
             background-color: #f9f9f9;
         }
 
-        .upload-container {
-            max-width: 100%;
-            margin: 0 auto;
+        /* ===== MAIN CONTAINER ===== */
+        .upload-studio-wrapper {
+            max-width: 1400px;
+            margin: 24px auto;
+            padding: 0 24px;
+        }
+
+        .studio-header {
+            margin-bottom: 24px;
+        }
+
+        .studio-title {
+            font-size: 24px;
+            font-weight: 500;
+            color: #0f0f0f;
+            margin: 0;
+        }
+
+        /* ===== LAYOUT 2 CỘT ===== */
+        .upload-layout {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 32px;
+            align-items: start;
+        }
+
+        @@media (max-width: 1024px) {
+            .upload-layout
+
+        {
+            grid-template-columns: 1fr;
+        }
+
+        }
+
+        /* ===== CỘT TRÁI: PREVIEW & UPLOAD FILES ===== */
+        .upload-preview-section {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
             padding: 20px;
-            background-color: white;
+            position: sticky;
+            top: 80px;
+        }
+
+        .preview-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #606060;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .thumbnail-preview-box {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #f1f1f1;
             border-radius: 8px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        }
-
-            .upload-container h2 {
-                font-size: 20px;
-                font-weight: 500;
-                color: #030303;
-                margin-bottom: 20px;
-            }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-            .form-group label {
-                font-size: 14px;
-                font-weight: 500;
-                color: #606060;
-                margin-bottom: 5px;
-                display: block;
-            }
-
-            .form-group select,
-            .form-group input,
-            .form-group textarea {
-                width: 100%;
-                padding: 10px;
-                font-size: 14px;
-                border: 1px solid #e0e0e0;
-                border-radius: 4px;
-                background-color: #f9f9f9;
-            }
-
-            .form-group textarea {
-                resize: vertical;
-                min-height: 100px;
-            }
-
-            .form-group input[type="file"] {
-                padding: 3px;
-            }
-
-        .preview-image {
-            max-height: 200px;
             overflow: hidden;
-            border-radius: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
         }
 
-            .preview-image img {
+            .thumbnail-preview-box img {
+                width: 100%;
+                height: 100%;
                 object-fit: cover;
             }
 
-        #progressContainer {
-            margin-top: 15px;
-            display: none;
-        }
-
-        .osahan-progress .progress {
-            border-radius: 2px;
-            height: 8px;
-            margin: 14px 0;
-            background-color: #f5f5f5;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            transition: width 0.5s ease-in-out;
-            background-color: #ff516b;
-        }
-
-        #progressText {
-            display: block;
-            margin-top: 5px;
-            font-size: 14px;
-            color: #606060;
-        }
-
-        #uploadMessage {
-            font-size: 0.9rem;
-            color: #606060;
-            margin-top: 10px;
-            display: none;
-        }
-
-        #resultContainer {
-            color: #dc3545;
-            margin-top: 15px;
-        }
-
-        #recognitionLoading {
-            margin-top: 10px;
-            text-align: center;
-            display: none;
-        }
-
-            #recognitionLoading .spinner-border {
-                width: 3rem;
-                height: 3rem;
-                border-width: 0.4em;
-                color: #ff516b;
+            .thumbnail-preview-box.empty::before {
+                content: "📷";
+                font-size: 48px;
+                opacity: 0.3;
             }
 
-            #recognitionLoading p {
-                font-size: 14px;
-                color: #606060;
-                margin-top: 10px;
-            }
-
-        .footer-buttons {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .btn-save {
-            background-color: #cc0000;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 14px;
-            border-radius: 2px;
-            text-transform: uppercase;
-            font-weight: 500;
-        }
-
-            .btn-save:hover {
-                background-color: #e60000;
-            }
-
-        .btn-back {
-            background-color: #f1f1f1;
-            color: #030303;
-            border: none;
-            padding: 10px 20px;
-            font-size: 14px;
-            border-radius: 2px;
-            text-transform: uppercase;
-            font-weight: 500;
-        }
-
-            .btn-back:hover {
-                background-color: #e0e0e0;
-            }
-
-        .osahan-title {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #030303;
-        }
-
-        .osahan-progress {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .osahan-close {
-            margin-left: 10px;
-        }
-
-        .osahan-desc {
-            font-size: 0.9rem;
-            color: #606060;
-        }
-
-        .osahan-form {
-            margin-top: 20px;
-        }
-
-        .category-checkbox {
-            display: flex;
-            flex-wrap: wrap;
-        }
-
-        .terms {
-            font-size: 0.9rem;
-            color: #606060;
-        }
-
-            .terms a {
-                color: #007bff;
-                text-decoration: none;
-            }
-
-                .terms a:hover {
-                    text-decoration: underline;
-                }
-        /* Custom Loading Spinner */
-        .custom-spinner {
-            margin: 0 auto;
-            width: 50px;
-            height: 50px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #ff516b;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @@keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        #recognitionLoading {
-            margin-top: 10px;
-            text-align: center;
-            display: none;
-            padding: 5px;
-            background-color: #f9f9f9;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-        }
-
-        #progressContainer {
-            margin-top: 15px;
-            display: none;
-        }
-
-        .custom-progress-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .custom-progress {
-            flex: 1;
-            height: 8px;
-            background-color: #f5f5f5;
-            border-radius: 4px;
-            overflow: hidden;
-            position: relative;
-            border: 1px solid #e0e0e0;
-        }
-
-        .custom-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #ff516b 0%, #ff7a8a 100%);
-            width: 0%;
-            transition: width 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-            /* Animation khi đang upload */
-            .custom-progress-bar.animating::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                bottom: 0;
-                right: 0;
-                background: linear-gradient( 90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0) 100% );
-                animation: shimmer 1.5s infinite;
-            }
-
-        @@keyframes shimmer {
-            0% {
-                transform: translateX(-100%);
-            }
-
-            100% {
-                transform: translateX(100%);
-            }
-        }
-
-        .custom-close-btn {
-            color: #dc3545;
-            font-size: 20px;
-            cursor: pointer;
-            text-decoration: none;
-            transition: transform 0.2s;
-        }
-
-            .custom-close-btn:hover {
-                transform: scale(1.2);
-                color: #c82333;
-            }
-
-        #progressText {
-            display: block;
-            margin-top: 8px;
-            font-size: 14px;
-            color: #606060;
-            font-weight: 500;
-        }
-
-        #uploadMessage {
-            font-size: 14px;
-            color: #606060;
-            margin-top: 10px;
-            display: none;
-            padding: 10px;
-            background-color: #fff3cd;
-            border-left: 4px solid #ffc107;
-            border-radius: 4px;
-        }
-
-        /* ===== CUSTOM LOADING SPINNER ===== */
-        #recognitionLoading {
-            margin-top: 10px;
-            text-align: center;
-            display: none;
-            padding: 5px;
-            background-color: #f9f9f9;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .custom-spinner {
-            margin: 0 auto;
-            width: 50px;
-            height: 50px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #ff516b;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @@keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        #recognitionLoading p {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #606060;
-            font-weight: 500;
-        }
-
-        #resultContainer {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 4px;
-        }
-
-            #resultContainer .text-danger {
-                color: #dc3545;
-            }
-
-            #resultContainer .text-warning {
-                color: #ffc107;
-            }
-
-            #resultContainer .text-success {
-                color: #28a745;
-            }
-
-        /* Icon styles */
-        .fas {
-            margin-right: 5px;
-        }
-
-        /* Demo container */
-        .demo-container {
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 30px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .demo-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #030303;
-        }
-
-        .demo-btn {
-            background-color: #cc0000;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 14px;
-            border-radius: 4px;
-            cursor: pointer;
-            text-transform: uppercase;
-            font-weight: 500;
-            margin-right: 10px;
-        }
-
-            .demo-btn:hover {
-                background-color: #e60000;
-            }
-
-            .demo-btn:disabled {
-                background-color: #cccccc;
-                cursor: not-allowed;
-            }
-        /* ===== MODERN UPLOAD PROGRESS DESIGN ===== */
-        #progressContainer {
-            margin-top: 20px;
-            padding: 30px;
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
-            border-radius: 16px;
-            border: 2px solid #e8eaf6;
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.12);
-            display: none;
-        }
-
-        .custom-progress-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 16px;
+        .file-upload-group {
             margin-bottom: 16px;
         }
 
+        .file-upload-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #0f0f0f;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .file-upload-input {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 13px;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+            .file-upload-input:hover {
+                border-color: #909090;
+            }
+
+            .file-upload-input:focus {
+                outline: none;
+                border-color: #065fd4;
+            }
+
+        /* ===== CỘT PHẢI: METADATA FORM ===== */
+        .upload-metadata-section {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 32px;
+        }
+
+        .form-section {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #0f0f0f;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 14px;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            background-color: #fff;
+            color: #0f0f0f;
+            font-family: 'Roboto', Arial, sans-serif;
+            transition: border-color 0.2s;
+        }
+
+            .form-input:focus,
+            .form-select:focus,
+            .form-textarea:focus {
+                outline: none;
+                border-color: #065fd4;
+                box-shadow: 0 0 0 2px rgba(6, 95, 212, 0.1);
+            }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        /* ===== AI TOGGLE SECTION ===== */
+        .ai-toggle-section {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+
+        .custom-switch {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .custom-control-input {
+            width: 40px;
+            height: 20px;
+            margin-right: 12px;
+        }
+
+        .custom-control-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #0f0f0f;
+            cursor: pointer;
+        }
+
+        .ai-toggle-hint {
+            font-size: 12px;
+            color: #606060;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        /* ===== PROGRESS BAR - ĐỎ YOUTUBE ===== */
+        #progressContainer {
+            margin-top: 24px;
+            padding: 24px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .custom-progress-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
         .custom-progress {
             flex: 1;
-            height: 16px;
-            background: #f0f0f5;
-            border-radius: 12px;
-            overflow: visible;
+            height: 6px;
+            background: #f1f1f1;
+            border-radius: 3px;
+            overflow: hidden;
             position: relative;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
         }
 
         .custom-progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(90deg, #ff0000 0%, #cc0000 100%);
             width: 0%;
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: width 0.3s ease;
             position: relative;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+            border-radius: 3px;
         }
 
-            /* Shimmer effect */
+            /* Shimmer effect - ĐỎ */
             .custom-progress-bar.animating::before {
                 content: '';
                 position: absolute;
@@ -474,169 +257,116 @@
             }
 
         @@keyframes shimmerMove {
-            0% {
-                left: -100%;
-            }
+            0%
 
-            100% {
-                left: 200%;
-            }
+        {
+            left: -100%;
+        }
+
+        100% {
+            left: 200%;
+        }
+
         }
 
         .custom-close-btn {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            background: #ff0000;
             color: white;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             cursor: pointer;
             text-decoration: none;
             border-radius: 50%;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+            transition: all 0.2s ease;
             flex-shrink: 0;
         }
 
             .custom-close-btn:hover {
-                transform: scale(1.1) rotate(90deg);
-                box-shadow: 0 4px 12px rgba(255, 107, 107, 0.5);
+                background: #cc0000;
+                transform: scale(1.1);
                 color: white;
                 text-decoration: none;
             }
 
         #progressText {
             display: block;
-            font-size: 14px;
-            color: #4a5568;
-            font-weight: 600;
-            text-align: center;
-            margin-top: 8px;
-        }
-
-            #progressText .progress-icon {
-                display: inline-block;
-                margin-right: 8px;
-                animation: bounce 1.5s infinite;
-            }
-
-        @@keyframes bounce {
-            0%, 100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-4px);
-            }
-        }
-
-        /* Upload Message */
-        #uploadMessage {
-            font-size: 14px;
-            color: #764ba2;
-            margin-top: 20px;
-            display: none;
-            padding: 14px 18px;
-            background: linear-gradient(135deg, #fff9e6 0%, #fff5f7 100%);
-            border-left: 4px solid #ffd700;
-            border-radius: 10px;
+            font-size: 13px;
+            color: #606060;
             font-weight: 500;
-            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.15);
-            animation: pulseGlow 2s infinite;
+            text-align: center;
         }
 
-        @@keyframes pulseGlow {
-            0%, 100% {
-                box-shadow: 0 2px 8px rgba(255, 215, 0, 0.15);
-            }
-
-            50% {
-                box-shadow: 0 2px 12px rgba(255, 215, 0, 0.3);
-            }
+        #uploadMessage {
+            font-size: 13px;
+            color: #606060;
+            margin-top: 16px;
+            display: none;
+            padding: 12px 16px;
+            background: #fff9e6;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
         }
 
-        /* ===== FACE RECOGNITION LOADING ===== */
+        /* ===== AI LOADING SPINNER - ĐỎ YOUTUBE ===== */
         #recognitionLoading {
-            margin-top: 20px;
+            margin-top: 24px;
             text-align: center;
             display: none;
-            padding: 50px 30px;
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
-            border-radius: 16px;
-            border: 2px solid #e8eaf6;
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.12);
-            position: relative;
-            overflow: hidden;
+            padding: 40px 24px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
         }
 
-            /* Animated background */
-            #recognitionLoading::before {
-                content: '';
-                position: absolute;
-                top: -50%;
-                left: -50%;
-                width: 200%;
-                height: 200%;
-                background: radial-gradient(circle, rgba(102, 126, 234, 0.05) 0%, transparent 70%);
-                animation: rotateBackground 15s linear infinite;
-            }
-
-        @@keyframes rotateBackground {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Face Recognition Container */
         .face-recognition-container {
             position: relative;
-            width: 140px;
-            height: 140px;
-            margin: 0 auto 30px;
-            z-index: 1;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 24px;
         }
 
-        /* Main face icon */
+        /* Main face icon - ĐỎ */
         .face-icon {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
+            width: 70px;
+            height: 70px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
             border-radius: 50%;
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 16px rgba(255, 0, 0, 0.3);
             animation: facePulse 2s infinite;
         }
 
             .face-icon svg {
-                width: 50px;
-                height: 50px;
+                width: 40px;
+                height: 40px;
                 fill: white;
             }
 
         @@keyframes facePulse {
-            0%, 100% {
-                transform: translate(-50%, -50%) scale(1);
-            }
+            0%, 100%
 
-            50% {
-                transform: translate(-50%, -50%) scale(1.05);
-            }
+        {
+            transform: translate(-50%, -50%) scale(1);
         }
 
-        /* Rotating rings */
+        50% {
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+
+        }
+
+        /* Rotating rings - ĐỎ */
         .scan-ring {
             position: absolute;
             top: 50%;
@@ -649,78 +379,38 @@
         .scan-ring-1 {
             width: 100%;
             height: 100%;
-            border-top-color: #667eea;
-            border-right-color: #667eea;
+            border-top-color: #ff0000;
+            border-right-color: #ff0000;
             animation: rotateScan 2s linear infinite;
         }
 
         .scan-ring-2 {
             width: 85%;
             height: 85%;
-            border-bottom-color: #764ba2;
-            border-left-color: #764ba2;
+            border-bottom-color: #cc0000;
+            border-left-color: #cc0000;
             animation: rotateScan 1.5s linear infinite reverse;
         }
 
-        .scan-ring-3 {
-            width: 115%;
-            height: 115%;
-            border-top-color: #f093fb;
-            border-right-color: #f093fb;
-            opacity: 0.5;
-            animation: rotateScan 2.5s linear infinite;
-        }
-
         @@keyframes rotateScan {
-            0% {
-                transform: translate(-50%, -50%) rotate(0deg);
-            }
+            0%
 
-            100% {
-                transform: translate(-50%, -50%) rotate(360deg);
-            }
+        {
+            transform: translate(-50%, -50%) rotate(0deg);
         }
 
-        /* Pulse waves */
-        .pulse-wave {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
-            border: 2px solid #667eea;
-            border-radius: 50%;
-            opacity: 0;
-            animation: pulseWave 2s infinite;
+        100% {
+            transform: translate(-50%, -50%) rotate(360deg);
         }
 
-            .pulse-wave:nth-child(2) {
-                animation-delay: 0.5s;
-            }
-
-            .pulse-wave:nth-child(3) {
-                animation-delay: 1s;
-            }
-
-        @@keyframes pulseWave {
-            0% {
-                transform: translate(-50%, -50%) scale(1);
-                opacity: 0.8;
-            }
-
-            100% {
-                transform: translate(-50%, -50%) scale(1.8);
-                opacity: 0;
-            }
         }
 
-        /* Corner brackets */
+        /* Corner brackets - ĐỎ */
         .corner-bracket {
             position: absolute;
-            width: 30px;
-            height: 30px;
-            border: 3px solid #667eea;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #ff0000;
             animation: cornerBlink 1.5s infinite;
         }
 
@@ -729,7 +419,7 @@
                 left: 0;
                 border-right: none;
                 border-bottom: none;
-                border-radius: 8px 0 0 0;
+                border-radius: 6px 0 0 0;
             }
 
             .corner-bracket.top-right {
@@ -737,7 +427,7 @@
                 right: 0;
                 border-left: none;
                 border-bottom: none;
-                border-radius: 0 8px 0 0;
+                border-radius: 0 6px 0 0;
             }
 
             .corner-bracket.bottom-left {
@@ -745,7 +435,7 @@
                 left: 0;
                 border-right: none;
                 border-top: none;
-                border-radius: 0 0 0 8px;
+                border-radius: 0 0 0 6px;
             }
 
             .corner-bracket.bottom-right {
@@ -753,472 +443,308 @@
                 right: 0;
                 border-left: none;
                 border-top: none;
-                border-radius: 0 0 8px 0;
+                border-radius: 0 0 6px 0;
             }
 
         @@keyframes cornerBlink {
-            0%, 100% {
-                opacity: 0.3;
-            }
+            0%, 100%
 
-            50% {
-                opacity: 1;
-            }
+        {
+            opacity: 0.3;
         }
 
-        /* Text */
+        50% {
+            opacity: 1;
+        }
+
+        }
+
         #recognitionLoading p {
             margin: 0;
-            font-size: 16px;
-            color: #4a5568;
-            font-weight: 600;
-            z-index: 1;
-            position: relative;
-            animation: textFade 2s infinite;
-        }
-
-        @@keyframes textFade {
-            0%, 100% {
-                opacity: 0.7;
-            }
-
-            50% {
-                opacity: 1;
-            }
-        }
-
-        .loading-dots {
-            display: inline-block;
-        }
-
-            .loading-dots::after {
-                content: '';
-                animation: dots 1.5s steps(4, end) infinite;
-            }
-
-        @@keyframes dots {
-            0%, 20% {
-                content: '';
-            }
-
-            40% {
-                content: '.';
-            }
-
-            60% {
-                content: '..';
-            }
-
-            80%, 100% {
-                content: '...';
-            }
-        }
-
-        /* ===== RESULT CONTAINER ===== */
-        #resultContainer {
-            margin-top: 20px;
-            animation: slideDown 0.5s ease;
-        }
-
-        @@keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        #resultContainer p {
-            padding: 16px 20px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 0;
             font-size: 14px;
+            color: #606060;
             font-weight: 500;
         }
 
-        #resultContainer .text-danger {
-            color: #dc3545;
-            background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
-            border-left: 4px solid #dc3545;
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s steps(4, end) infinite;
         }
 
-        #resultContainer .text-warning {
-            color: #ffa500;
-            background: linear-gradient(135deg, #fff9e6 0%, #ffedd5 100%);
-            border-left: 4px solid #ffa500;
+        @@keyframes dots {
+            0%, 20%
+
+        {
+            content: '';
         }
 
-        #resultContainer .text-success {
-            color: #10b981;
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-            border-left: 4px solid #10b981;
+        40% {
+            content: '.';
         }
 
-        #resultContainer i {
-            font-size: 20px;
-            flex-shrink: 0;
+        60% {
+            content: '..';
         }
 
-        .fas.fa-exclamation-circle {
-            animation: shake 0.5s;
+        80%, 100% {
+            content: '...';
         }
 
-        .fas.fa-times-circle {
-            animation: shake 0.5s;
         }
 
-        .fas.fa-check-circle {
-            animation: bounceIn 0.6s;
+        /* ===== RESULT MESSAGES ===== */
+        #resultContainer {
+            margin-top: 16px;
         }
 
-        @@keyframes shake {
-            0%, 100% {
-                transform: translateX(0);
+            #resultContainer p {
+                padding: 12px 16px;
+                border-radius: 4px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin: 0;
+                font-size: 13px;
+                font-weight: 500;
             }
 
-            25% {
-                transform: translateX(-3px);
+            #resultContainer .text-danger {
+                color: #d32f2f;
+                background: #ffebee;
+                border-left: 4px solid #d32f2f;
             }
 
-            75% {
-                transform: translateX(3px);
+            #resultContainer .text-warning {
+                color: #f57c00;
+                background: #fff3e0;
+                border-left: 4px solid #f57c00;
             }
+
+            #resultContainer .text-success {
+                color: #388e3c;
+                background: #e8f5e9;
+                border-left: 4px solid #388e3c;
+            }
+
+        /* ===== ACTION BUTTONS ===== */
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e0e0e0;
         }
 
-        @@keyframes bounceIn {
-            0% {
-                transform: scale(0);
-            }
-
-            50% {
-                transform: scale(1.15);
-            }
-
-            100% {
-                transform: scale(1);
-            }
+        .btn-studio-save {
+            background-color: #cc0000;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            font-size: 14px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
         }
+
+            .btn-studio-save:hover {
+                background-color: #b30000;
+            }
+
+            .btn-studio-save:disabled {
+                background-color: #cccccc;
+                cursor: not-allowed;
+            }
+
+        .btn-studio-back {
+            background-color: transparent;
+            color: #065fd4;
+            border: 1px solid #065fd4;
+            padding: 10px 24px;
+            font-size: 14px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+            .btn-studio-back:hover {
+                background-color: rgba(6, 95, 212, 0.05);
+                text-decoration: none;
+            }
+
+        /* ===== SUMMERNOTE OVERRIDE ===== */
+        .note-editor.note-frame {
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+        }
+
+            .note-editor.note-frame .note-editing-area .note-editable {
+                background: #fff;
+                color: #0f0f0f;
+            }
 
         /* ===== RESPONSIVE ===== */
         @@media (max-width: 768px) {
-            #progressContainer, #recognitionLoading {
-                padding: 24px 16px;
-                margin-top: 16px;
-            }
+            .upload-studio-wrapper
 
-            .face-recognition-container {
-                width: 100px;
-                height: 100px;
-            }
+        {
+            padding: 0 16px;
+            margin: 16px auto;
+        }
 
-            .face-icon {
-                width: 60px;
-                height: 60px;
-            }
+        .upload-layout {
+            gap: 20px;
+        }
 
-                .face-icon svg {
-                    width: 36px;
-                    height: 36px;
-                }
+        .upload-metadata-section {
+            padding: 20px;
+        }
 
-            .corner-bracket {
-                width: 20px;
-                height: 20px;
-                border-width: 2px;
-            }
+        .studio-title {
+            font-size: 20px;
+        }
 
-            #recognitionLoading p {
-                font-size: 14px;
-            }
+        .action-buttons {
+            flex-direction: column-reverse;
+        }
 
-            .custom-close-btn {
-                width: 32px;
-                height: 32px;
-                font-size: 16px;
-            }
+        .btn-studio-save,
+        .btn-studio-back {
+            width: 100%;
+        }
 
-            .custom-progress {
-                height: 12px;
-            }
         }
     </style>
 }
-<div class="row">
-    <div class="col-lg-12">
-        <div class="main-title">
-            <h6>Upload Details</h6>
-        </div>
+
+<div class="upload-studio-wrapper">
+    <!-- Header -->
+    <div class="studio-header">
+        <h1 class="studio-title">@(Model.Id != Guid.Empty ? "Edit Video" : "Upload Video")</h1>
     </div>
-    <div class="col-lg-2">
-        <div class="imgplace preview-image" id="previewImage"></div>
-    </div>
-    <div class="col-lg-10">
-        <div class="osahan-title">@(Model.Id != Guid.Empty ? "Edit Video" : "Upload Video")</div>
 
-        <!-- Progress Bar Section -->
-        <div id="progressContainer">
-            <div class="custom-progress-wrapper">
-                <div class="custom-progress">
-                    <div id="progressBar" class="custom-progress-bar"></div>
-                </div>
-                <a href="#" id="cancelUpload" class="custom-close-btn">✕</a>
-            </div>
-            <span id="progressText">
-                <span class="progress-icon">📤</span>
-                <span id="progressPercentage">0%</span>
-                (<span id="progressLoaded">0 KB</span> / <span id="progressTotal">0 KB</span>)
-            </span>
-        </div>
+    <!-- Layout 2 Cột -->
+    <div class="upload-layout">
+        <!-- CỘT TRÁI: Preview & Upload Files -->
+        <div class="upload-preview-section">
+            <span class="preview-label">Thumbnail Preview</span>
+            <div class="thumbnail-preview-box empty" id="previewImage"></div>
 
-        <!-- Upload Message -->
-        <div id="uploadMessage">
-            ⚠️ Your video is uploading, please keep this page open until it's done.
-        </div>
-
-        <!-- Face Recognition Loading -->
-        <div id="recognitionLoading">
-            <div class="face-recognition-container">
-                <!-- Pulse waves -->
-                <div class="pulse-wave"></div>
-                <div class="pulse-wave"></div>
-                <div class="pulse-wave"></div>
-
-                <!-- Rotating scan rings -->
-                <div class="scan-ring scan-ring-1"></div>
-                <div class="scan-ring scan-ring-2"></div>
-                <div class="scan-ring scan-ring-3"></div>
-
-                <!-- Corner brackets -->
-                <div class="corner-bracket top-left"></div>
-                <div class="corner-bracket top-right"></div>
-                <div class="corner-bracket bottom-left"></div>
-                <div class="corner-bracket bottom-right"></div>
-
-                <!-- Center face icon -->
-                <div class="face-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                    </svg>
-                </div>
+            <div class="file-upload-group">
+                <label class="file-upload-label" asp-for="ImageUpload">Thumbnail Image</label>
+                <input id="imageUpload" asp-for="ImageUpload" type="file"
+                       class="file-upload-input" accept="@Model.ImageContentTypes" />
+                <span asp-validation-for="ImageUpload" class="text-danger"></span>
             </div>
 
-            <p>
-                🔍 Đang nhận diện khuôn mặt<span class="loading-dots"></span>
-            </p>
+            <div class="file-upload-group">
+                <label class="file-upload-label" asp-for="VideoUpload">Video File</label>
+                <input id="videoUpload" asp-for="VideoUpload" type="file"
+                       class="file-upload-input" accept="@Model.VideoContentTypes" />
+                <span asp-validation-for="VideoUpload" class="text-danger"></span>
+            </div>
         </div>
 
-        <!-- Result Container -->
-        <div id="resultContainer"></div>
-    </div>
-</div>
-<hr>
-<div class="row">
-    <div class="col-lg-12">
-        <div class="osahan-form">
+        <!-- CỘT PHẢI: Metadata Form -->
+        <div class="upload-metadata-section">
             <form id="videoAddEditForm" asp-action="CreateEditVideo" enctype="multipart/form-data">
                 <input id="videoId" hidden asp-for="Id" />
                 <input id="imageUrl" asp-for="ImageUrl" hidden />
-                <div class="row">
-                    <div class="col-lg-12">
-                        <div class="form-group">
-                            <label asp-for="ImageUpload">Thumbnail</label>
-                            <input id="imageUpload" asp-for="ImageUpload" type="file" class="form-control" accept="@Model.ImageContentTypes" />
-                            <span asp-validation-for="ImageUpload" class="text-danger"></span>
-                        </div>
+
+                <!-- Title -->
+                <div class="form-section">
+                    <label class="form-label" asp-for="Title">Video Title</label>
+                    <input asp-for="Title" class="form-input" placeholder="Enter a descriptive title" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+
+                <!-- Description -->
+                <div class="form-section">
+                    <label class="form-label" asp-for="Description">Description</label>
+                    <textarea asp-for="Description" class="form-textarea" id="Description"
+                              placeholder="Tell viewers about your video"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <!-- Category -->
+                <div class="form-section">
+                    <label class="form-label" asp-for="CategoryId">Category</label>
+                    <select asp-for="CategoryId" asp-items="Model.CategoryDropdown" class="form-select">
+                        <option disabled selected>Select a category</option>
+                    </select>
+                    <span asp-validation-for="CategoryId" class="text-danger"></span>
+                </div>
+
+                <!-- AI Toggle -->
+                <div class="ai-toggle-section">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input" id="hasCelebToggle" asp-for="HasCelebrity">
+                        <label class="custom-control-label" for="hasCelebToggle">
+                            Enable AI face recognition (Video contains celebrities)
+                        </label>
                     </div>
-                    <div class="col-lg-12">
-                        <div class="form-group">
-                            <label asp-for="VideoUpload">Video</label>
-                            <input id="videoUpload" asp-for="VideoUpload" type="file" class="form-control" accept="@Model.VideoContentTypes" />
-                            <span asp-validation-for="VideoUpload" class="text-danger"></span>
-                        </div>
+                    <div class="ai-toggle-hint">
+                        <i class="fas fa-info-circle"></i>
+                        If <strong>enabled</strong>: Processing may take several minutes.
+                        If <strong>disabled</strong>: Video will be published immediately.
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-lg-12">
-                        <div class="form-group">
-                            <label asp-for="Title">Video Title</label>
-                            <input asp-for="Title" class="form-control" id="e1" placeholder="Enter video title" />
-                            <span asp-validation-for="Title" class="text-danger"></span>
+
+                <!-- Progress Bar -->
+                <div id="progressContainer">
+                    <div class="custom-progress-wrapper">
+                        <div class="custom-progress">
+                            <div id="progressBar" class="custom-progress-bar"></div>
                         </div>
+                        <a href="#" id="cancelUpload" class="custom-close-btn">✕</a>
                     </div>
-                    <div class="col-lg-12">
-                        <div class="form-group">
-                            <label asp-for="Description">About</label>
-                            <textarea asp-for="Description" class="form-control" id="Description" rows="3"></textarea>
-                            <span asp-validation-for="Description" class="text-danger"></span>
-                        </div>
-                    </div>
+                    <span id="progressText">
+                        <span id="progressPercentage">0%</span>
+                        (<span id="progressLoaded">0 KB</span> / <span id="progressTotal">0 KB</span>)
+                    </span>
                 </div>
-                <div class="row">
-                    <div class="col-lg-3">
-                        <div class="form-group">
-                            <label asp-for="CategoryId">Category</label>
-                            <select asp-for="CategoryId" asp-items="Model.CategoryDropdown" class="custom-select" id="e3">
-                                <option disabled selected>Select here</option>
-                            </select>
-                            <span asp-validation-for="CategoryId" class="text-danger"></span>
-                        </div>
-                    </div>
-                    <div class="col-lg-9">
-                        <div class="form-group mt-3 p-3 border rounded bg-light">
-                            <div class="custom-control custom-switch">
-                                <input type="checkbox" class="custom-control-input" id="hasCelebToggle" asp-for="HasCelebrity">
-                                <label class="custom-control-label text-dark font-weight-bold" for="hasCelebToggle">
-                                    Video này có chứa người nổi tiếng? (Bật AI nhận diện)
-                                </label>
-                            </div>
-                            <small class="text-muted d-block mt-1">
-                                <i class="fas fa-info-circle"></i>
-                                Nếu <strong>BẬT</strong>: Hệ thống sẽ mất vài phút để phân tích khuôn mặt. <br />
-                                Nếu <strong>TẮT</strong>: Video sẽ được đăng ngay lập tức.
-                            </small>
-                        </div>
-                    </div>
-                    @* <div class="col-lg-3">
-                        <div class="form-group">
-                            <label for="e4">Privacy Settings</label>
-                            <select id="e4" class="custom-select">
-                                <option>Public</option>
-                                <option>Private</option>
-                                <option>Unlisted</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-lg-3">
-                        <div class="form-group">
-                            <label for="e5">Monetize</label>
-                            <select id="e5" class="custom-select">
-                                <option>Yes</option>
-                                <option>No</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-lg-3">
-                        <div class="form-group">
-                            <label for="e6">License</label>
-                            <select id="e6" class="custom-select">
-                                <option>Standard</option>
-                                <option>Creative Commons</option>
-                            </select>
-                        </div>
-                    </div> *@
+
+                <!-- Upload Message -->
+                <div id="uploadMessage">
+                    ⚠️ Your video is uploading, please keep this page open until it's done.
                 </div>
-                @* <div class="row">
-                    <div class="col-lg-5">
-                        <div class="form-group">
-                            <label for="e7">Tags (13 Tags Remaining)</label>
-                            <input type="text" placeholder="Gaming, PS4" id="e7" class="form-control">
+
+                <!-- AI Recognition Loading -->
+                <div id="recognitionLoading">
+                    <div class="face-recognition-container">
+                        <!-- Rotating scan rings -->
+                        <div class="scan-ring scan-ring-1"></div>
+                        <div class="scan-ring scan-ring-2"></div>
+
+                        <!-- Corner brackets -->
+                        <div class="corner-bracket top-left"></div>
+                        <div class="corner-bracket top-right"></div>
+                        <div class="corner-bracket bottom-left"></div>
+                        <div class="corner-bracket bottom-right"></div>
+
+                        <!-- Center face icon -->
+                        <div class="face-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                            </svg>
                         </div>
                     </div>
-                    <div class="col-lg-4">
-                        <div class="form-group">
-                            <label for="e8">Cast (Optional)</label>
-                            <input type="text" placeholder="Nathan Drake" id="e8" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-lg-3">
-                        <div class="form-group">
-                            <label for="e9">Language in Video (Optional)</label>
-                            <select id="e9" class="custom-select">
-                                <option>English</option>
-                                <option>Vietnamese</option>
-                                <option>Spanish</option>
-                            </select>
-                        </div>
-                    </div>
+                    <p>🔍 Analyzing faces<span class="loading-dots"></span></p>
                 </div>
-                <div class="row">
-                    <div class="col-lg-12">
-                        <div class="main-title">
-                            <h6>Category (you can select up to 6 categories)</h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="row category-checkbox">
-                    <div class="col-lg-2 col-xs-6 col-4">
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="customCheck1">
-                            <label class="custom-control-label" for="customCheck1">Abaft</label>
-                        </div>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="customCheck2">
-                            <label class="custom-control-label" for="customCheck2">Brick</label>
-                        </div>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="customCheck3">
-                            <label class="custom-control-label" for="customCheck3">Purpose</label>
-                        </div>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="customCheck4">
-                            <label class="custom-control-label" for="customCheck4">Shallow</label>
-                        </div>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="customCheck5">
-                            <label class="custom-control-label" for="customCheck5">Spray</label>
-                        </div>
-                    </div>
-                    <div class="col-lg-2 col-xs-6 col-4">
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="zcustomCheck1">
-                            <label class="custom-control-label" for="zcustomCheck1">Cemetery</label>
-                        </div>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="zcustomCheck2">
-                            <label class="custom-control-label" for="zcustomCheck2">Trouble</label>
-                        </div>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="zcustomCheck3">
-                            <label class="custom-control-label" for="zcustomCheck3">Pin</label>
-                        </div>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="zcustomCheck4">
-                            <label class="custom-control-label" for="zcustomCheck4">Fall</label>
-                        </div>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="zcustomCheck5">
-                            <label class="custom-control-label" for="zcustomCheck5">Leg</label>
-                        </div>
-                    </div>
-                    <div class="col-lg-2 col-xs-6 col-4">
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="czcustomCheck1">
-                            <label class="custom-control-label" for="czcustomCheck1">Scissors</label>
-                        </div>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="czcustomCheck2">
-                            <label class="custom-control-label" for="czcustomCheck2">Stitch</label>
-                        </div>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="czcustomCheck3">
-                            <label class="custom-control-label" for="czcustomCheck3">Agonizing</label>
-                        </div>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="czcustomCheck4">
-                            <label class="custom-control-label" for="czcustomCheck4">Rescue</label>
-                        </div>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="czcustomCheck5">
-                            <label class="custom-control-label" for="czcustomCheck5">Quiet</label>
-                        </div>
-                    </div>
-                </div> *@
-                <div class="footer-buttons">
-                    <button class="btn btn-save" type="submit">Save</button>
-                    <a class="btn btn-back" asp-controller="Channel" asp-action="Index">Back</a>
+
+                <!-- Result Container -->
+                <div id="resultContainer"></div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <a class="btn-studio-back" asp-controller="Channel" asp-action="Index">Cancel</a>
+                    <button class="btn-studio-save" type="submit">Save</button>
                 </div>
             </form>
-        </div>
-        <div class="terms text-center mt-3">
-            <p class="mb-0">There are many variations of passages of Lorem Ipsum available, but the majority <a href="#">Terms of Service</a> and <a href="#">Community Guidelines</a>.</p>
-            <p class="hidden-xs mb-0">Ipsum is therefore always free from repetition, injected humour, or non</p>
         </div>
     </div>
 </div>
@@ -1226,14 +752,17 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.js"></script>
-    <script>
-                $(document).ready(function () {
-            $('#Description').summernote();
-            console.log('Summernote initialized');
 
-            // Test hiển thị progress bar ngay khi load trang (để debug)
-            console.log('Progress container exists:', $('#progressContainer').length);
-            console.log('Progress container display:', $('#progressContainer').css('display'));
+    <script>
+        $(document).ready(function () {
+            $('#Description').summernote({
+                height: 150,
+                toolbar: [
+                    ['style', ['bold', 'italic', 'underline']],
+                    ['para', ['ul', 'ol']],
+                    ['insert', ['link']]
+                ]
+            });
         });
 
         $(function () {
@@ -1241,18 +770,16 @@
             if (videoId && videoId !== "00000000-0000-0000-0000-000000000000") {
                 $('#videoUpload').prop("disabled", true);
                 const url = $('#imageUrl').val();
-                $('#previewImage').append(`<img src="${url}" class="card-img-top rounded preview-image" />`);
-                console.log('Edit mode: Video upload disabled, image preview loaded');
+                $('#previewImage').removeClass('empty').append(`<img src="${url}" class="preview-image" />`);
             }
         });
 
         $('#imageUpload').on('change', function () {
             if (this.files && this.files[0]) {
-                $('#previewImage').empty();
+                $('#previewImage').removeClass('empty').empty();
                 var reader = new FileReader();
                 reader.onload = function (event) {
-                    $('#previewImage').append(`<img src="${event.target.result}" class="card-img-top rounded preview-image" />`);
-                    console.log('Image preview updated');
+                    $('#previewImage').append(`<img src="${event.target.result}" />`);
                 }
                 reader.readAsDataURL(this.files[0]);
             }
@@ -1260,11 +787,26 @@
 
         let xhr;
 
-            $('#videoAddEditForm').on('submit', function (e) {
+        $('#videoAddEditForm').on('submit', function (e) {
             e.preventDefault();
-            console.log('=== FORM SUBMITTED ===');
 
-            const formData = new FormData(this);
+        const form = this;
+        const fileInput = document.getElementById('videoUpload');
+
+        // SỬA 1: Kiểm tra độ dài mảng files thay vì kiểm tra biến object
+        const hasFile = fileInput.files && fileInput.files.length > 0;
+        const videoId = $('#videoId').val();
+
+        // Kiểm tra validate: Nếu là tạo mới VÀ chưa chọn file
+        if ((!videoId || videoId === "00000000-0000-0000-0000-000000000000") && !hasFile) {
+            resultContainer.html('<p class="text-danger"><i class="fas fa-exclamation-circle"></i> Vui lòng chọn file video.</p>');
+            $('.btn-studio-save').prop('disabled', false).text('Save');
+            return;
+        }
+
+        // Khởi tạo FormData
+        // new FormData(form) đã tự động lấy input có name="VideoUpload" rồi.
+        const formData = new FormData(form);
             const progressContainer = $('#progressContainer');
             const progressBar = $('#progressBar');
             const recognitionLoading = $('#recognitionLoading');
@@ -1279,18 +821,16 @@
             progressBar.css('width', '0%').removeClass('animating');
             $('#progressPercentage').text('0%');
 
-            // Kiểm tra checkbox có được tích không
             const hasCeleb = $('#hasCelebToggle').is(':checked');
 
-            // Hiển thị Progress
+            // Show Progress
             progressContainer.show();
             uploadMessage.show();
-            $('.btn-save').prop('disabled', true).text('Uploading...');
+            $('.btn-studio-save').prop('disabled', true).text('Uploading...');
 
             xhr = new XMLHttpRequest();
             xhr.open('POST', '/Video/CreateEditVideo', true);
 
-            // Theo dõi upload
             xhr.upload.onprogress = function (event) {
                 if (event.lengthComputable) {
                     const percentComplete = Math.round((event.loaded / event.total) * 100);
@@ -1302,99 +842,76 @@
                 }
             };
 
-            // Khi upload xong file lên server
             xhr.upload.onloadend = function () {
-                console.log('Upload file complete.');
                 progressBar.removeClass('animating');
-
                 if (hasCeleb) {
-                    // Nếu CÓ người nổi tiếng -> Hiện loading AI
                     progressContainer.hide();
                     uploadMessage.hide();
                     recognitionLoading.show();
-                    $('.btn-save').text('Running AI...');
+                    $('.btn-studio-save').text('Running AI...');
                 } else {
-                    // Nếu KHÔNG CÓ -> Hiện thông báo đang lưu
-                    $('#uploadMessage').html('<i class="fas fa-save"></i> Đang lưu video, vui lòng đợi...');
-                    $('.btn-save').text('Saving...');
+                    $('#uploadMessage').html('<i class="fas fa-save"></i> Saving video, please wait...');
+                    $('.btn-studio-save').text('Saving...');
                 }
             };
 
-            // Nhận kết quả từ Server
             xhr.onload = function () {
-                recognitionLoading.hide();
-                if (xhr.status === 200) {
-                    try {
-                        // Nếu server trả về Redirect (JSON hoặc Header)
-                        const response = JSON.parse(xhr.responseText);
-                        if (response.redirectUrl) {
-                            window.location.href = response.redirectUrl;
-                        } else {
-                            window.location.href = '/Channel/Index';
-                        }
-                    } catch (e) {
-                        window.location.href = '/Channel/Index';
+            recognitionLoading.hide();
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+
+                    // CHỈ CHUYỂN HƯỚNG KHI IS_SUCCESS LÀ TRUE HOẶC CÓ redirectUrl
+                    if (response.isSuccess === true) {
+                        // Dùng redirectUrl nếu có, nếu không thì dùng mặc định /Channel/Index
+                        window.location.href = response.redirectUrl || '/Channel/Index';
                     }
-                } else {
-                    resultContainer.html(`<p class="text-danger">Lỗi: ${xhr.statusText}</p>`);
-                    $('.btn-save').prop('disabled', false).text('Save');
+                    else if (response.isSuccess === false) {
+                        // Nếu server trả về lỗi nghiệp vụ (ví dụ: thiếu video)
+                        const message = response.message || 'Dữ liệu không hợp lệ.';
+                        resultContainer.html(`<p class="text-danger"><i class="fas fa-exclamation-circle"></i> Lỗi: ${message}</p>`);
+                        $('.btn-studio-save').prop('disabled', false).text('Save');
+                    }
+                    else {
+                        // Trường hợp response không chứa isSuccess, coi là lỗi
+                        resultContainer.html(`<p class="text-danger"><i class="fas fa-exclamation-circle"></i> Lỗi xử lý phản hồi (Cấu trúc JSON không rõ ràng).</p>`);
+                        $('.btn-studio-save').prop('disabled', false).text('Save');
+                    }
+
+                } catch (e) {
+                    // Xử lý khi parse JSON thất bại (server trả về HTML hoặc response rỗng)
+                    console.error("Lỗi parse JSON:", e);
+                    resultContainer.html(`<p class="text-danger"><i class="fas fa-exclamation-circle"></i> Lỗi nghiêm trọng: Server không trả về JSON hợp lệ.</p>`);
+                    $('.btn-studio-save').prop('disabled', false).text('Save');
                 }
-            };
+            } else {
+                // Xử lý các lỗi HTTP non-200 (ví dụ: 500 Internal Server Error)
+                resultContainer.html(`<p class="text-danger"><i class="fas fa-exclamation-circle"></i> Lỗi: ${xhr.statusText || 'Lỗi mạng'}</p>`);
+                $('.btn-studio-save').prop('disabled', false).text('Save');
+            }
+        };
 
             xhr.onerror = function () {
                 recognitionLoading.hide();
-                resultContainer.html(`<p class="text-danger">Lỗi kết nối mạng.</p>`);
-                $('.btn-save').prop('disabled', false).text('Save');
+                resultContainer.html(`<p class="text-danger"><i class="fas fa-exclamation-circle"></i> Network error.</p>`);
+                $('.btn-studio-save').prop('disabled', false).text('Save');
             };
 
             xhr.send(formData);
         });
 
-        // Hủy upload
         $('#cancelUpload').on('click', function (e) {
             e.preventDefault();
-            console.log('Upload cancelled by user');
-
-            if (xhr) {
-                xhr.abort();
-            }
-
-            $('#progressContainer').hide();
-            $('#uploadMessage').hide();
-            $('#recognitionLoading').hide();
-            $('#resultContainer').html(`
-                <p class="text-warning">
-                    <i class="fas fa-times-circle"></i>
-                    Upload đã bị hủy.
-                </p>
-            `);
-            $('.btn-save').prop('disabled', false).text('Save');
-        });
-
-        // Format bytes helper function
-        function formatBytes(bytes) {
-            if (bytes === 0) return '0 KB';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-
-        // Hủy upload
-        $('#cancelUpload').on('click', function (e) {
-            e.preventDefault();
-            console.log('Upload cancelled by user');
             if (xhr) {
                 xhr.abort();
             }
             $('#progressContainer').hide();
             $('#uploadMessage').hide();
             $('#recognitionLoading').hide();
-            $('#resultContainer').html('<p class="text-warning"><i class="fas fa-times-circle"></i> Upload đã bị hủy.</p>');
-            $('.btn-save').prop('disabled', false).text('Save');
+            $('#resultContainer').html(`<p class="text-warning"><i class="fas fa-times-circle"></i> Upload cancelled.</p>`);
+            $('.btn-studio-save').prop('disabled', false).text('Save');
         });
 
-        // Format bytes
         function formatBytes(bytes) {
             if (bytes === 0) return '0 KB';
             const k = 1024;

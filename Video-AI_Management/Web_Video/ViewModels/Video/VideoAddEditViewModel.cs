@@ -16,6 +16,7 @@ namespace Web_Video.ViewModels.Video
         [Display(Name = "Upload thumbnail here")]
         public IFormFile ImageUpload { get; set; }
         [Display(Name = "Upload your video here")]
+        //[Required]
         public IFormFile VideoUpload { get; set; }
         [Display(Name = "Choose the category for your video")]
         [Required(ErrorMessage = "Please choose a category")]

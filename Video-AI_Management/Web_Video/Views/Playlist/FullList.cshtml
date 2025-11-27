@@ -1,4 +1,5 @@
 ﻿@model Web_Video.ViewModels.Playlist.PlaylistWatchViewModel
+
 @{
     ViewData["Title"] = "Toàn bộ danh sách phát: " + Model.PlaylistInfo.Name;
     ViewData["CurrentPage"] = Model.PlaylistInfo.Name;
@@ -13,9 +14,8 @@
                 <h1 class="playlist-title">@Model.PlaylistInfo.Name</h1>
                 <div class="playlist-meta">
                     <span class="meta-item">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            <path d="M9 10l6 2-6 2V10z" />
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18M3 12h18M3 18h18" />
                         </svg>
                         @Model.PlaylistInfo.VideoCount video
                     </span>
@@ -25,11 +25,15 @@
             </div>
         </div>
 
-        <!-- Video Grid -->
-        <div class="video-grid">
+        <!-- Video List -->
+        <div class="video-list">
+            @{
+                int index = 1;
+            }
             @foreach (var item in Model.Items)
             {
                 <div class="video-item" onclick="location.href='/Video/Watch/@item.VideoId'">
+                    <div class="video-index">@index</div>
                     <div class="thumbnail-wrapper">
                         <img src="@(item.Thumbnail ?? "/default-thumbnail.jpg")"
                              alt="@item.Title"
@@ -43,6 +47,7 @@
                         </div>
                     </div>
                 </div>
+                index++;
             }
         </div>
     </div>
@@ -50,10 +55,11 @@
 
 @section Css {
     <style>
+        /* Global Container - YouTube Style */
         .playlist-container {
-            background: linear-gradient(180deg, #f9f9f9 0%, #ffffff 100%);
+            background: #FFFFFF;
             min-height: 100vh;
-            padding: 32px 24px;
+            padding: 24px 24px 48px;
         }
 
         .playlist-wrapper {
@@ -61,21 +67,21 @@
             margin: 0 auto;
         }
 
+        /* Header Section - YouTube Style */
         .playlist-header {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 32px;
-            margin-bottom: 32px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            border: 1px solid #e5e5e5;
+            background: #FFFFFF;
+            padding: 0 0 24px 0;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #E5E5E5;
         }
 
         .playlist-title {
-            font-size: 32px;
-            font-weight: 600;
-            color: #0f0f0f;
-            margin: 0 0 12px 0;
+            font-size: 24px;
+            font-weight: 400;
+            color: #0F0F0F;
+            margin: 0 0 8px 0;
             line-height: 1.3;
+            letter-spacing: -0.5px;
         }
 
         .playlist-meta {
@@ -93,35 +99,54 @@
         }
 
             .meta-item svg {
-                opacity: 0.8;
+                opacity: 0.7;
             }
 
         .meta-divider {
-            color: #d0d0d0;
+            color: #AAAAAA;
         }
 
-        .video-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 24px;
+        /* Video List - Vertical Layout */
+        .video-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
         }
 
+        /* Video Item - YouTube List Style */
         .video-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 8px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: transform 0.2s ease;
+            transition: background-color 0.1s ease;
         }
 
             .video-item:hover {
-                transform: translateY(-4px);
+                background: #F2F2F2;
             }
 
+        /* Video Index Number */
+        .video-index {
+            flex-shrink: 0;
+            width: 24px;
+            font-size: 14px;
+            font-weight: 400;
+            color: #606060;
+            text-align: center;
+            padding-top: 8px;
+            line-height: 20px;
+        }
+
+        /* Thumbnail */
         .thumbnail-wrapper {
             position: relative;
-            width: 100%;
-            margin-bottom: 12px;
-            border-radius: 12px;
+            flex-shrink: 0;
+            width: 168px;
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
         }
 
         .thumbnail {
@@ -129,8 +154,8 @@
             aspect-ratio: 16/9;
             object-fit: cover;
             display: block;
-            transition: transform 0.3s ease;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #F1F1F1;
+            transition: transform 0.2s ease;
         }
 
         .video-item:hover .thumbnail {
@@ -139,42 +164,43 @@
 
         .duration-badge {
             position: absolute;
-            bottom: 8px;
-            right: 8px;
-            background: rgba(0, 0, 0, 0.85);
-            color: #fff;
-            padding: 4px 8px;
-            border-radius: 6px;
+            bottom: 4px;
+            right: 4px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #FFFFFF;
+            padding: 2px 4px;
+            border-radius: 2px;
             font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 0.3px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            line-height: 12px;
         }
 
+        /* Video Details */
         .video-details {
-            padding: 0 4px;
+            flex: 1;
+            min-width: 0;
+            padding-top: 4px;
         }
 
         .video-title {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 500;
-            color: #0f0f0f;
-            margin: 0 0 8px 0;
-            line-height: 1.4;
+            color: #0F0F0F;
+            margin: 0 0 4px 0;
+            line-height: 20px;
             overflow: hidden;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             text-overflow: ellipsis;
-            min-height: 42px;
-        }
-
-        .video-item:hover .video-title {
-            color: #065fd4;
+            max-height: 40px;
         }
 
         .video-meta {
-            font-size: 13px;
+            font-size: 12px;
             color: #606060;
+            line-height: 18px;
         }
 
         .channel-name {
@@ -183,53 +209,96 @@
 
         /* Responsive Design */
         @@media (max-width: 992px) {
-            .video-grid {
-                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-                gap: 20px;
-            }
+            .playlist-container
 
-            .playlist-header {
-                padding: 24px;
-            }
+        {
+            padding: 20px 16px 40px;
+        }
 
-            .playlist-title {
-                font-size: 26px;
-            }
+        .playlist-title {
+            font-size: 20px;
+        }
+
+        .thumbnail-wrapper {
+            width: 148px;
+        }
+
         }
 
         @@media (max-width: 768px) {
-            .playlist-container {
-                padding: 20px 16px;
-            }
+            .playlist-container
 
-            .video-grid {
-                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-                gap: 16px;
-            }
+        {
+            padding: 16px 12px 32px;
+        }
 
-            .playlist-header {
-                padding: 20px;
-                margin-bottom: 24px;
-            }
+        .playlist-header {
+            padding: 0 0 16px 0;
+            margin-bottom: 16px;
+        }
 
-            .playlist-title {
-                font-size: 22px;
-            }
+        .playlist-title {
+            font-size: 18px;
+        }
 
-            .video-title {
-                font-size: 14px;
-            }
+        .playlist-meta {
+            font-size: 13px;
+        }
+
+        .video-item {
+            gap: 8px;
+            padding: 6px;
+        }
+
+        .video-index {
+            width: 20px;
+            font-size: 13px;
+        }
+
+        .thumbnail-wrapper {
+            width: 120px;
+        }
+
+        .video-title {
+            font-size: 13px;
+        }
+
+        .video-meta {
+            font-size: 11px;
+        }
+
         }
 
         @@media (max-width: 480px) {
-            .video-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
+            .playlist-container
 
-            .playlist-title {
-                font-size: 20px;
-            }
+        {
+            padding: 12px 8px 24px;
+        }
+
+        .playlist-title {
+            font-size: 16px;
+        }
+
+        .video-item {
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .video-index {
+            width: 100%;
+            text-align: left;
+            padding-top: 0;
+        }
+
+        .thumbnail-wrapper {
+            width: 100%;
+        }
+
+        .video-details {
+            padding-top: 0;
+        }
+
         }
     </style>
 }

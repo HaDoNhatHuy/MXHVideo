@@ -2,13 +2,13 @@
 
 @{
     ViewData["Title"] = "Trang chủ";
-    ViewData["CurrentPage"] = "Home";
+    ViewData["CurrentPage"] = "Index";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 @if (!User.Identity.IsAuthenticated)
 {
     <div class="text-center pt-4">
-        <h2 class="h4">Đăng nhập để khám phá các video clip tuyệt vời.</h2>
+        <h2 class="h4" style="color:black;">Đăng nhập để khám phá các video clip tuyệt vời.</h2>
     </div>
 }
 else

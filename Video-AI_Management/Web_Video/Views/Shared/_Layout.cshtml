@@ -592,7 +592,7 @@
               method="get" asp-controller="Search" asp-action="Index">
 
             <div class="input-group">
-                <input type="text" class="form-control" id="searchInput" name="query" placeholder="Tìm kiếm...">
+                <input type="text" style="color:black" class="form-control" id="searchInput" name="query" placeholder="Tìm kiếm...">
 
                 <div class="input-group-append">
                     <button class="btn btn-light" type="button" id="searchBtn">
@@ -646,6 +646,21 @@
                         <a class="dropdown-item" asp-controller="Settings" asp-action="Index">
                             <i class="fas fa-fw fa-cog"></i> Settings
                         </a>
+                        @if (User.IsInRole(SD.AdminRole))
+                        {
+                            <div class="dropdown-divider"></div>
+                            <h6 style="margin-left:10px;">Admin Panel</h6>
+                            <a class="dropdown-item" asp-controller="Admin" asp-action="Category"><i class="fas fa-fw fa-list"></i> &nbsp; Category</a>
+                            <a class="dropdown-item" asp-controller="Admin" asp-action="AddEditUser"><i class="fas fa-fw fa-user-shield"></i> &nbsp; User Management</a>
+                            <a class="dropdown-item" asp-controller="Admin" asp-action="AllUsers"><i class="fas fa-fw fa-user-shield"></i> &nbsp; All User</a>
+                        }
+                        @if (User.IsInRole(SD.ModeratorRole))
+                        {
+                            <div class="dropdown-divider"></div>
+                            <h6 style="margin-left:10px;">Moderator Panel</h6>
+                            <a class="dropdown-item" asp-controller="Moderator" asp-action="AllVideos"><i class="fas fa-fw fa-video"></i> &nbsp; Video Management</a>
+                            <a class="dropdown-item" asp-controller="Moderator" asp-action="AllReports"><i class="fas fa-fw fa-flag"></i> &nbsp; Reports</a>
+                        }
                         <div class="dropdown-divider"></div>
                         <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
                             <i class="fas fa-fw fa-sign-out-alt"></i> Logout
@@ -665,13 +680,13 @@
     <div id="wrapper" class="youtube-content">
         <!-- Sidebar -->
         <ul class="sidebar navbar-nav" id="sidebarMenu">
-            <li class="nav-item @(ViewData["CurrentPage"] == "Home" ? "active" : "")">
+            <li class="nav-item @(ViewData["CurrentPage"] == "Index" ? "active" : "")">
                 <a class="nav-link" asp-controller="Home" asp-action="Index">
                     <i class="fas fa-fw fa-home"></i>
                     <span>Home</span>
                 </a>
             </li>
-            <li class="nav-item @(ViewData["CurrentPage"] == "Home" ? "active" : "")">
+            <li class="nav-item @(ViewData["CurrentPage"] == "Short" ? "active" : "")">
                 <a class="nav-link" asp-controller="Home" asp-action="Index">
                     <i class="fas fa-fw fa-file-video"></i>
                     <span>Shorts</span>
@@ -726,22 +741,22 @@
             <li class="nav-item channel-sidebar-list">
                 <h6>EXPLORE</h6>
                 <ul>
-                    <li class="nav-item @(ViewData["CurrentPage"] == "Home" ? "active" : "")">
+                    <li class="nav-item">
                         <a class="nav-link" asp-controller="Category" asp-action="Index" asp-route-categoryId="@Guid.Parse("F12B613B-5719-4FCE-83FF-E7B08ECE172B")">
                             <i class="fas fa-fw fa-music"></i> <span>Music</span>
                         </a>
                     </li>
-                    <li class="nav-item @(ViewData["CurrentPage"] == "Home" ? "active" : "")">
+                    <li class="nav-item">
                         <a class="nav-link" asp-controller="Category" asp-action="Index" asp-route-categoryId="@Guid.Parse("DD488F44-3BCE-4D02-998B-DF48B22B7AED")">
                             <i class="fas fa-fw fa-gamepad"></i> <span>Gaming</span>
                         </a>
                     </li>
-                    <li class="nav-item @(ViewData["CurrentPage"] == "Home" ? "active" : "")">
+                    <li class="nav-item">
                         <a class="nav-link" asp-controller="Category" asp-action="Index" asp-route-categoryId="@Guid.Parse("A3B68743-C049-4449-807C-C29531EE78DF")">
                             <i class="fas fa-fw fa-newspaper"></i> <span>News</span>
                         </a>
                     </li>
-                    <li class="nav-item @(ViewData["CurrentPage"] == "Home" ? "active" : "")">
+                    <li class="nav-item">
                         <a class="nav-link" asp-controller="Category" asp-action="Index" asp-route-categoryId="@Guid.Parse("B0B863E6-E86C-40A8-9AA1-230122EEFC61")">
                             <i class="fas fa-fw fa-dumbbell"></i> <span>Sports</span>
                         </a>
@@ -805,7 +820,7 @@
         <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="logoutModalLabel">Ready to Leave?</h5>
+                    <h5 class="modal-title" style="color:black;" id="logoutModalLabel">Ready to Leave?</h5>
                     <button class="close" type="button" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
