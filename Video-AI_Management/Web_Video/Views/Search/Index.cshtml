@@ -4,6 +4,10 @@
     ViewData["Title"] = "Kết quả tìm kiếm";
     ViewData["CurrentPage"] = "Search";
     bool isFallback = ViewBag.IsFallback ?? false;
+    // Lấy cờ mới
+    bool isFuzzyMatch = ViewBag.IsFuzzyMatch ?? false; // <-- THÊM DÒNG NÀY
+    string currentUploadTime = ViewData["UploadTime"] as string ?? "any";
+    string currentDuration = ViewData["Duration"] as string ?? "any";
 }
 
 @section Css {
@@ -18,11 +22,60 @@
             {
                 <span><i class="fas fa-search me-2"></i> Không tìm thấy kết quả chính xác cho: <span class="search-query-highlight">"@ViewData["Query"]"</span></span>
             }
+            else if (isFuzzyMatch) // <-- Xử lý trường hợp có kết quả Fuzzy
+            {
+                <span><i class="fas fa-search me-2"></i> Kết quả tìm kiếm GẦN ĐÚNG cho: <span class="font-weight-bold text-primary">"@ViewData["Query"]"</span></span>
+                <small class="text-info d-block">Kết quả này được tạo ra dựa trên độ tương đồng từ khóa.</small>
+            }
             else
             {
                 <span>Kết quả tìm kiếm cho: <span class="search-query-highlight">"@ViewData["Query"]"</span></span>
             }
         </h6>
+    </div>
+
+    <div class="search-filters mb-4">
+        <!-- Nút Lọc Chính (giống YouTube) -->
+        <button class="btn btn-sm btn-outline-secondary me-2 filter-toggle-btn" id="filterToggleBtn">
+            <i class="fas fa-filter me-1"></i> Lọc
+        </button>
+
+        <!-- Container Dropdown Lọc -->
+        <div id="filterDropdownContainer" class="d-inline-flex gap-3" style="display: none!important;">
+
+            <!-- Lọc theo Thời gian đăng tải -->
+            <div class="dropdown">
+                <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="uploadTimeFilter" data-bs-toggle="dropdown" aria-expanded="false">
+                    Thời gian đăng tải
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="uploadTimeFilter">
+                    <li><a class="dropdown-item filter-option @(currentUploadTime == "any" ? "active text-primary" : "")" href="#" data-filter-type="uploadTime" data-filter-value="any">Bất kỳ</a></li>
+                    <li><a class="dropdown-item filter-option @(currentUploadTime == "last_hour" ? "active text-primary" : "")" href="#" data-filter-type="uploadTime" data-filter-value="last_hour">Giờ trước</a></li>
+                    <li><a class="dropdown-item filter-option @(currentUploadTime == "today" ? "active text-primary" : "")" href="#" data-filter-type="uploadTime" data-filter-value="today">Hôm nay</a></li>
+                    <li><a class="dropdown-item filter-option @(currentUploadTime == "this_week" ? "active text-primary" : "")" href="#" data-filter-type="uploadTime" data-filter-value="this_week">Tuần này</a></li>
+                    <li><a class="dropdown-item filter-option @(currentUploadTime == "this_month" ? "active text-primary" : "")" href="#" data-filter-type="uploadTime" data-filter-value="this_month">Tháng này</a></li>
+                    <li><a class="dropdown-item filter-option @(currentUploadTime == "this_year" ? "active text-primary" : "")" href="#" data-filter-type="uploadTime" data-filter-value="this_year">Năm nay</a></li>
+                </ul>
+            </div>
+
+            <!-- Lọc theo Thời lượng video -->
+            <div class="dropdown">
+                <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="durationFilter" data-bs-toggle="dropdown" aria-expanded="false">
+                    Thời lượng
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="durationFilter">
+                    <li><a class="dropdown-item filter-option @(currentDuration == "any" ? "active text-primary" : "")" href="#" data-filter-type="duration" data-filter-value="any">Bất kỳ</a></li>
+                    <li><a class="dropdown-item filter-option @(currentDuration == "short" ? "active text-primary" : "")" href="#" data-filter-type="duration" data-filter-value="short">Ngắn (dưới 4 phút)</a></li>
+                    <li><a class="dropdown-item filter-option @(currentDuration == "medium" ? "active text-primary" : "")" href="#" data-filter-type="duration" data-filter-value="medium">Trung bình (4-20 phút)</a></li>
+                    <li><a class="dropdown-item filter-option @(currentDuration == "long" ? "active text-primary" : "")" href="#" data-filter-type="duration" data-filter-value="long">Dài (trên 20 phút)</a></li>
+                </ul>
+            </div>
+
+            <!-- Nút Reset -->
+            <button class="btn btn-sm btn-outline-danger" id="resetFiltersBtn">
+                Xóa bộ lọc
+            </button>
+        </div>
     </div>
 
     @if (Model.Channels != null && Model.Channels.Any())
@@ -161,23 +214,93 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
+
+            /* ============================================================
+             *  1) FILTER NÂNG CAO (UPLOAD TIME + DURATION)
+             * ============================================================ */
+
+            // Lấy query từ ViewData (nếu có)
+            const currentQuery = '@Html.Raw(ViewData["Query"])';
+
+            // Lấy filter từ ViewData
+            let currentUploadTime = '@Html.Raw(currentUploadTime)';
+            let currentDuration = '@Html.Raw(currentDuration)';
+
+            const $filterContainer = $('#filterDropdownContainer');
+
+            // Toggle bộ lọc
+            $('#filterToggleBtn').on('click', function () {
+                if ($filterContainer.css('display') === 'none' || !$filterContainer.hasClass('d-inline-flex')) {
+                    $filterContainer.css('display', 'inline-flex').addClass('d-inline-flex');
+                } else {
+                    $filterContainer.hide().removeClass('d-inline-flex');
+                }
+            });
+
+            // Chọn filter
+            $('.filter-option').on('click', function (e) {
+                e.preventDefault();
+
+                const type = $(this).data('filter-type');
+                const value = $(this).data('filter-value');
+
+                if (type === 'uploadTime') currentUploadTime = value;
+                if (type === 'duration') currentDuration = value;
+
+                performSearch();
+            });
+
+            // Reset filter
+            $('#resetFiltersBtn').on('click', function () {
+                currentUploadTime = 'any';
+                currentDuration = 'any';
+                performSearch();
+            });
+
+            // Hàm redirect URL search
+            function performSearch() {
+                let url = `/Search?query=${encodeURIComponent(currentQuery)}`;
+
+                if (currentUploadTime !== 'any') url += `&uploadTime=${currentUploadTime}`;
+                if (currentDuration !== 'any') url += `&duration=${currentDuration}`;
+
+                window.location.href = url;
+            }
+
+            // Nếu filter đang bật → hiển thị container
+            if (currentUploadTime !== 'any' || currentDuration !== 'any') {
+                $filterContainer.css('display', 'inline-flex').addClass('d-inline-flex');
+            }
+
+            /* ============================================================
+             *  2) LOGIC CŨ: INFINITE SCROLL + FALLBACK MODE
+             * ============================================================ */
+
             let isLoading = false;
             let isFallbackMode = @Json.Serialize(isFallback);
 
-            if (isFallbackMode) $('#recommendation-separator').show();
+            if (isFallbackMode) {
+                $('#recommendation-separator').show();
+            }
 
             $(window).scroll(function () {
+
+                // Khi kéo gần cuối trang
                 if ($(window).scrollTop() + $(window).height() > $(document).height() - 100) {
+
                     if (!isLoading) {
+
                         if (!isFallbackMode) {
                             isFallbackMode = true;
                             $('#recommendation-separator').fadeIn();
                         }
+
                         loadMoreRecommendations();
                     }
                 }
             });
 
+            // AJAX load video fallback
             function loadMoreRecommendations() {
                 isLoading = true;
                 $('#search-loading').show();
@@ -187,15 +310,18 @@
                     type: 'GET',
                     data: { pageNumber: 1, pageSize: 8, sortBy: 'random' },
                     success: function (res) {
+
                         $('#search-loading').hide();
                         if (res.result && res.result.items) {
                             appendVideos(res.result.items);
                         }
+
                         isLoading = false;
                     }
                 });
             }
 
+            // Append video vào grid
             function appendVideos(videos) {
                 let html = '';
                 videos.forEach(v => {
@@ -223,8 +349,11 @@
                         </div>
                     </div>`;
                 });
+
                 $('.mt-5.pt-3.border-top .row').append(html);
             }
+
         });
     </script>
+
 }
