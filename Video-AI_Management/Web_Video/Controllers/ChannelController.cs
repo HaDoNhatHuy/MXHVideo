@@ -51,22 +51,58 @@ namespace Web_Video.Controllers
                 }
             }
 
-            var channel = await _context.Channels
-                .Include(c => c.Subscribers)
-                .Include(c => c.Videos)
-                .FirstOrDefaultAsync(x => x.AppUserId == User.GetUserId());
+            //var channel = await _context.Channels
+            //    .Include(c => c.Subscribers)
+            //    .Include(c => c.Videos)
+            //    .FirstOrDefaultAsync(x => x.AppUserId == User.GetUserId());
 
-            if (channel != null)
+            //if (channel != null)
+            //{
+            //    model.Id = channel.Id;
+            //    model.Name = channel.ChannelName;
+            //    model.About = channel.About;
+            //    model.CreatedDate = channel.CreatedDate ?? DateTime.UtcNow;
+            //    model.AvatarUrl = channel.ChannelPicture;
+            //    model.BannerUrl = channel.BannerPicture ?? "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1920";
+            //    model.SubcribersCount = channel.Subscribers.Count;
+            //    model.TotalVideos = channel.Videos.Count;
+            //    model.TotalViews = channel.Videos.Sum(v => v.Views ?? 0);
+            //}
+            // --- ĐOẠN CODE MỚI TỐI ƯU (THÊM VÀO) ---
+            // Chỉ lấy những trường cần thiết, SQL Server sẽ tự tính toán Count và Sum
+            var channelData = await _context.Channels
+                .Where(x => x.AppUserId == User.GetUserId())
+                .Select(x => new
+                {
+                    x.Id,
+                    x.ChannelName,
+                    x.About,
+                    x.CreatedDate,
+                    x.ChannelPicture,
+                    x.BannerPicture,
+                    // Tính toán trực tiếp trong Database
+                    SubcribersCount = x.Subscribers.Count(),
+                    TotalVideos = x.Videos.Count(),
+                    // Tính tổng view, xử lý null bằng Coalesce (?? 0)
+                    TotalViews = x.Videos.Sum(v => (long)(v.Views ?? 0))
+                })
+                .FirstOrDefaultAsync();
+
+            if (channelData != null)
             {
-                model.Id = channel.Id;
-                model.Name = channel.ChannelName;
-                model.About = channel.About;
-                model.CreatedDate = channel.CreatedDate ?? DateTime.UtcNow;
-                model.AvatarUrl = channel.ChannelPicture;
-                model.BannerUrl = channel.BannerPicture ?? "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1920";
-                model.SubcribersCount = channel.Subscribers.Count;
-                model.TotalVideos = channel.Videos.Count;
-                model.TotalViews = channel.Videos.Sum(v => v.Views ?? 0);
+                model.Id = channelData.Id;
+                model.Name = channelData.ChannelName;
+                model.About = channelData.About;
+                model.CreatedDate = channelData.CreatedDate ?? DateTime.UtcNow;
+                model.AvatarUrl = channelData.ChannelPicture;
+                // Logic banner mặc định giữ nguyên
+                model.BannerUrl = !string.IsNullOrEmpty(channelData.BannerPicture)
+                    ? channelData.BannerPicture
+                    : "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1920";
+
+                model.SubcribersCount = channelData.SubcribersCount;
+                model.TotalVideos = channelData.TotalVideos;
+                model.TotalViews = channelData.TotalViews;
             }
 
             return View(model);

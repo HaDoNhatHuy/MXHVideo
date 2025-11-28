@@ -31,15 +31,15 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.Configure<IISServerOptions>(options =>
-{
-    options.MaxRequestBodySize = 100_000_000; // 100MB
-});
+//builder.Services.Configure<IISServerOptions>(options =>
+//{
+//    options.MaxRequestBodySize = 100_000_000; // 100MB
+//});
 
-builder.Services.Configure<KestrelServerOptions>(options =>
-{
-    options.Limits.MaxRequestBodySize = 100_000_000; // 100MB
-});
+//builder.Services.Configure<KestrelServerOptions>(options =>
+//{
+//    options.Limits.MaxRequestBodySize = 100_000_000; // 100MB
+//});
 
 // FIX: Tăng giới hạn upload file (ví dụ: 500MB)
 builder.Services.Configure<FormOptions>(options =>
@@ -61,12 +61,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-// Thêm dòng này trước app.UseRouting() hoặc app.UseEndpoints()
-app.Use(async (context, next) =>
-{
-    context.Request.EnableBuffering(); // Cho phép đọc lại body (cần cho file lớn)
-    await next();
-});
+
 app.UseRouting();
 app.UseCors("AllowAll"); // Thêm CORS middleware
 
