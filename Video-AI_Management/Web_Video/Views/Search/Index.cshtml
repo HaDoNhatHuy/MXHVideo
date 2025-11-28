@@ -8,11 +8,30 @@
     bool isFuzzyMatch = ViewBag.IsFuzzyMatch ?? false; // <-- THÊM DÒNG NÀY
     string currentUploadTime = ViewData["UploadTime"] as string ?? "any";
     string currentDuration = ViewData["Duration"] as string ?? "any";
+    bool filtersApplied = currentUploadTime != "any" || currentDuration != "any";
+
 }
 
 @section Css {
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="/css/youtube-search.css" rel="stylesheet" />
+    <style>
+        /* Thêm khoảng cách giữa các phần tử trong bộ lọc vì Bootstrap 4 không có gap-3 */
+        #filterDropdownContainer .dropdown,
+        #filterDropdownContainer #resetFiltersBtn {
+            margin-right: 10px; /* Tạo khoảng cách ngang */
+        }
+
+        /* Đảm bảo dropdown menu hiển thị đúng lớp trên cùng */
+        .dropdown-menu {
+            z-index: 1050; /* Bootstrap 4 z-index chuẩn */
+        }
+
+        .dropdown-item.active, .dropdown-item:active{
+            background-color: transparent;
+            color: inherit;
+        }
+    </style>
 }
 
 <div class="youtube-search-results">
@@ -21,6 +40,10 @@
             @if (isFallback)
             {
                 <span><i class="fas fa-search me-2"></i> Không tìm thấy kết quả chính xác cho: <span class="search-query-highlight">"@ViewData["Query"]"</span></span>
+                @if (filtersApplied)
+                {
+                    <small class="text-info d-block">LƯU Ý: Đã áp dụng bộ lọc thời gian đăng tải/thời lượng, bạn có thể thử xóa bộ lọc.</small>
+                }
             }
             else if (isFuzzyMatch) // <-- Xử lý trường hợp có kết quả Fuzzy
             {
@@ -41,11 +64,11 @@
         </button>
 
         <!-- Container Dropdown Lọc -->
-        <div id="filterDropdownContainer" class="d-inline-flex gap-3" style="display: none!important;">
+        <div id="filterDropdownContainer" class="d-inline-flex gap-3" style="display: none;">
 
             <!-- Lọc theo Thời gian đăng tải -->
             <div class="dropdown">
-                <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="uploadTimeFilter" data-bs-toggle="dropdown" aria-expanded="false">
+                <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="uploadTimeFilter" data-toggle="dropdown" aria-expanded="false">
                     Thời gian đăng tải
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="uploadTimeFilter">
@@ -60,7 +83,7 @@
 
             <!-- Lọc theo Thời lượng video -->
             <div class="dropdown">
-                <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="durationFilter" data-bs-toggle="dropdown" aria-expanded="false">
+                <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="durationFilter" data-toggle="dropdown" aria-expanded="false">
                     Thời lượng
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="durationFilter">
@@ -230,10 +253,13 @@
 
             // Toggle bộ lọc
             $('#filterToggleBtn').on('click', function () {
-                if ($filterContainer.css('display') === 'none' || !$filterContainer.hasClass('d-inline-flex')) {
-                    $filterContainer.css('display', 'inline-flex').addClass('d-inline-flex');
+                const $container = $('#filterDropdownContainer');
+
+                // Kiểm tra nếu đang ẩn thì hiện và ngược lại
+                if ($container.is(':hidden')) {
+                    $container.css('display', 'inline-flex'); // Hiện dạng flex để các nút nằm ngang
                 } else {
-                    $filterContainer.hide().removeClass('d-inline-flex');
+                    $container.hide();
                 }
             });
 
@@ -259,12 +285,20 @@
 
             // Hàm redirect URL search
             function performSearch() {
-                let url = `/Search?query=${encodeURIComponent(currentQuery)}`;
+                // FIX: Sử dụng URLSearchParams để quản lý query string chuẩn hơn
+                const params = new URLSearchParams(window.location.search);
 
-                if (currentUploadTime !== 'any') url += `&uploadTime=${currentUploadTime}`;
-                if (currentDuration !== 'any') url += `&duration=${currentDuration}`;
+                // Giữ lại query cũ
+                if (currentQuery) params.set('query', currentQuery);
 
-                window.location.href = url;
+                // Cập nhật filter
+                if (currentUploadTime !== 'any') params.set('uploadTime', currentUploadTime);
+                else params.delete('uploadTime'); // Xóa nếu là any
+
+                if (currentDuration !== 'any') params.set('duration', currentDuration);
+                else params.delete('duration'); // Xóa nếu là any
+
+                window.location.href = `/Search?${params.toString()}`;
             }
 
             // Nếu filter đang bật → hiển thị container

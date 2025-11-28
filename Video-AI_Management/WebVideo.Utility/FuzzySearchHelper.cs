@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FuzzySharp;
+﻿using FuzzySharp;
 
 namespace WebVideo.Utility
 {
@@ -19,13 +14,15 @@ namespace WebVideo.Utility
             string s1 = source.ToLowerInvariant();
             string s2 = target.ToLowerInvariant();
 
-            // Sử dụng Token Set Ratio, là phương pháp mạnh mẽ hơn cho tìm kiếm (Tối ưu cho việc đảo thứ tự từ)
-            // Nếu bạn muốn so sánh chính tả đơn giản hơn, dùng Fuzz.Ratio(s1, s2)
-            // Ví dụ này sử dụng Token Set Ratio (FuzzySharp)
-            // Nếu bạn không dùng FuzzySharp, phải tự viết thuật toán Levenshtein ở đây.
+            // 1. Dùng TokenSetRatio (Tốt cho đảo thứ tự từ khóa)
+            double scoreTokenSet = Fuzz.TokenSetRatio(s1, s2);
 
-            // Giả định bạn đã cài FuzzySharp:
-            return Fuzz.TokenSetRatio(s1, s2);
+            // 2. Dùng Ratio (Tốt cho lỗi chính tả/typos nhỏ)
+            // Hoặc Fuzz.PartialRatio nếu bạn muốn tìm kiếm cụm từ con bị gõ sai trong chuỗi dài
+            double scoreRatio = Fuzz.Ratio(s1, s2);
+
+            // Lấy điểm số cao nhất trong hai trường hợp
+            return Math.Max(scoreTokenSet, scoreRatio);
         }
     }
 }

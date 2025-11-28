@@ -113,10 +113,13 @@
     flex-direction: column;
     cursor: pointer;
     transition: transform 0.2s;
+    border-radius: 12px;
 }
 
     .yt-video-card:hover {
         transform: translateY(-2px);
+        background-color: #f2f2f2;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.12);
     }
 
 /* Thumbnail Container */
@@ -162,6 +165,7 @@
 .yt-video-info {
     display: flex;
     gap: 12px;
+    padding:0 5px;
 }
 
 /* Channel Avatar */
