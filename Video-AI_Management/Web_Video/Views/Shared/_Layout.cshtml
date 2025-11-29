@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>@ViewData["Title"] - YouTube Clone</title>
     <!-- Favicon Icon -->
-    <link rel="icon" type="image/png" href="/img/favicon.png">
+    <link rel="icon" type="image/png" href="/icons/youtube.png">
     <!-- Bootstrap core CSS-->
     <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <!-- Custom fonts for this template-->
@@ -74,8 +74,9 @@
         }
 
         .navbar .navbar-brand img {
-            height: 20px;
+            height: 100px;
             width: auto;
+            object-fit:cover;
         }
 
         .navbar #toggleSidebarBtn {
@@ -615,7 +616,8 @@
             </button>
 
             <a class="navbar-brand mr-1" asp-controller="Home" asp-action="Index">
-                <img class="img-fluid" alt="" src="/img/logo.png">
+                @* <img class="img-fluid" alt="" src="/img/logo.png"> *@
+                <img class="img-fluid" alt="" src="/icons/youtube-icon.jpg">
             </a>
         </div>
 

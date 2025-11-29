@@ -32,27 +32,31 @@
             }
             @foreach (var item in Model.Items)
             {
-                <div class="video-item" onclick="location.href='/Video/Watch/@item.VideoId'">
-                    <div class="video-index">@index</div>
-                    <div class="thumbnail-wrapper">
-                        <img src="@(item.Thumbnail ?? "/default-thumbnail.jpg")"
-                             alt="@item.Title"
-                             class="thumbnail">
-                        <div class="duration-badge">@item.Duration</div>
-                    </div>
-                    <div class="video-details">
-                        <h3 class="video-title" title="@item.Title">@item.Title</h3>
-                        <div class="video-meta">
-                            <span class="channel-name">@item.ChannelName</span>
+                <div class="video-item">
+                    <div class="video-clickable" onclick="location.href='/Video/Watch/@item.VideoId'">
+                        <div class="video-index">@index</div>
+                        <div class="thumbnail-wrapper">
+                            <img src="@(item.Thumbnail ?? "/default-thumbnail.jpg")"
+                                 alt="@item.Title"
+                                 class="thumbnail">
+                            <div class="duration-badge">@item.Duration</div>
+                        </div>
+                        <div class="video-details">
+                            <h3 class="video-title" title="@item.Title">@item.Title</h3>
+                            <div class="video-meta">
+                                <span class="channel-name">@item.ChannelName</span>
+                            </div>
                         </div>
                     </div>
-                    <!-- Nút Xóa (Hiển thị ngay cạnh item) -->
+                    <!-- Nút Xóa (Redesigned) -->
                     <button class="remove-playlist-item-btn"
                             data-video-id="@item.VideoId"
                             data-playlist-id="@Model.PlaylistInfo.Id"
                             data-title="@item.Title"
-                            title="Xóa video khỏi Playlist">
-                        <i class="fas fa-times"></i>
+                            title="Xóa khỏi danh sách phát">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
+                        </svg>
                     </button>
                 </div>
                 index++;
@@ -122,41 +126,80 @@
         }
 
         /* Video Item - YouTube List Style */
+        /* Video Item - YouTube List Style */
         .video-item {
             display: flex;
-            align-items: flex-start;
-            gap: 12px;
+            align-items: center;
+            gap: 0;
             padding: 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.1s ease;
+            border-radius: 12px;
+            transition: background-color 0.15s ease;
+            position: relative;
         }
 
             .video-item:hover {
                 background: #F2F2F2;
             }
 
-        /* Nút Xóa */
+        /* Wrapper cho phần có thể click */
+        .video-clickable {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            flex: 1;
+            cursor: pointer;
+            min-width: 0;
+        }
+
+        /* Nút Xóa - Redesigned */
         .remove-playlist-item-btn {
-            background: none;
+            background: transparent;
             border: none;
             color: #606060;
             cursor: pointer;
-            padding: 0 15px;
+            padding: 8px 12px;
+            margin-left: 8px;
+            border-radius: 50%;
             font-size: 16px;
-            transition: color 0.2s, transform 0.2s;
-            height: 100%;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            position: absolute; /* Đặt nút ở cuối wrapper */
-            right: 0;
-            z-index: 2; /* Đảm bảo nằm trên item video */
+            justify-content: center;
+            opacity: 0;
+            transform: scale(0.9);
+            flex-shrink: 0;
+            z-index: 10; /* THÊM dòng này */
+            position: relative; /* THÊM dòng này */
         }
 
-            .remove-playlist-item-btn:hover {
-                color: #ff0000;
-                transform: scale(1.1);
-            }
+        .video-item:hover .remove-playlist-item-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .remove-playlist-item-btn:hover {
+            background: #FF0000;
+            color: #FFFFFF;
+            transform: scale(1.1);
+        }
+
+        .remove-playlist-item-btn:active {
+            transform: scale(0.95);
+        }
+
+        .remove-playlist-item-btn svg {
+            transition: transform 0.2s ease;
+        }
+
+        .remove-playlist-item-btn:hover svg {
+            transform: rotate(5deg);
+        }
+
+        /* Xóa các style cũ không cần thiết */
+        .video-info {
+            /* Xóa hoặc comment phần này */
+        }
+       
         /* Điều chỉnh Item khi có nút xóa */
         .video-info {
             flex-grow: 1;
@@ -340,71 +383,87 @@
 @section Scripts {
     <script src="~/js/site.js"></script>
     <script>
-        $(document).ready(function () {
-            // Lắng nghe sự kiện click trên nút xóa
-            $(document).on('click', '.remove-playlist-item-btn', async function (e) {
+        function displayNotification(isSuccess, title, message, type) {
+            alert(`${title}: ${message}`);
+        }
+
+        async function confirmation(message) {
+            return new Promise((resolve) => {
+                const result = window.confirm(message);
+                resolve(result);
+            });
+        }
+            $(document).ready(function () {
+            // Ngăn chặn sự kiện click lan truyền từ nút xóa
+            $(document).on('click', '.remove-playlist-item-btn', function (e) {
                 e.preventDefault();
-                e.stopPropagation(); // Rất quan trọng: Ngăn chặn kích hoạt sự kiện onclick của .video-item
+                e.stopPropagation();
+                e.stopImmediatePropagation(); // QUAN TRỌNG: Thêm dòng này
 
                 const $btn = $(this);
                 const videoId = $btn.data('video-id');
                 const playlistId = $btn.data('playlist-id');
                 const videoTitle = $btn.data('title');
-                const $itemWrapper = $btn.closest('.video-item-wrapper');
+                const $itemWrapper = $btn.closest('.video-item');
                 const token = $('input[name="__RequestVerificationToken"]').val();
 
                 // 1. Xác nhận xóa
-                const confirmed = await confirmation(`Bạn có chắc chắn muốn xóa video "${videoTitle}" ra khỏi Danh sách phát này không?`);
+                confirmation(`Bạn có chắc chắn muốn xóa video "${videoTitle}" ra khỏi Danh sách phát này không?`)
+                    .then(function(confirmed) {
+                        if (confirmed) {
+                            // Tắt nút và hiện loading
+                            $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="31.4" stroke-dashoffset="10"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></circle></svg>');
 
-                if (confirmed) {
-                    // Tắt nút và hiện loading
-                    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+                            // 2. Gọi API xóa
+                            $.ajax({
+                                url: '/Playlist/RemoveVideoFromPlaylist',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({ PlaylistId: playlistId, VideoId: videoId }),
+                                headers: {
+                                    'RequestVerificationToken': token
+                                },
+                                success: function (response) {
+                                    if (response.isSuccess) {
+                                        displayNotification(true, response.title, response.message, 'toastr');
 
-                    // 2. Gọi API xóa [2]
-                    $.ajax({
-                        url: '/Playlist/RemoveVideoFromPlaylist',
-                        type: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({ PlaylistId: playlistId, VideoId: videoId }),
-                        headers: {
-                            'RequestVerificationToken': token
-                        },
-                        success: function (response) {
-                            if (response.isSuccess) {
-                                displayNotification(true, response.title, response.message, 'toastr');
+                                        // 3. Xóa item khỏi DOM
+                                        $itemWrapper.fadeOut(300, function() {
+                                            $(this).remove();
 
-                                // 3. Xóa item khỏi DOM và cập nhật số lượng video
-                                $itemWrapper.fadeOut(300, function() {
-                                    $(this).remove();
+                                            // Cập nhật lại số thứ tự
+                                            $('.video-item').each(function(idx) {
+                                                $(this).find('.video-index').text(idx + 1);
+                                            });
 
-                                    // Cập nhật số lượng video trong header
-                                    const $countElement = $('.playlist-meta .meta-item:first-child');
-                                    let currentCountText = $countElement.text().trim();
-                                    const regex = /(\d+)/;
-                                    const match = currentCountText.match(regex);
-                                    if (match) {
-                                        let currentCount = parseInt(match[4]);
-                                        currentCount = Math.max(0, currentCount - 1); // Đảm bảo không âm
-                                        $countElement.html(`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18" /></svg> ${currentCount} video`);
+                                            // Cập nhật số lượng video trong header
+                                            const $countElement = $('.playlist-meta .meta-item:first-child');
+                                            let currentCountText = $countElement.text().trim();
+                                            const regex = /(\d+)/;
+                                            const match = currentCountText.match(regex);
+                                            if (match) {
+                                                let currentCount = parseInt(match[1]);
+                                                currentCount = Math.max(0, currentCount - 1);
+                                                $countElement.html(`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18" /></svg> ${currentCount} video`);
+                                            }
+
+                                            // Kiểm tra nếu không còn video
+                                            if ($('.video-item').length === 0) {
+                                                $('.video-list').html('<div style="text-align:center;padding:40px;color:#606060;">Danh sách phát trống</div>');
+                                            }
+                                        });
+                                    } else {
+                                        displayNotification(false, 'Lỗi', response.message, 'toastr');
+                                        $btn.prop('disabled', false).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" /></svg>');
                                     }
-
-                                    // Tải lại trang nếu không còn video nào (Tùy chọn)
-                                    if ($('.video-item-wrapper').length === 0) {
-                                        // window.location.reload();
-                                        // Hoặc hiển thị thông báo "Danh sách rỗng"
-                                    }
-                                });
-                            } else {
-                                displayNotification(false, 'Lỗi', response.message, 'toastr');
-                                $btn.prop('disabled', false).html('<i class="fas fa-times"></i>');
-                            }
-                        },
-                        error: function () {
-                            displayNotification(false, 'Lỗi', 'Không thể xóa video khỏi Playlist. Lỗi kết nối server.', 'toastr');
-                            $btn.prop('disabled', false).html('<i class="fas fa-times"></i>');
+                                },
+                                error: function () {
+                                    displayNotification(false, 'Lỗi', 'Không thể xóa video khỏi Playlist. Lỗi kết nối server.', 'toastr');
+                                    $btn.prop('disabled', false).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" /></svg>');
+                                }
+                            });
                         }
                     });
-                }
             });
         });
     </script>
