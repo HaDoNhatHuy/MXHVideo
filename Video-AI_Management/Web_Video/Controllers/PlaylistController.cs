@@ -183,7 +183,7 @@ namespace Web_Video.Controllers
                     FirstVideoThumbnail = p.PlaylistItems
                         .OrderBy(pi => pi.OrderIndex)
                         .Select(pi => pi.Video.Thumbnail)
-                        .FirstOrDefault() ?? "/default-thumbnail.jpg"
+                        .FirstOrDefault() ?? "/img/playlist_2.jpg"
                 }).ToListAsync();
 
             return Json(new ApiResponse(200, result: playlists));

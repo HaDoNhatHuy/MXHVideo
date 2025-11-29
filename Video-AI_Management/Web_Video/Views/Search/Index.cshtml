@@ -9,7 +9,27 @@
     string currentUploadTime = ViewData["UploadTime"] as string ?? "any";
     string currentDuration = ViewData["Duration"] as string ?? "any";
     bool filtersApplied = currentUploadTime != "any" || currentDuration != "any";
+    // --- MAPPING NHÃN HIỂN THỊ ---
+    var uploadTimeLabels = new Dictionary<string, string>
+    {
+        { "any", "Thời gian đăng tải" },
+        { "last_hour", "Giờ trước" },
+        { "today", "Hôm nay" },
+        { "this_week", "Tuần này" },
+        { "this_month", "Tháng này" },
+        { "this_year", "Năm nay" }
+    };
+    var durationLabels = new Dictionary<string, string>
+    {
+        { "any", "Thời lượng" },
+        { "short", "Ngắn (dưới 4 phút)" },
+        { "medium", "Trung bình (4-20 phút)" },
+        { "long", "Dài (trên 20 phút)" }
+    };
 
+    // Lấy nhãn hiện tại
+    string displayUploadTime = uploadTimeLabels.ContainsKey(currentUploadTime) ? uploadTimeLabels[currentUploadTime] : uploadTimeLabels["any"];
+    string displayDuration = durationLabels.ContainsKey(currentDuration) ? durationLabels[currentDuration] : durationLabels["any"];
 }
 
 @section Css {
@@ -27,7 +47,7 @@
             z-index: 1050; /* Bootstrap 4 z-index chuẩn */
         }
 
-        .dropdown-item.active, .dropdown-item:active{
+        .dropdown-item.active, .dropdown-item:active {
             background-color: transparent;
             color: inherit;
         }
@@ -69,7 +89,7 @@
             <!-- Lọc theo Thời gian đăng tải -->
             <div class="dropdown">
                 <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="uploadTimeFilter" data-toggle="dropdown" aria-expanded="false">
-                    Thời gian đăng tải
+                    @displayUploadTime
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="uploadTimeFilter">
                     <li><a class="dropdown-item filter-option @(currentUploadTime == "any" ? "active text-primary" : "")" href="#" data-filter-type="uploadTime" data-filter-value="any">Bất kỳ</a></li>
@@ -84,7 +104,7 @@
             <!-- Lọc theo Thời lượng video -->
             <div class="dropdown">
                 <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="durationFilter" data-toggle="dropdown" aria-expanded="false">
-                    Thời lượng
+                    @displayDuration
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="durationFilter">
                     <li><a class="dropdown-item filter-option @(currentDuration == "any" ? "active text-primary" : "")" href="#" data-filter-type="duration" data-filter-value="any">Bất kỳ</a></li>

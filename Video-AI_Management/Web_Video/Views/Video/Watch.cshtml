@@ -372,7 +372,7 @@
             #playlistList li {
                 display: flex;
                 align-items: center;
-                padding: 8px 0;
+                padding: 8px 10px;
                 cursor: pointer;
                 font-size: 15px;
                 color: var(--yt-light-text);
@@ -787,7 +787,7 @@
                     success: function (response) {
                         console.log('API Response (GetUserPlaylistsSummary):', response);
                         if (response.isSuccess && response.result) {
-                            let html = '<ul class="list-group">';
+                            let html = '<ul class="list-group" style="gap:10px;!important">';
                             response.result.forEach(playlist => {
                                 html += `
                                     <li class="list-group-item">
