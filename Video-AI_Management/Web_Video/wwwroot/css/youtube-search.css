@@ -159,11 +159,17 @@
     cursor: pointer;
     transition: none;
     background: transparent;
+    border-radius: 12px;
     padding: 0;
+    transition: transform 0.2s;
 }
 
     .video-card:hover {
-        background-color: transparent;
+        /*transition: transform 0.2s;*/
+        transform: translateY(-2px);
+        background-color: #f2f2f2;
+        /*box-shadow: 10px 18px rgba(0,0,0,0.12);*/
+        box-shadow: rgba(0, 0, 0, 0.56) 0px 22px 70px 4px;
     }
 
 /* Thumbnail Container */

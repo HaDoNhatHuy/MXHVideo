@@ -1,13 +1,15 @@
 ﻿@model Web_Video.Controllers.SearchController.SearchViewModel
+
 @{
     ViewData["Title"] = "Kết quả tìm kiếm";
     ViewData["CurrentPage"] = "Search";
     bool isFallback = ViewBag.IsFallback ?? false;
-    bool isFuzzyMatch = ViewBag.IsFuzzyMatch ?? false;
+    // Lấy cờ mới
+    bool isFuzzyMatch = ViewBag.IsFuzzyMatch ?? false; // <-- THÊM DÒNG NÀY
     string currentUploadTime = ViewData["UploadTime"] as string ?? "any";
     string currentDuration = ViewData["Duration"] as string ?? "any";
     bool filtersApplied = currentUploadTime != "any" || currentDuration != "any";
-
+    // --- MAPPING NHÃN HIỂN THỊ ---
     var uploadTimeLabels = new Dictionary<string, string>
     {
         { "any", "Thời gian đăng tải" },
@@ -17,178 +19,104 @@
         { "this_month", "Tháng này" },
         { "this_year", "Năm nay" }
     };
-
     var durationLabels = new Dictionary<string, string>
     {
         { "any", "Thời lượng" },
-        { "short", "Ngắn (< 4 phút)" },
+        { "short", "Ngắn (dưới 4 phút)" },
         { "medium", "Trung bình (4-20 phút)" },
-        { "long", "Dài (> 20 phút)" }
+        { "long", "Dài (trên 20 phút)" }
     };
 
-    string displayUploadTime = uploadTimeLabels.ContainsKey(currentUploadTime)
-        ? uploadTimeLabels[currentUploadTime] : uploadTimeLabels["any"];
-    string displayDuration = durationLabels.ContainsKey(currentDuration)
-        ? durationLabels[currentDuration] : durationLabels["any"];
+    // Lấy nhãn hiện tại
+    string displayUploadTime = uploadTimeLabels.ContainsKey(currentUploadTime) ? uploadTimeLabels[currentUploadTime] : uploadTimeLabels["any"];
+    string displayDuration = durationLabels.ContainsKey(currentDuration) ? durationLabels[currentDuration] : durationLabels["any"];
 }
 
 @section Css {
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="/css/youtube-search.css" rel="stylesheet" />
     <style>
-        /* Loading Skeleton Styles */
-        .skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
+        /* Thêm khoảng cách giữa các phần tử trong bộ lọc vì Bootstrap 4 không có gap-3 */
+        #filterDropdownContainer .dropdown,
+        #filterDropdownContainer #resetFiltersBtn {
+            margin-right: 10px; /* Tạo khoảng cách ngang */
         }
 
-        @@keyframes loading {
-            0% {
-                background-position: 200% 0;
-            }
-
-            100% {
-                background-position: -200% 0;
-            }
+        /* Đảm bảo dropdown menu hiển thị đúng lớp trên cùng */
+        .dropdown-menu {
+            z-index: 1050; /* Bootstrap 4 z-index chuẩn */
         }
 
-        .skeleton-text {
-            border-radius: 4px;
-            margin-bottom: 8px;
-        }
-
-        .skeleton-button {
-            border-radius: 20px;
-            display: inline-block;
-            margin-right: 8px;
-        }
-
-        .skeleton-thumbnail {
-            width: 100%;
-            height: 200px;
-            border-radius: 12px;
-            margin-bottom: 12px;
-        }
-
-        /* Smooth image loading */
-        img {
-            transition: opacity 0.3s ease;
-        }
-
-            img:not(.loaded) {
-                opacity: 0.5;
-            }
-
-            img.loaded {
-                opacity: 1;
-            }
-
-        .dropdown-item.active {
-            background-color: transparent !important;
-            color: #007bff !important;
-            font-weight: 600;
+        .dropdown-item.active, .dropdown-item:active {
+            background-color: transparent;
+            color: inherit;
         }
     </style>
 }
 
-<!-- Loading Skeleton cho khi đang tải -->
-<div id="searchLoadingSkeleton" style="display: none;">
-    <div class="search-header">
-        <div class="skeleton skeleton-text" style="width: 60%; height: 24px;"></div>
-    </div>
-    <div class="search-filters mb-4">
-        <div class="skeleton skeleton-button" style="width: 80px; height: 32px;"></div>
-    </div>
-    <div class="video-card">
-        <div class="skeleton skeleton-thumbnail"></div>
-        <div class="video-details">
-            <div class="skeleton skeleton-text" style="width: 80%; height: 20px; margin-bottom: 10px;"></div>
-            <div class="skeleton skeleton-text" style="width: 50%; height: 16px; margin-bottom: 10px;"></div>
-            <div class="skeleton skeleton-text" style="width: 60%; height: 16px;"></div>
-        </div>
-    </div>
-</div>
-
-<div class="youtube-search-results" id="searchResults">
+<div class="youtube-search-results">
     <div class="search-header">
         <h6 class="search-query-text">
             @if (isFallback)
             {
-                <span>
-                    <i class="fas fa-search me-2"></i> Không tìm thấy kết quả chính xác cho:
-                    <span class="search-query-highlight">"@ViewData["Query"]"</span>
-                </span>
+                <span><i class="fas fa-search me-2"></i> Không tìm thấy kết quả chính xác cho: <span class="search-query-highlight">"@ViewData["Query"]"</span></span>
                 @if (filtersApplied)
                 {
-                    <small class="text-info d-block">
-                        <i class="fas fa-info-circle"></i> Bạn đã áp dụng bộ lọc.
-                        <a href="#" id="quickRemoveFilters" class="text-primary">Xóa bộ lọc</a> để xem nhiều kết quả hơn.
-                    </small>
+                    <small class="text-info d-block">LƯU Ý: Đã áp dụng bộ lọc thời gian đăng tải/thời lượng, bạn có thể thử xóa bộ lọc.</small>
                 }
             }
-            else if (isFuzzyMatch)
+            else if (isFuzzyMatch) // <-- Xử lý trường hợp có kết quả Fuzzy
             {
-                <span>
-                    <i class="fas fa-magic me-2"></i> Kết quả gần đúng cho:
-                    <span class="font-weight-bold text-primary">"@ViewData["Query"]"</span>
-                </span>
-                <small class="text-info d-block">
-                    <i class="fas fa-lightbulb"></i> Có thể bạn muốn tìm: <strong>@ViewData["Query"]</strong>
-                </small>
+                <span><i class="fas fa-search me-2"></i> Kết quả tìm kiếm GẦN ĐÚNG cho: <span class="font-weight-bold text-primary">"@ViewData["Query"]"</span></span>
+                <small class="text-info d-block">Kết quả này được tạo ra dựa trên độ tương đồng từ khóa.</small>
             }
             else
             {
-                <span>
-                    Kết quả tìm kiếm cho:
-                    <span class="search-query-highlight">"@ViewData["Query"]"</span>
-                </span>
+                <span>Kết quả tìm kiếm cho: <span class="search-query-highlight">"@ViewData["Query"]"</span></span>
             }
         </h6>
     </div>
 
     <div class="search-filters mb-4">
+        <!-- Nút Lọc Chính (giống YouTube) -->
         <button class="btn btn-sm btn-outline-secondary me-2 filter-toggle-btn" id="filterToggleBtn">
             <i class="fas fa-filter me-1"></i> Lọc
         </button>
 
-        <div id="filterDropdownContainer" class="d-inline-flex gap-3" style="@(filtersApplied ? "display: inline-flex !important;" : "display: none;")">
+        <!-- Container Dropdown Lọc -->
+        <div id="filterDropdownContainer" class="d-inline-flex gap-3" style="display: none;">
+
+            <!-- Lọc theo Thời gian đăng tải -->
             <div class="dropdown">
-                <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="uploadTimeFilter" data-toggle="dropdown">
+                <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="uploadTimeFilter" data-toggle="dropdown" aria-expanded="false">
                     @displayUploadTime
                 </button>
-                <ul class="dropdown-menu">
-                    @foreach (var option in uploadTimeLabels)
-                    {
-                        <li>
-                            <a class="dropdown-item filter-option @(currentUploadTime == option.Key ? "active text-primary" : "")"
-                               href="#" data-filter-type="uploadTime" data-filter-value="@option.Key">
-                                @option.Value
-                            </a>
-                        </li>
-                    }
+                <ul class="dropdown-menu" aria-labelledby="uploadTimeFilter">
+                    <li><a class="dropdown-item filter-option @(currentUploadTime == "any" ? "active text-primary" : "")" href="#" data-filter-type="uploadTime" data-filter-value="any">Bất kỳ</a></li>
+                    <li><a class="dropdown-item filter-option @(currentUploadTime == "last_hour" ? "active text-primary" : "")" href="#" data-filter-type="uploadTime" data-filter-value="last_hour">Giờ trước</a></li>
+                    <li><a class="dropdown-item filter-option @(currentUploadTime == "today" ? "active text-primary" : "")" href="#" data-filter-type="uploadTime" data-filter-value="today">Hôm nay</a></li>
+                    <li><a class="dropdown-item filter-option @(currentUploadTime == "this_week" ? "active text-primary" : "")" href="#" data-filter-type="uploadTime" data-filter-value="this_week">Tuần này</a></li>
+                    <li><a class="dropdown-item filter-option @(currentUploadTime == "this_month" ? "active text-primary" : "")" href="#" data-filter-type="uploadTime" data-filter-value="this_month">Tháng này</a></li>
+                    <li><a class="dropdown-item filter-option @(currentUploadTime == "this_year" ? "active text-primary" : "")" href="#" data-filter-type="uploadTime" data-filter-value="this_year">Năm nay</a></li>
                 </ul>
             </div>
 
+            <!-- Lọc theo Thời lượng video -->
             <div class="dropdown">
-                <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="durationFilter" data-toggle="dropdown">
+                <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="durationFilter" data-toggle="dropdown" aria-expanded="false">
                     @displayDuration
                 </button>
-                <ul class="dropdown-menu">
-                    @foreach (var option in durationLabels)
-                    {
-                        <li>
-                            <a class="dropdown-item filter-option @(currentDuration == option.Key ? "active text-primary" : "")"
-                               href="#" data-filter-type="duration" data-filter-value="@option.Key">
-                                @option.Value
-                            </a>
-                        </li>
-                    }
+                <ul class="dropdown-menu" aria-labelledby="durationFilter">
+                    <li><a class="dropdown-item filter-option @(currentDuration == "any" ? "active text-primary" : "")" href="#" data-filter-type="duration" data-filter-value="any">Bất kỳ</a></li>
+                    <li><a class="dropdown-item filter-option @(currentDuration == "short" ? "active text-primary" : "")" href="#" data-filter-type="duration" data-filter-value="short">Ngắn (dưới 4 phút)</a></li>
+                    <li><a class="dropdown-item filter-option @(currentDuration == "medium" ? "active text-primary" : "")" href="#" data-filter-type="duration" data-filter-value="medium">Trung bình (4-20 phút)</a></li>
+                    <li><a class="dropdown-item filter-option @(currentDuration == "long" ? "active text-primary" : "")" href="#" data-filter-type="duration" data-filter-value="long">Dài (trên 20 phút)</a></li>
                 </ul>
             </div>
 
+            <!-- Nút Reset -->
             <button class="btn btn-sm btn-outline-danger" id="resetFiltersBtn">
-                <i class="fas fa-times me-1"></i> Xóa bộ lọc
+                Xóa bộ lọc
             </button>
         </div>
     </div>
@@ -196,14 +124,13 @@
     @if (Model.Channels != null && Model.Channels.Any())
     {
         <div id="channelResults" class="mb-4">
-            <h6 class="search-section-title"><i class="fas fa-users me-2"></i>Kênh</h6>
+            <h6 class="search-section-title">Kênh</h6>
             @foreach (var channel in Model.Channels)
             {
                 <div class="channel-card">
                     <div class="channel-avatar-container">
                         <a href="/Member/Channel/@channel.Id">
-                            <img src="@(channel.ChannelPicture ?? "/avatarUser/avt-default.jpg")"
-                                 alt="@channel.ChannelName" loading="lazy">
+                            <img src="@(channel.ChannelPicture ?? "/avatarUser/avt-default.jpg")" alt="@channel.ChannelName">
                         </a>
                     </div>
                     <div class="channel-details">
@@ -229,8 +156,7 @@
                 <div class="video-card">
                     <div class="video-thumbnail-container">
                         <a href="/Video/Watch/@video.Id">
-                            <img src="@(video.Thumbnail ?? "/img/default-thumbnail.jpg")"
-                                 alt="@video.Title" loading="lazy">
+                            <img src="@(video.Thumbnail ?? "/img/default-thumbnail.jpg")" alt="@video.Title">
                         </a>
                         <span class="video-duration">@(video.Duration ?? "0:00")</span>
                     </div>
@@ -244,8 +170,7 @@
                             <span>@WebVideo.Utility.SD.TimeAgo(video.UploadDate)</span>
                         </div>
                         <div class="channel-info">
-                            <img src="@(video.Channel?.ChannelPicture ?? "/avatarUser/avt-default.jpg")"
-                                 alt="@(video.Channel?.ChannelName)" loading="lazy">
+                            <img src="@(video.Channel?.ChannelPicture ?? "/avatarUser/avt-default.jpg")" alt="@(video.Channel?.ChannelName)">
                             <a href="/Member/Channel/@(video.Channel?.Id)">
                                 @(video.Channel?.ChannelName)
                             </a>
@@ -257,7 +182,7 @@
                 </div>
             }
         }
-        else if (!isFallback && (Model.Channels == null || !Model.Channels.Any()))
+        else if (!isFallback && (Model.Channels == null || Model.Channels.Count == 0))
         {
             <div class="no-results">
                 <div class="no-results-icon">
@@ -266,12 +191,11 @@
                 <h3 class="no-results-title">Không tìm thấy kết quả</h3>
                 <p class="no-results-text">Không tìm thấy video nào khớp với từ khóa của bạn.</p>
                 <div class="no-results-suggestions">
-                    <p><strong>Gợi ý:</strong></p>
+                    <p>Gợi ý:</p>
                     <ul>
                         <li>Kiểm tra chính tả từ khóa</li>
                         <li>Thử sử dụng từ khóa khác</li>
                         <li>Thử sử dụng từ khóa tổng quát hơn</li>
-                        <li>Xóa bộ lọc để mở rộng kết quả</li>
                     </ul>
                 </div>
             </div>
@@ -284,14 +208,10 @@
             <h5>
                 @if (isFallback)
                 {
-                    <i class="fas fa-video me-2"></i>
-
                     <span>Video đề xuất cho bạn</span>
                 }
                 else
                 {
-                    <i class="fas fa-thumbs-up me-2"></i>
-
                     <span>Có thể bạn cũng thích</span>
                 }
             </h5>
@@ -302,22 +222,18 @@
                         <div class="video-card">
                             <div class="video-card-image">
                                 <a href="/Video/Watch/@video.Id">
-                                    <img src="@(video.Thumbnail ?? "/img/default-thumbnail.jpg")"
-                                         alt="@video.Title" loading="lazy">
+                                    <img src="@(video.Thumbnail ?? "/img/default-thumbnail.jpg")" alt="@video.Title">
                                 </a>
                                 <span class="time">@(video.Duration ?? "0:00")</span>
                             </div>
                             <div class="video-card-body">
-                                <img src="@(video.Channel?.ChannelPicture ?? "/avatarUser/avt-default.jpg")"
-                                     alt="@(video.Channel?.ChannelName)" loading="lazy">
+                                <img src="@(video.Channel?.ChannelPicture ?? "/avatarUser/avt-default.jpg")" alt="@(video.Channel?.ChannelName)">
                                 <div class="video-info">
                                     <div class="video-title">
                                         <a href="/Video/Watch/@video.Id">@video.Title</a>
                                     </div>
                                     <div class="video-page">
-                                        <a href="/Member/Channel/@(video.Channel?.Id)">
-                                            @(video.Channel?.ChannelName)
-                                        </a>
+                                        <a href="/Member/Channel/@(video.Channel?.Id)">@(video.Channel?.ChannelName)</a>
                                     </div>
                                     <div class="video-view">
                                         @(video.Views ?? 0) lượt xem • @WebVideo.Utility.SD.TimeAgo(video.UploadDate)
@@ -332,26 +248,45 @@
     }
 </div>
 
+<div id="search-loading" style="display: none;">
+    <div class="spinner-border spinner-border-sm" role="status">
+        <span class="sr-only">Đang tải...</span>
+    </div>
+</div>
+
 @section Scripts {
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
+
+            /* ============================================================
+             *  1) FILTER NÂNG CAO (UPLOAD TIME + DURATION)
+             * ============================================================ */
+
+            // Lấy query từ ViewData (nếu có)
             const currentQuery = '@Html.Raw(ViewData["Query"])';
+
+            // Lấy filter từ ViewData
             let currentUploadTime = '@Html.Raw(currentUploadTime)';
             let currentDuration = '@Html.Raw(currentDuration)';
+
             const $filterContainer = $('#filterDropdownContainer');
 
-            // Toggle filter
-            $('#filterToggleBtn').on('click', function() {
-                if ($filterContainer.is(':hidden')) {
-                    $filterContainer.css('display', 'inline-flex');
+            // Toggle bộ lọc
+            $('#filterToggleBtn').on('click', function () {
+                const $container = $('#filterDropdownContainer');
+
+                // Kiểm tra nếu đang ẩn thì hiện và ngược lại
+                if ($container.is(':hidden')) {
+                    $container.css('display', 'inline-flex'); // Hiện dạng flex để các nút nằm ngang
                 } else {
-                    $filterContainer.hide();
+                    $container.hide();
                 }
             });
 
-            // Apply filter
-            $('.filter-option').on('click', function(e) {
+            // Chọn filter
+            $('.filter-option').on('click', function (e) {
                 e.preventDefault();
+
                 const type = $(this).data('filter-type');
                 const value = $(this).data('filter-value');
 
@@ -362,43 +297,117 @@
             });
 
             // Reset filter
-            $('#resetFiltersBtn, #quickRemoveFilters').on('click', function(e) {
-                e.preventDefault();
+            $('#resetFiltersBtn').on('click', function () {
                 currentUploadTime = 'any';
                 currentDuration = 'any';
                 performSearch();
             });
 
+            // Hàm redirect URL search
             function performSearch() {
-                // Show loading skeleton
-                $('#searchLoadingSkeleton').show();
-                $('#searchResults').hide();
+                // FIX: Sử dụng URLSearchParams để quản lý query string chuẩn hơn
+                const params = new URLSearchParams(window.location.search);
 
-                const params = new URLSearchParams();
+                // Giữ lại query cũ
                 if (currentQuery) params.set('query', currentQuery);
+
+                // Cập nhật filter
                 if (currentUploadTime !== 'any') params.set('uploadTime', currentUploadTime);
+                else params.delete('uploadTime'); // Xóa nếu là any
+
                 if (currentDuration !== 'any') params.set('duration', currentDuration);
+                else params.delete('duration'); // Xóa nếu là any
 
                 window.location.href = `/Search?${params.toString()}`;
             }
 
-            // Lazy loading images
-            if ('IntersectionObserver' in window) {
-                const imageObserver = new IntersectionObserver((entries, observer) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            const img = entry.target;
-                            img.src = img.dataset.src || img.src;
-                            img.classList.add('loaded');
-                            observer.unobserve(img);
-                        }
-                    });
-                });
+            // Nếu filter đang bật → hiển thị container
+            if (currentUploadTime !== 'any' || currentDuration !== 'any') {
+                $filterContainer.css('display', 'inline-flex').addClass('d-inline-flex');
+            }
 
-                document.querySelectorAll('img[loading="lazy"]').forEach(img => {
-                    imageObserver.observe(img);
+            /* ============================================================
+             *  2) LOGIC CŨ: INFINITE SCROLL + FALLBACK MODE
+             * ============================================================ */
+
+            let isLoading = false;
+            let isFallbackMode = @Json.Serialize(isFallback);
+
+            if (isFallbackMode) {
+                $('#recommendation-separator').show();
+            }
+
+            $(window).scroll(function () {
+
+                // Khi kéo gần cuối trang
+                if ($(window).scrollTop() + $(window).height() > $(document).height() - 100) {
+
+                    if (!isLoading) {
+
+                        if (!isFallbackMode) {
+                            isFallbackMode = true;
+                            $('#recommendation-separator').fadeIn();
+                        }
+
+                        loadMoreRecommendations();
+                    }
+                }
+            });
+
+            // AJAX load video fallback
+            function loadMoreRecommendations() {
+                isLoading = true;
+                $('#search-loading').show();
+
+                $.ajax({
+                    url: '/Home/GetVideosForHomeGrid',
+                    type: 'GET',
+                    data: { pageNumber: 1, pageSize: 8, sortBy: 'random' },
+                    success: function (res) {
+
+                        $('#search-loading').hide();
+                        if (res.result && res.result.items) {
+                            appendVideos(res.result.items);
+                        }
+
+                        isLoading = false;
+                    }
                 });
             }
+
+            // Append video vào grid
+            function appendVideos(videos) {
+                let html = '';
+                videos.forEach(v => {
+                    html += `
+                    <div class="col-xl-3 col-lg-4 col-sm-6 mb-4">
+                        <div class="video-card animated">
+                            <div class="video-card-image">
+                                <a href="/Video/Watch/${v.id}">
+                                    <img src="${v.thumbnail || '/img/default-thumbnail.jpg'}" alt="${v.title}">
+                                </a>
+                                <span class="time">${v.duration || '0:00'}</span>
+                            </div>
+                            <div class="video-card-body">
+                                <img src="${v.channelPicture || '/avatarUser/avt-default.jpg'}" alt="${v.channelName}">
+                                <div class="video-info">
+                                    <div class="video-title">
+                                        <a href="/Video/Watch/${v.id}">${v.title}</a>
+                                    </div>
+                                    <div class="video-page">
+                                        <a href="/Member/Channel/${v.channelId}">${v.channelName}</a>
+                                    </div>
+                                    <div class="video-view">${v.views} lượt xem • ${v.createdAtTimeAgo}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+
+                $('.mt-5.pt-3.border-top .row').append(html);
+            }
+
         });
     </script>
+
 }
