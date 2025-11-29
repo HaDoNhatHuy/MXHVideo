@@ -5,6 +5,10 @@ using Database_Video.IRepo;
 using Database_Video.Pagination;
 using Microsoft.EntityFrameworkCore;
 using WebVideo.Utility;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace DataAccess.Repo
 {
@@ -20,33 +24,37 @@ namespace DataAccess.Repo
         public async Task<string> GetUserIdByVideoIdAsync(Guid videoId)
         {
             return await _context.Videos
+                .AsNoTracking()
                 .Where(x => x.Id == videoId)
                 .Select(x => x.Channel.AppUserId)
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<PaginatedList<VideoGridChannelDto>> GetVideosForChannelGridAsync(Guid channelId, BaseParameters parameters)
+        public async Task<PaginatedList<VideoGridChannelDto>> GetVideosForChannelGridAsync(
+            Guid channelId,
+            BaseParameters parameters)
         {
+            // Tối ưu: Chỉ select các field cần thiết
             var query = _context.Videos
-                .Include(x => x.Category)
+                .AsNoTracking()
                 .Where(x => x.ChannelId == channelId)
                 .Select(x => new VideoGridChannelDto
                 {
                     Id = x.Id,
                     Title = x.Title,
-                    //Thumbnail = x.Thumbnail,
-                    Thumbnail = x.Thumbnail != null ? x.Thumbnail.Replace("\\", "/") : "/avatarUser/avt-default.jpg",
-                    Duration = x.Duration ?? "0:00", // Thêm Duration
+                    Thumbnail = x.Thumbnail != null
+                        ? x.Thumbnail.Replace("\\", "/")
+                        : "/avatarUser/avt-default.jpg",
+                    Duration = x.Duration ?? "0:00",
                     CreatedAt = x.UploadDate,
                     CategoryName = x.Category.CategoryName,
-                    //Views = x.Viewers.Count(),
                     Views = x.Viewers.Sum(v => v.NumberOfVisit),
                     Comments = x.Comments.Count(),
-                    Likes = x.LikeDislikes.Where(l => l.Liked == true).Count(),
-                    Dislikes = x.LikeDislikes.Where(l => l.Liked == false).Count(),
-                })
-                .AsQueryable();
+                    Likes = x.LikeDislikes.Count(l => l.Liked == true),
+                    Dislikes = x.LikeDislikes.Count(l => l.Liked == false),
+                });
 
+            // Áp dụng sorting
             query = parameters.SortBy switch
             {
                 "title-a" => query.OrderBy(x => x.Title),
@@ -66,62 +74,120 @@ namespace DataAccess.Repo
                 _ => query.OrderByDescending(u => u.CreatedAt)
             };
 
-            return await PaginatedList<VideoGridChannelDto>.CreateAsync(query.AsNoTracking(), parameters.PageNumber, parameters.PageSize);
+            return await PaginatedList<VideoGridChannelDto>.CreateAsync(
+                query,
+                parameters.PageNumber,
+                parameters.PageSize);
         }
 
-        public async Task<PaginatedList<VideoForHomeGridDto>> GetVideosForHomeGridAsync(HomeParameters parameters)
+        public async Task<PaginatedList<VideoForHomeGridDto>> GetVideosForHomeGridAsync(
+            HomeParameters parameters)
         {
+            // Tối ưu: Sử dụng projection để giảm data load
             var query = _context.Videos
-                .Include(x => x.Channel)
-                .Include(x => x.Category)
+                .AsNoTracking()
                 .Select(x => new VideoForHomeGridDto
                 {
                     Id = x.Id,
                     Thumbnail = x.Thumbnail,
-                    Duration = x.Duration ?? "0:00", // Thêm Duration
+                    Duration = x.Duration ?? "0:00",
                     Title = x.Title,
                     Description = x.Description,
                     CreatedAt = x.UploadDate,
                     ChannelName = x.Channel.ChannelName,
                     ChannelId = x.Channel.Id,
                     CategoryId = x.Category.Id,
-                    Views = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
-                    CreatedAtTimeAgo = SD.TimeAgo(x.UploadDate) // Thêm tính toán thời gian tương đối
+                    Views = x.Viewers.Sum(v => v.NumberOfVisit),
+                    CreatedAtTimeAgo = SD.TimeAgo(x.UploadDate)
                 })
                 .AsQueryable();
 
+            // Filter by category
             if (parameters.CategoryId != Guid.Empty)
             {
                 query = query.Where(x => x.CategoryId == parameters.CategoryId);
             }
 
-            if (!string.IsNullOrEmpty(parameters.SearchBy) && parameters.SearchBy.ToLower() != "all")
+            // Filter by search
+            if (!string.IsNullOrEmpty(parameters.SearchBy) &&
+                parameters.SearchBy.ToLower() != "all")
             {
-                query = query.Where(x => x.Title.ToLower().Contains(parameters.SearchBy) || x.Description.ToLower().Contains(parameters.SearchBy));
+                string searchLower = parameters.SearchBy.ToLower();
+                query = query.Where(x =>
+                    x.Title.ToLower().Contains(searchLower) ||
+                    x.Description.ToLower().Contains(searchLower));
             }
 
-            return await PaginatedList<VideoForHomeGridDto>.CreateAsync(query.AsNoTracking(), parameters.PageNumber, parameters.PageSize);
+            return await PaginatedList<VideoForHomeGridDto>.CreateAsync(
+                query,
+                parameters.PageNumber,
+                parameters.PageSize);
         }
 
         public async Task RemoveVideoAsync(Guid videoId)
         {
-            var video = await GetFirstOrDefaultAsync(x => x.Id == videoId, "Comments,LikeDislikes,Viewers");
+            // Tối ưu: Sử dụng batch delete thay vì load tất cả vào memory
+            var video = await _context.Videos
+                .FirstOrDefaultAsync(x => x.Id == videoId);
+
             if (video != null)
             {
-                if (video.Viewers != null)
-                {
-                    _context.VideoViews.RemoveRange(video.Viewers);
-                }
-                if (video.Comments != null)
-                {
-                    _context.Comments.RemoveRange(video.Comments);
-                }
-                if (video.LikeDislikes != null)
-                {
-                    _context.LikeDislikes.RemoveRange(video.LikeDislikes);
-                }
-                Remove(video);
+                // Xóa related entities bằng raw SQL để tăng performance
+                await _context.Database.ExecuteSqlInterpolatedAsync(
+                    $"DELETE FROM VideoViews WHERE VideoId = {videoId}");
+
+                await _context.Database.ExecuteSqlInterpolatedAsync(
+                    $"DELETE FROM Comments WHERE VideoId = {videoId}");
+
+                await _context.Database.ExecuteSqlInterpolatedAsync(
+                    $"DELETE FROM LikeDislikes WHERE VideoId = {videoId}");
+
+                // Xóa video
+                _context.Videos.Remove(video);
+                await _context.SaveChangesAsync();
             }
+        }
+
+        /// <summary>
+        /// Lấy video phổ biến nhất (cho trending)
+        /// </summary>
+        public async Task<List<Video>> GetTrendingVideosAsync(int count = 20)
+        {
+            var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+
+            return await _context.Videos
+                .AsNoTracking()
+                .Include(v => v.Channel)
+                .Include(v => v.Category)
+                .Where(v => v.UploadDate >= sevenDaysAgo)
+                .OrderByDescending(v => v.Viewers.Sum(vv => vv.NumberOfVisit))
+                .ThenByDescending(v => v.LikeDislikes.Count(l => l.Liked == true))
+                .Take(count)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Tìm video liên quan (cho recommendation)
+        /// </summary>
+        public async Task<List<Video>> GetRelatedVideosAsync(Guid videoId, int count = 12)
+        {
+            var video = await _context.Videos
+                .AsNoTracking()
+                .Include(v => v.Category)
+                .FirstOrDefaultAsync(v => v.Id == videoId);
+
+            if (video == null)
+                return new List<Video>();
+
+            return await _context.Videos
+                .AsNoTracking()
+                .Include(v => v.Channel)
+                .Include(v => v.Category)
+                .Where(v => v.Id != videoId &&
+                           v.Category.Id == video.Category.Id)
+                .OrderByDescending(v => v.Viewers.Sum(vv => vv.NumberOfVisit))
+                .Take(count)
+                .ToListAsync();
         }
     }
 }
