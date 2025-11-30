@@ -10,6 +10,8 @@ namespace Web_Video.ViewModels.Video
         public string Title { get; set; }
         public string Description { get; set; }
         public string Thumbnail { get; set; }
+        // THÊM MỚI: Đường dẫn phụ đề
+        public string? SubtitleUrl { get; set; }
         public Guid ChannelId { get; set; }
         public string ChannelName { get; set; }
         public string ChannelAvatar { get; set; }

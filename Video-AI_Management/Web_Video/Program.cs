@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -49,6 +50,11 @@ builder.Services.Configure<FormOptions>(options =>
     options.MemoryBufferThreshold = int.MaxValue;
     options.MultipartHeadersLengthLimit = int.MaxValue;
 });
+// Cấu hình để phục vụ file .vtt với MIME Type chính xác
+var provider = new FileExtensionContentTypeProvider();
+// Thêm ánh xạ cho .vtt
+provider.Mappings[".vtt"] = "text/vtt";
+builder.Services.AddSingleton<IContentTypeProvider>(provider); // Đăng ký provider
 
 var app = builder.Build();
 
@@ -60,7 +66,13 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+//app.UseStaticFiles();
+// SỬ DỤNG PROVIDER ĐÃ CẤU HÌNH
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = app.Services.GetRequiredService<IContentTypeProvider>()
+});
+
 
 app.UseRouting();
 app.UseCors("AllowAll"); // Thêm CORS middleware

@@ -13,6 +13,15 @@
                 <div class="single-video">
                     <video id="player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" playsinline data-poster="@Model.Thumbnail">
                         <source src="/Video/GetVideoFile?videoId=@Model.Id" type="@(Model.VideoContentType ?? "video/mp4")" />
+                        @if (!string.IsNullOrEmpty(Model.SubtitleUrl))
+                        {
+                            <!-- THÊM MỚI: Thẻ Track cho phụ đề -->
+                            <track kind="subtitles"
+                                   src="@Model.SubtitleUrl"
+                                   srclang="vi"
+                                   label="Vietnamese"
+                                   default />
+                        }
                         <p class="vjs-no-js">
                             To view this video please enable JavaScript, and consider upgrading to a web browser that
                             <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>

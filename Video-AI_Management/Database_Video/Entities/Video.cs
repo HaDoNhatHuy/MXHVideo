@@ -12,6 +12,8 @@ namespace Database_Video.Entities
         public string? VideoUrl { get; set; }
         [Required]
         public string? Thumbnail { get; set; }
+        // THÊM MỚI: Đường dẫn đến file phụ đề
+        public string? SubtitleUrl { get; set; }
         public DateTime UploadDate { get; set; } = DateTime.Now;
         public string? Duration { get; set; } // Thêm trường Duration (ví dụ: "03:45")
         public int? Views { get; set; }

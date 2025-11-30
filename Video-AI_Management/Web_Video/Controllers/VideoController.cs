@@ -388,6 +388,21 @@ namespace Web_Video.Controllers
                         // Nếu KHÔNG chọn ảnh -> Dùng FFmpeg cắt frame ngẫu nhiên
                         thumbnailPath = await GenerateThumbnailFromVideo(physicalPath);
                     }
+                    // THÊM MỚI: Xử lý Upload Subtitle
+                    string subtitleFilePath = null;
+                    if (model.SubtitleUpload != null)
+                    {
+                        // Sử dụng cùng thư mục upload
+                        string subtitleFileName = Guid.NewGuid().ToString() + Path.GetExtension(model.SubtitleUpload.FileName);
+                        string subtitlePhysicalPath = Path.Combine(uploadDir, subtitleFileName);
+
+                        using (var fileStream = new FileStream(subtitlePhysicalPath, FileMode.Create))
+                        {
+                            await model.SubtitleUpload.CopyToAsync(fileStream);
+                        }
+                        // Lưu đường dẫn tương đối (để load trên Web)
+                        subtitleFilePath = $"/uploads/videos/{subtitleFileName}";
+                    }
 
                     // C. Xử lý AI (Tùy chọn dựa vào Checkbox)
                     string recognitionResult = "Không yêu cầu nhận diện";
@@ -459,6 +474,8 @@ namespace Web_Video.Controllers
                         Thumbnail = thumbnailPath,
                         Duration = duration,
                         UploadDate = DateTime.UtcNow,
+                        // CẬP NHẬT: Lưu đường dẫn phụ đề
+                        SubtitleUrl = subtitleFilePath, 
 
                         // SỬ DỤNG KẾT QUẢ TỪ KHỐI CODE TRÊN
                         RecognizedCelebrities = recognitionResult,
@@ -864,6 +881,7 @@ namespace Web_Video.Controllers
                 {
                     Id = x.Id,
                     Title = x.Title,
+                    SubtitleUrl = x.SubtitleUrl,
                     Description = x.Description,
                     CreatedAt = x.UploadDate,
                     ChannelId = x.ChannelId ?? Guid.Empty,

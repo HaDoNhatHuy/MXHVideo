@@ -51,6 +51,44 @@
             background-color: transparent;
             color: inherit;
         }
+        /* Custom CSS cho nút Đăng ký trên trang Search */
+
+        /* Style cho nút khi đã đăng ký */
+        .subscribe-search-btn.subscribed-btn {
+            /* Dùng màu xám nền và chữ xám tương tự các nút phụ khác */
+            background-color: var(--search-bg-secondary, #e5e5e5);
+            color: var(--search-text-secondary, #606060);
+            border: 1px solid var(--search-divider, #ccc);
+        }
+
+            .subscribe-search-btn.subscribed-btn:hover {
+                background-color: var(--yt-gray-200, #d9d9d9);
+                color: var(--search-text, #0f0f0f);
+                /* Khi hover Đã đăng ký, ta có thể đổi thành "Hủy đăng ký" màu đỏ, nhưng để đơn giản, ta giữ màu xám */
+            }
+
+        /* Đảm bảo nút Đăng ký mặc định màu đỏ */
+        .subscribe-search-btn.btn-danger {
+            background-color: var(--yt-red, #ff0000);
+            color: #fff;
+            border: none;
+        }
+
+            .subscribe-search-btn.btn-danger:hover {
+                background-color: #cc0000;
+            }
+
+        /* Định nghĩa lại style chung của nút (nếu cần) */
+        .channel-card .btn {
+            height: 36px;
+            padding: 0 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
     </style>
 }
 
@@ -141,7 +179,33 @@
                         <p class="channel-description">@channel.About</p>
                     </div>
                     <div>
-                        <a href="/Member/Channel/@channel.Id" class="btn btn-danger">Đăng ký</a>
+                        @{
+                            bool isUserAuthenticated = User.Identity.IsAuthenticated;
+                            string userId = isUserAuthenticated ? User.GetUserId() : null;
+
+                            // Kiểm tra trạng thái đăng ký dựa trên dữ liệu tải từ DB
+                            bool isSubscribed = isUserAuthenticated && channel.Subscribers.Any(s => s.AppUserId == userId);
+
+                            string buttonClass = isSubscribed ? "subscribed-btn" : "btn-danger";
+                            string buttonText = isSubscribed ? "Đã đăng ký" : "Đăng ký";
+                            string dataAttr = isSubscribed.ToString().ToLower();
+                        }
+
+                        @if (isUserAuthenticated)
+                        {
+                            <button type="button"
+                                    class="btn @buttonClass subscribe-search-btn"
+                                    data-channel-id="@channel.Id"
+                                    data-is-subscribed="@dataAttr"
+                                    data-channel-name="@channel.ChannelName">
+                                @buttonText
+                            </button>
+                        }
+                        else
+                        {
+                            <!-- Nếu chưa đăng nhập, giữ nguyên hành vi chuyển hướng (ví dụ: đến trang đăng nhập hoặc trang kênh) -->
+                            <a href="/Account/Login" class="btn btn-danger">Đăng ký</a>
+                        }
                     </div>
                 </div>
             }
@@ -255,8 +319,114 @@
 </div>
 
 @section Scripts {
+    <script src="~/js/site.js"></script>
     <script>
+        // Hàm xác nhận (được lấy từ logic trong AllReports.cshtml [8])
+        function confirmation(message) {
+            return new Promise((resolve) => {
+                const result = window.confirm(message);
+                resolve(result);
+            });
+        }
+
+        // Hàm hiển thị thông báo (được lấy từ logic trong _Notification.cshtml [9] và Watch.cshtml [10])
+        function displayNotification(isSuccess, title, message, type) {
+            if (typeof toastr !== "undefined") {
+                if (isSuccess) toastr.success(message, title);
+                else toastr.error(message, title);
+            } else {
+                alert(`${title}: ${message}`);
+            }
+        }
         $(document).ready(function () {
+
+            // Lắng nghe sự kiện click trên tất cả các nút subscribe trên trang tìm kiếm
+        $(document).on('click', '.subscribe-search-btn', function(e) {
+            e.preventDefault();
+
+            const $btn = $(this);
+            const channelId = $btn.data('channel-id');
+            // Đọc trạng thái hiện tại (boolean)
+            let isCurrentlySubscribed = $btn.data('is-subscribed') === true || $btn.data('is-subscribed') === 'true';
+            const channelName = $btn.data('channel-name');
+
+            const actionText = isCurrentlySubscribed ? 'Hủy đăng ký' : 'Đăng ký';
+
+            // Xử lý xác nhận nếu đang ở trạng thái Đã đăng ký
+            if (isCurrentlySubscribed) {
+                if (typeof confirmation === 'function') {
+                    confirmation(`Bạn có chắc chắn muốn hủy đăng ký kênh "${channelName}" không?`)
+                    .then(confirmed => {
+                        if (confirmed) {
+                            performSubscriptionToggle($btn, channelId, isCurrentlySubscribed, actionText);
+                        }
+                    });
+                } else {
+                    // Fallback nếu hàm confirmation không tồn tại
+                    if(confirm(`Bạn có chắc chắn muốn hủy đăng ký kênh "${channelName}" không?`)){
+                        performSubscriptionToggle($btn, channelId, isCurrentlySubscribed, actionText);
+                    }
+                }
+            } else {
+                // Không cần xác nhận khi Đăng ký
+                performSubscriptionToggle($btn, channelId, isCurrentlySubscribed, actionText);
+            }
+        });
+
+        function performSubscriptionToggle($btn, channelId, isCurrentlySubscribed, actionText) {
+
+            // Lưu trạng thái hiện tại để khôi phục nếu lỗi
+            const originalText = $btn.text();
+            const originalClass = $btn.attr('class');
+
+            // Hiển thị trạng thái loading
+            $btn.prop('disabled', true).text('Đang xử lý...');
+
+            // Lấy token anti-forgery (cần thiết cho POST/PUT/DELETE)
+            const token = $('input[name="__RequestVerificationToken"]').val();
+
+            // Gửi yêu cầu PUT đến API SubscribeChannel (đã được sử dụng trong Watch.cshtml [1])
+            $.ajax({
+                url: "/Video/SubscribeChannel",
+                type: "PUT",
+                contentType: "application/x-www-form-urlencoded", // Dùng standard encoding
+                data: { channelId: channelId },
+                headers: {
+                    // Truyền token bảo mật qua header
+                    'RequestVerificationToken': token
+                },
+                success: function (data) {
+                    $btn.prop('disabled', false);
+
+                    if (data && data.isSuccess) {
+                        // Cập nhật trạng thái mới
+                        const newStatus = data.title === "Subscribed"; // Kiểm tra phản hồi từ server
+                        const newText = newStatus ? "Đã đăng ký" : "Đăng ký";
+                        const newClass = newStatus ? "subscribed-btn" : "btn-danger";
+
+                        // Cập nhật button
+                        $btn.text(newText);
+                        // Xóa cả hai class có thể có và thêm class mới
+                        $btn.removeClass('btn-danger subscribed-btn').addClass(newClass + ' subscribe-search-btn btn');
+                        $btn.data('is-subscribed', newStatus); // Cập nhật data-attribute
+
+                        // Hiển thị thông báo
+                        displayNotification(true, data.title, data.message, 'toastr');
+                    } else {
+                        // Xử lý lỗi từ server
+                        // Khôi phục nút
+                        $btn.text(originalText).attr('class', originalClass);
+                        displayNotification(false, 'Lỗi', data.message || `Không thể ${actionText} kênh.`, 'toastr');
+                    }
+                },
+                error: function (xhr) {
+                    // Khôi phục nút nếu lỗi kết nối
+                    $btn.prop('disabled', false).text(originalText).attr('class', originalClass);
+                    displayNotification(false, 'Lỗi', `Lỗi kết nối khi ${actionText}.`, 'toastr');
+                }
+            });
+        }
+
 
             /* ============================================================
              *  1) FILTER NÂNG CAO (UPLOAD TIME + DURATION)
@@ -409,5 +579,5 @@
 
         });
     </script>
-
+    <partial name="_ValidationScriptsPartial" />
 }

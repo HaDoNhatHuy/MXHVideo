@@ -21,6 +21,9 @@ namespace Web_Video.ViewModels.Video
         [Display(Name = "Choose the category for your video")]
         [Required(ErrorMessage = "Please choose a category")]
         public Guid? CategoryId { get; set; }
+        // THÊM MỚI: File phụ đề
+        [Display(Name = "Upload Subtitle File (.vtt, .srt) (Tùy chọn)")]
+        public IFormFile SubtitleUpload { get; set; }
         public IEnumerable<SelectListItem> CategoryDropdown { get; set; }
         public string ImageContentTypes { get; set; }
         public string VideoContentTypes { get; set; }

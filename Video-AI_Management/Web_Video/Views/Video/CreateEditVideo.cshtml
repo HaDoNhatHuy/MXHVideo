@@ -44,12 +44,9 @@
         }
 
         @@media (max-width: 1024px) {
-            .upload-layout
-
-        {
-            grid-template-columns: 1fr;
-        }
-
+            .upload-layout {
+                grid-template-columns: 1fr;
+            }
         }
 
         /* ===== CỘT TRÁI: PREVIEW & UPLOAD FILES ===== */
@@ -257,16 +254,13 @@
             }
 
         @@keyframes shimmerMove {
-            0%
+            0% {
+                left: -100%;
+            }
 
-        {
-            left: -100%;
-        }
-
-        100% {
-            left: 200%;
-        }
-
+            100% {
+                left: 200%;
+            }
         }
 
         .custom-close-btn {
@@ -354,16 +348,13 @@
             }
 
         @@keyframes facePulse {
-            0%, 100%
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
 
-        {
-            transform: translate(-50%, -50%) scale(1);
-        }
-
-        50% {
-            transform: translate(-50%, -50%) scale(1.05);
-        }
-
+            50% {
+                transform: translate(-50%, -50%) scale(1.05);
+            }
         }
 
         /* Rotating rings - ĐỎ */
@@ -393,16 +384,13 @@
         }
 
         @@keyframes rotateScan {
-            0%
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
 
-        {
-            transform: translate(-50%, -50%) rotate(0deg);
-        }
-
-        100% {
-            transform: translate(-50%, -50%) rotate(360deg);
-        }
-
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
         }
 
         /* Corner brackets - ĐỎ */
@@ -447,16 +435,13 @@
             }
 
         @@keyframes cornerBlink {
-            0%, 100%
+            0%, 100% {
+                opacity: 0.3;
+            }
 
-        {
-            opacity: 0.3;
-        }
-
-        50% {
-            opacity: 1;
-        }
-
+            50% {
+                opacity: 1;
+            }
         }
 
         #recognitionLoading p {
@@ -472,24 +457,21 @@
         }
 
         @@keyframes dots {
-            0%, 20%
+            0%, 20% {
+                content: '';
+            }
 
-        {
-            content: '';
-        }
+            40% {
+                content: '.';
+            }
 
-        40% {
-            content: '.';
-        }
+            60% {
+                content: '..';
+            }
 
-        60% {
-            content: '..';
-        }
-
-        80%, 100% {
-            content: '...';
-        }
-
+            80%, 100% {
+                content: '...';
+            }
         }
 
         /* ===== RESULT MESSAGES ===== */
@@ -589,35 +571,153 @@
 
         /* ===== RESPONSIVE ===== */
         @@media (max-width: 768px) {
-            .upload-studio-wrapper
+            .upload-studio-wrapper {
+                padding: 0 16px;
+                margin: 16px auto;
+            }
 
-        {
-            padding: 0 16px;
-            margin: 16px auto;
+            .upload-layout {
+                gap: 20px;
+            }
+
+            .upload-metadata-section {
+                padding: 20px;
+            }
+
+            .studio-title {
+                font-size: 20px;
+            }
+
+            .action-buttons {
+                flex-direction: column-reverse;
+            }
+
+            .btn-studio-save,
+            .btn-studio-back {
+                width: 100%;
+            }
+        }
+        /* ===== ENHANCED FILE UPLOAD STYLING ===== */
+        .file-upload-group {
+            margin-bottom: 16px;
+            position: relative;
         }
 
-        .upload-layout {
-            gap: 20px;
-        }
-
-        .upload-metadata-section {
-            padding: 20px;
-        }
-
-        .studio-title {
-            font-size: 20px;
-        }
-
-        .action-buttons {
-            flex-direction: column-reverse;
-        }
-
-        .btn-studio-save,
-        .btn-studio-back {
+        .file-upload-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
             width: 100%;
         }
 
+        .file-upload-input {
+            position: absolute;
+            left: -9999px;
         }
+
+        .file-upload-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 14px 16px;
+            background: #f8f9fa;
+            border: 2px dashed #d0d0d0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            color: #606060;
+            font-weight: 500;
+        }
+
+            .file-upload-button:hover {
+                background: #e8f4fd;
+                border-color: #065fd4;
+                color: #065fd4;
+            }
+
+            .file-upload-button i {
+                font-size: 20px;
+            }
+
+        .file-name-display {
+            display: none;
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: #e8f5e9;
+            border-left: 3px solid #4caf50;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #2e7d32;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .file-name-display.active {
+                display: flex;
+            }
+
+            .file-name-display i {
+                color: #4caf50;
+            }
+
+            .file-name-display .remove-file {
+                margin-left: auto;
+                cursor: pointer;
+                color: #d32f2f;
+                font-size: 16px;
+                transition: transform 0.2s;
+            }
+
+                .file-name-display .remove-file:hover {
+                    transform: scale(1.2);
+                }
+
+        /* ===== AUTO SUBTITLE LINK STYLING ===== */
+        .subtitle-helper {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #fff9e6 0%, #fff3d9 100%);
+            border-left: 4px solid #ff9800;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #5d4037;
+        }
+
+            .subtitle-helper i {
+                font-size: 18px;
+                color: #ff9800;
+                flex-shrink: 0;
+            }
+
+        .subtitle-helper-text {
+            flex: 1;
+        }
+
+        .subtitle-link {
+            color: #065fd4;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+            .subtitle-link:hover {
+                color: #0448a0;
+                text-decoration: underline;
+            }
+
+            .subtitle-link i {
+                font-size: 12px;
+                color: inherit;
+            }
     </style>
 }
 
@@ -627,31 +727,93 @@
         <h1 class="studio-title">@(Model.Id != Guid.Empty ? "Edit Video" : "Upload Video")</h1>
     </div>
     <form id="videoAddEditForm" asp-action="CreateEditVideo" enctype="multipart/form-data">
-    <!-- Layout 2 Cột -->
-    <div class="upload-layout">
-        <!-- CỘT TRÁI: Preview & Upload Files -->
-        <div class="upload-preview-section">
-            <span class="preview-label">Thumbnail Preview</span>
-            <div class="thumbnail-preview-box empty" id="previewImage"></div>
+        <!-- Layout 2 Cột -->
+        <div class="upload-layout">
+            <!-- CỘT TRÁI: Preview & Upload Files -->
+            <!-- CỘT TRÁI: Preview & Upload Files -->
+            <div class="upload-preview-section">
+                <span class="preview-label">Thumbnail Preview</span>
+                <div class="thumbnail-preview-box empty" id="previewImage"></div>
 
-            <div class="file-upload-group">
-                <label class="file-upload-label" asp-for="ImageUpload">Thumbnail Image</label>
-                <input id="imageUpload" asp-for="ImageUpload" type="file"
-                       class="file-upload-input" accept="@Model.ImageContentTypes" />
-                <span asp-validation-for="ImageUpload" class="text-danger"></span>
+                <!-- Thumbnail Upload -->
+                <div class="file-upload-group">
+                    <label class="file-upload-label" asp-for="ImageUpload">
+                        <i class="fas fa-image"></i> Thumbnail Image
+                    </label>
+                    <div class="file-upload-wrapper">
+                        <input id="imageUpload" asp-for="ImageUpload" type="file"
+                               class="file-upload-input" accept="@Model.ImageContentTypes" />
+                        <label for="imageUpload" class="file-upload-button">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Choose thumbnail image</span>
+                        </label>
+                    </div>
+                    <div class="file-name-display" id="imageFileName">
+                        <i class="fas fa-check-circle"></i>
+                        <span class="file-name"></span>
+                        <i class="fas fa-times remove-file" onclick="removeFile('imageUpload', 'imageFileName')"></i>
+                    </div>
+                    <span asp-validation-for="ImageUpload" class="text-danger"></span>
+                </div>
+
+                <!-- Video Upload -->
+                <div class="file-upload-group">
+                    <label class="file-upload-label" asp-for="VideoUpload">
+                        <i class="fas fa-video"></i> Video File
+                    </label>
+                    <div class="file-upload-wrapper">
+                        <input id="videoUpload" asp-for="VideoUpload" type="file"
+                               class="file-upload-input" accept="@Model.VideoContentTypes" />
+                        <label for="videoUpload" class="file-upload-button">
+                            <i class="fas fa-film"></i>
+                            <span>Choose video file</span>
+                        </label>
+                    </div>
+                    <div class="file-name-display" id="videoFileName">
+                        <i class="fas fa-check-circle"></i>
+                        <span class="file-name"></span>
+                        <i class="fas fa-times remove-file" onclick="removeFile('videoUpload', 'videoFileName')"></i>
+                    </div>
+                    <span asp-validation-for="VideoUpload" class="text-danger"></span>
+                </div>
+
+                <!-- Subtitle Upload -->
+                <div class="file-upload-group">
+                    <label class="file-upload-label" asp-for="SubtitleUpload">
+                        <i class="fas fa-closed-captioning"></i> File Phụ đề (.vtt, .srt) (Tùy chọn)
+                    </label>
+                    <div class="file-upload-wrapper">
+                        <input id="subtitleUpload" asp-for="SubtitleUpload" type="file"
+                               class="file-upload-input" accept=".vtt,.srt" />
+                        <label for="subtitleUpload" class="file-upload-button">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Choose subtitle file</span>
+                        </label>
+                    </div>
+                    <div class="file-name-display" id="subtitleFileName">
+                        <i class="fas fa-check-circle"></i>
+                        <span class="file-name"></span>
+                        <i class="fas fa-times remove-file" onclick="removeFile('subtitleUpload', 'subtitleFileName')"></i>
+                    </div>
+                    <span asp-validation-for="SubtitleUpload" class="text-danger"></span>
+
+                    <!-- Auto Subtitle Link -->
+                    <div class="subtitle-helper">
+                        <i class="fas fa-magic"></i>
+                        <div class="subtitle-helper-text">
+                            Chưa có phụ đề?
+                            <a href="#" class="subtitle-link" id="autoSubtitleLink">
+                                Click vào đây để tạo phụ đề tự động
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="file-upload-group">
-                <label class="file-upload-label" asp-for="VideoUpload">Video File</label>
-                <input id="videoUpload" asp-for="VideoUpload" type="file"
-                       class="file-upload-input" accept="@Model.VideoContentTypes" />
-                <span asp-validation-for="VideoUpload" class="text-danger"></span>
-            </div>
-        </div>
+            <!-- CỘT PHẢI: Metadata Form -->
+            <div class="upload-metadata-section">
 
-        <!-- CỘT PHẢI: Metadata Form -->
-        <div class="upload-metadata-section">
-            
                 <input id="videoId" hidden asp-for="Id" />
                 <input id="imageUrl" asp-for="ImageUrl" hidden />
 
@@ -744,9 +906,9 @@
                     <a class="btn-studio-back" asp-controller="Channel" asp-action="Index">Cancel</a>
                     <button class="btn-studio-save" type="submit">Save</button>
                 </div>
-            
+
+            </div>
         </div>
-    </div>
     </form>
 </div>
 
@@ -766,16 +928,37 @@
             });
         });
 
-        $(function () {
-            const videoId = $('#videoId').val();
-            if (videoId && videoId !== "00000000-0000-0000-0000-000000000000") {
-                $('#videoUpload').prop("disabled", true);
-                const url = $('#imageUrl').val();
-                $('#previewImage').removeClass('empty').append(`<img src="${url}" class="preview-image" />`);
-            }
-        });
+        // Enhanced file upload display
+        function updateFileDisplay(inputId, displayId) {
+            const input = document.getElementById(inputId);
+            const display = document.getElementById(displayId);
+            const fileName = display.querySelector('.file-name');
 
+            if (input.files && input.files[0]) {
+                fileName.textContent = input.files[0].name;
+                display.classList.add('active');
+            } else {
+                display.classList.remove('active');
+            }
+        }
+
+        function removeFile(inputId, displayId) {
+            const input = document.getElementById(inputId);
+            const display = document.getElementById(displayId);
+
+            input.value = '';
+            display.classList.remove('active');
+
+            // Clear preview nếu là image
+            if (inputId === 'imageUpload') {
+                $('#previewImage').addClass('empty').empty();
+            }
+        }
+
+        // File input change handlers
         $('#imageUpload').on('change', function () {
+            updateFileDisplay('imageUpload', 'imageFileName');
+
             if (this.files && this.files[0]) {
                 $('#previewImage').removeClass('empty').empty();
                 var reader = new FileReader();
@@ -785,6 +968,41 @@
                 reader.readAsDataURL(this.files[0]);
             }
         });
+
+        $('#videoUpload').on('change', function () {
+            updateFileDisplay('videoUpload', 'videoFileName');
+        });
+
+        $('#subtitleUpload').on('change', function () {
+            updateFileDisplay('subtitleUpload', 'subtitleFileName');
+        });
+
+        // Auto subtitle link handler (bạn có thể thay đổi URL này)
+        $('#autoSubtitleLink').on('click', function(e) {
+            e.preventDefault();
+            // Thay URL này bằng link thực tế của bạn
+            window.open('https://www.zapsubs.com/', '_blank');
+        });
+
+        $(function () {
+            const videoId = $('#videoId').val();
+            if (videoId && videoId !== "00000000-0000-0000-0000-000000000000") {
+                $('#videoUpload').prop("disabled", true);
+                const url = $('#imageUrl').val();
+                $('#previewImage').removeClass('empty').append(`<img src="${url}" class="preview-image" />`);
+            }
+        });
+
+        // $('#imageUpload').on('change', function () {
+        //     if (this.files && this.files[0]) {
+        //         $('#previewImage').removeClass('empty').empty();
+        //         var reader = new FileReader();
+        //         reader.onload = function (event) {
+        //             $('#previewImage').append(`<img src="${event.target.result}" />`);
+        //         }
+        //         reader.readAsDataURL(this.files[0]);
+        //     }
+        // });
 
         let xhr;
 

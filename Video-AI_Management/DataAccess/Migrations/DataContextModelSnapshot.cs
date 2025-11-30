@@ -420,6 +420,9 @@ namespace DataAccess.Migrations
                     b.Property<string>("RecognizedCelebrities")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("SubtitleUrl")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Thumbnail")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
