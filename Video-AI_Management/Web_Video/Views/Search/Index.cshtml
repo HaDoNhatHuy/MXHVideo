@@ -279,10 +279,10 @@
                     <span>Có thể bạn cũng thích</span>
                 }
             </h5>
-            <div class="row">
+            <div class="row" id="recommendedVideoGrid">
                 @foreach (var video in Model.RecommendedVideos)
                 {
-                    <div class="col-xl-3 col-lg-4 col-sm-6 mb-4">
+                    <div class="col-xl-3 col-lg-4 col-sm-6 mb-4 video-item" data-video-id="@video.Id">
                         <div class="video-card">
                             <div class="video-card-image">
                                 <a href="/Video/Watch/@video.Id">
@@ -291,7 +291,8 @@
                                 <span class="time">@(video.Duration ?? "0:00")</span>
                             </div>
                             <div class="video-card-body">
-                                <img src="@(video.Channel?.ChannelPicture ?? "/avatarUser/avt-default.jpg")" alt="@(video.Channel?.ChannelName)">
+                                <img src="@(video.Channel?.ChannelPicture ?? "/avatarUser/avt-default.jpg")"
+                                     alt="@(video.Channel?.ChannelName)">
                                 <div class="video-info">
                                     <div class="video-title">
                                         <a href="/Video/Watch/@video.Id">@video.Title</a>
@@ -320,16 +321,18 @@
 
 @section Scripts {
     <script src="~/js/site.js"></script>
+
     <script>
-        // Hàm xác nhận (được lấy từ logic trong AllReports.cshtml [8])
+        // =========================
+        // Utility functions (giữ nguyên / tương thích)
+        // =========================
         function confirmation(message) {
             return new Promise((resolve) => {
-                const result = window.confirm(message);
-                resolve(result);
+                const r = window.confirm(message);
+                resolve(r);
             });
         }
 
-        // Hàm hiển thị thông báo (được lấy từ logic trong _Notification.cshtml [9] và Watch.cshtml [10])
         function displayNotification(isSuccess, title, message, type) {
             if (typeof toastr !== "undefined") {
                 if (isSuccess) toastr.success(message, title);
@@ -338,246 +341,290 @@
                 alert(`${title}: ${message}`);
             }
         }
-        $(document).ready(function () {
 
-            // Lắng nghe sự kiện click trên tất cả các nút subscribe trên trang tìm kiếm
-        $(document).on('click', '.subscribe-search-btn', function(e) {
+        // =========================
+        // SUBSCRIBE BUTTON (giữ logic ban đầu: token + PUT /Video/SubscribeChannel)
+        // =========================
+        $(document).on('click', '.subscribe-search-btn', function (e) {
             e.preventDefault();
 
             const $btn = $(this);
             const channelId = $btn.data('channel-id');
-            // Đọc trạng thái hiện tại (boolean)
             let isCurrentlySubscribed = $btn.data('is-subscribed') === true || $btn.data('is-subscribed') === 'true';
             const channelName = $btn.data('channel-name');
-
             const actionText = isCurrentlySubscribed ? 'Hủy đăng ký' : 'Đăng ký';
 
-            // Xử lý xác nhận nếu đang ở trạng thái Đã đăng ký
-            if (isCurrentlySubscribed) {
-                if (typeof confirmation === 'function') {
-                    confirmation(`Bạn có chắc chắn muốn hủy đăng ký kênh "${channelName}" không?`)
-                    .then(confirmed => {
-                        if (confirmed) {
-                            performSubscriptionToggle($btn, channelId, isCurrentlySubscribed, actionText);
+            function doToggle() {
+                const originalText = $btn.text();
+                const originalClass = $btn.attr('class');
+
+                $btn.prop('disabled', true).text('Đang xử lý...');
+
+                const token = $('input[name="__RequestVerificationToken"]').val();
+
+                $.ajax({
+                    url: "/Video/SubscribeChannel",
+                    type: "PUT",
+                    contentType: "application/x-www-form-urlencoded",
+                    data: { channelId: channelId },
+                    headers: { 'RequestVerificationToken': token },
+                    success: function (data) {
+                        $btn.prop('disabled', false);
+                        if (data && data.isSuccess) {
+                            const newStatus = data.title === "Subscribed" || !isCurrentlySubscribed;
+                            const newText = newStatus ? "Đã đăng ký" : "Đăng ký";
+                            const newClass = newStatus ? "subscribed-btn" : "btn-danger";
+
+                            $btn.text(newText);
+                            $btn.removeClass('btn-danger subscribed-btn').addClass(newClass + ' subscribe-search-btn btn');
+                            $btn.data('is-subscribed', newStatus);
+                            displayNotification(true, data.title, data.message, 'toastr');
+                        } else {
+                            $btn.text(originalText).attr('class', originalClass);
+                            displayNotification(false, 'Lỗi', (data && data.message) || `Không thể ${actionText} kênh.`, 'toastr');
                         }
-                    });
-                } else {
-                    // Fallback nếu hàm confirmation không tồn tại
-                    if(confirm(`Bạn có chắc chắn muốn hủy đăng ký kênh "${channelName}" không?`)){
-                        performSubscriptionToggle($btn, channelId, isCurrentlySubscribed, actionText);
+                    },
+                    error: function () {
+                        $btn.prop('disabled', false).text(originalText).attr('class', originalClass);
+                        displayNotification(false, 'Lỗi', `Lỗi kết nối khi ${actionText}.`, 'toastr');
                     }
-                }
+                });
+            }
+
+            if (isCurrentlySubscribed) {
+                confirmation(`Bạn có chắc chắn muốn hủy đăng ký kênh "${channelName}" không?`)
+                    .then(confirmed => { if (confirmed) doToggle(); });
             } else {
-                // Không cần xác nhận khi Đăng ký
-                performSubscriptionToggle($btn, channelId, isCurrentlySubscribed, actionText);
+                doToggle();
             }
         });
 
-        function performSubscriptionToggle($btn, channelId, isCurrentlySubscribed, actionText) {
-
-            // Lưu trạng thái hiện tại để khôi phục nếu lỗi
-            const originalText = $btn.text();
-            const originalClass = $btn.attr('class');
-
-            // Hiển thị trạng thái loading
-            $btn.prop('disabled', true).text('Đang xử lý...');
-
-            // Lấy token anti-forgery (cần thiết cho POST/PUT/DELETE)
-            const token = $('input[name="__RequestVerificationToken"]').val();
-
-            // Gửi yêu cầu PUT đến API SubscribeChannel (đã được sử dụng trong Watch.cshtml [1])
-            $.ajax({
-                url: "/Video/SubscribeChannel",
-                type: "PUT",
-                contentType: "application/x-www-form-urlencoded", // Dùng standard encoding
-                data: { channelId: channelId },
-                headers: {
-                    // Truyền token bảo mật qua header
-                    'RequestVerificationToken': token
-                },
-                success: function (data) {
-                    $btn.prop('disabled', false);
-
-                    if (data && data.isSuccess) {
-                        // Cập nhật trạng thái mới
-                        const newStatus = data.title === "Subscribed"; // Kiểm tra phản hồi từ server
-                        const newText = newStatus ? "Đã đăng ký" : "Đăng ký";
-                        const newClass = newStatus ? "subscribed-btn" : "btn-danger";
-
-                        // Cập nhật button
-                        $btn.text(newText);
-                        // Xóa cả hai class có thể có và thêm class mới
-                        $btn.removeClass('btn-danger subscribed-btn').addClass(newClass + ' subscribe-search-btn btn');
-                        $btn.data('is-subscribed', newStatus); // Cập nhật data-attribute
-
-                        // Hiển thị thông báo
-                        displayNotification(true, data.title, data.message, 'toastr');
-                    } else {
-                        // Xử lý lỗi từ server
-                        // Khôi phục nút
-                        $btn.text(originalText).attr('class', originalClass);
-                        displayNotification(false, 'Lỗi', data.message || `Không thể ${actionText} kênh.`, 'toastr');
-                    }
-                },
-                error: function (xhr) {
-                    // Khôi phục nút nếu lỗi kết nối
-                    $btn.prop('disabled', false).text(originalText).attr('class', originalClass);
-                    displayNotification(false, 'Lỗi', `Lỗi kết nối khi ${actionText}.`, 'toastr');
-                }
-            });
-        }
-
-
-            /* ============================================================
-             *  1) FILTER NÂNG CAO (UPLOAD TIME + DURATION)
-             * ============================================================ */
-
-            // Lấy query từ ViewData (nếu có)
+        // =========================
+        // FILTER logic (giữ nguyên gần như bản cũ)
+        // =========================
+        $(function () {
             const currentQuery = '@Html.Raw(ViewData["Query"])';
-
-            // Lấy filter từ ViewData
             let currentUploadTime = '@Html.Raw(currentUploadTime)';
             let currentDuration = '@Html.Raw(currentDuration)';
 
             const $filterContainer = $('#filterDropdownContainer');
 
-            // Toggle bộ lọc
             $('#filterToggleBtn').on('click', function () {
                 const $container = $('#filterDropdownContainer');
-
-                // Kiểm tra nếu đang ẩn thì hiện và ngược lại
-                if ($container.is(':hidden')) {
-                    $container.css('display', 'inline-flex'); // Hiện dạng flex để các nút nằm ngang
-                } else {
-                    $container.hide();
-                }
+                if ($container.is(':hidden')) $container.css('display', 'inline-flex');
+                else $container.hide();
             });
 
-            // Chọn filter
             $('.filter-option').on('click', function (e) {
                 e.preventDefault();
-
                 const type = $(this).data('filter-type');
                 const value = $(this).data('filter-value');
-
                 if (type === 'uploadTime') currentUploadTime = value;
                 if (type === 'duration') currentDuration = value;
-
                 performSearch();
             });
 
-            // Reset filter
             $('#resetFiltersBtn').on('click', function () {
                 currentUploadTime = 'any';
                 currentDuration = 'any';
                 performSearch();
             });
 
-            // Hàm redirect URL search
             function performSearch() {
-                // FIX: Sử dụng URLSearchParams để quản lý query string chuẩn hơn
                 const params = new URLSearchParams(window.location.search);
-
-                // Giữ lại query cũ
                 if (currentQuery) params.set('query', currentQuery);
-
-                // Cập nhật filter
                 if (currentUploadTime !== 'any') params.set('uploadTime', currentUploadTime);
-                else params.delete('uploadTime'); // Xóa nếu là any
-
+                else params.delete('uploadTime');
                 if (currentDuration !== 'any') params.set('duration', currentDuration);
-                else params.delete('duration'); // Xóa nếu là any
-
+                else params.delete('duration');
                 window.location.href = `/Search?${params.toString()}`;
             }
 
-            // Nếu filter đang bật → hiển thị container
             if (currentUploadTime !== 'any' || currentDuration !== 'any') {
                 $filterContainer.css('display', 'inline-flex').addClass('d-inline-flex');
             }
+        });
 
-            /* ============================================================
-             *  2) LOGIC CŨ: INFINITE SCROLL + FALLBACK MODE
-             * ============================================================ */
-
+        // =========================
+        // INFINITE SCROLL (kết hợp 2 chế độ: fallback feed & recommendations API)
+        // =========================
+        $(document).ready(function () {
+            // Chỉ **1** isLoading - tránh khai báo nhiều lần
             let isLoading = false;
-            let isFallbackMode = @Json.Serialize(isFallback);
+            let hasMore = true;
 
-            if (isFallbackMode) {
-                $('#recommendation-separator').show();
+            // isFallbackMode lấy từ server-side variable
+            let isFallbackMode = @Html.Raw(Json.Serialize(isFallback)); // sẽ render true/false
+
+            // Nếu bạn có phần tử '#recommendation-separator' hiển thị khi fallback, đảm bảo tồn tại
+            if (isFallbackMode) $('#recommendation-separator').show();
+
+            function formatViews(views) {
+                if (!views && views !== 0) return 0;
+                if (views >= 1000000) return (views / 1000000).toFixed(1) + 'M';
+                if (views >= 1000) return (views / 1000).toFixed(1) + 'K';
+                return views;
             }
 
-            $(window).scroll(function () {
-
-                // Khi kéo gần cuối trang
-                if ($(window).scrollTop() + $(window).height() > $(document).height() - 100) {
-
-                    if (!isLoading) {
-
+            $(window).on('scroll', function () {
+                if ($(window).scrollTop() + $(window).height() > $(document).height() - 120) {
+                    if (!isLoading && hasMore) {
+                        // Nếu chưa ở fallback -> kích hoạt fallback feed (Home/GetVideosForHomeGrid) 1 lần
                         if (!isFallbackMode) {
                             isFallbackMode = true;
                             $('#recommendation-separator').fadeIn();
+                            loadFallbackFeed();
+                        } else {
+                            // Ở fallback -> lấy từ Search/GetMoreRecommendations (gửi excludeIds)
+                            loadRecommendationWithExcludes();
                         }
-
-                        loadMoreRecommendations();
                     }
                 }
             });
 
-            // AJAX load video fallback
-            function loadMoreRecommendations() {
+            // ---------- Fallback feed (Home/GetVideosForHomeGrid) ----------
+            function loadFallbackFeed() {
+            isLoading = true;
+            $('#search-loading').show();
+
+            // SỬA: Chuyển sang POST và gửi JSON body để khớp với HomeController [HttpPost]
+            const payload = {
+                pageNumber: 1,
+                pageSize: 8,
+                sortBy: 'random'
+                // excludeIds: [] // Nếu HomeController cần excludeIds, bạn có thể thêm vào đây
+            };
+
+            $.ajax({
+                url: '/Home/GetVideosForHomeGrid',
+                type: 'POST', // <--- QUAN TRỌNG: Đổi từ GET sang POST [cite: 1142]
+                contentType: 'application/json', // <--- QUAN TRỌNG: Báo cho server biết đây là JSON
+                data: JSON.stringify(payload),   // <--- QUAN TRỌNG: Stringify object
+                success: function (res) {
+                    // Kiểm tra kết quả trả về
+                    if (res && res.result && res.result.items && res.result.items.length > 0) {
+                        appendVideosToRecommended(res.result.items);
+                    } else {
+                        // nếu backend không trả gì -> không còn dữ liệu
+                        hasMore = false;
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Lỗi Fallback Feed:", error); // Log lỗi để debug
+                    hasMore = false;
+                },
+                complete: function () {
+                    $('#search-loading').hide();
+                    isLoading = false;
+                }
+            });
+        }
+
+            // ---------- Recommendations with excludeIds ----------
+            function loadRecommendationWithExcludes() {
                 isLoading = true;
                 $('#search-loading').show();
 
+                // Build excludeIds set (unique)
+                const excludeSet = new Set();
+
+                // 1) từ kết quả tìm kiếm chính: lấy tất cả anchors tới /Video/Watch/... (loại querystring)
+                $('#videoResults a[href*="/Video/Watch/"]').each(function () {
+                    const href = $(this).attr('href') || '';
+                    // lấy phần cuối sau /Video/Watch/, bỏ querystring nếu có
+                    const last = href.split('/').pop() || '';
+                    const id = last.split('?')[0];
+                    if (id) excludeSet.add(id);
+                });
+
+                // 2) từ recommended grid: data-video-id attribute (server render)
+                $('#recommendedVideoGrid .video-item').each(function () {
+                    const id = $(this).data('video-id');
+                    if (id) excludeSet.add(String(id));
+                });
+
+                const excludeIds = Array.from(excludeSet);
+
+                // Call server
                 $.ajax({
-                    url: '/Home/GetVideosForHomeGrid',
-                    type: 'GET',
-                    data: { pageNumber: 1, pageSize: 8, sortBy: 'random' },
+                    url: '/Search/GetMoreRecommendations',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ excludeIds: excludeIds }),
                     success: function (res) {
-
-                        $('#search-loading').hide();
-                        if (res.result && res.result.items) {
-                            appendVideos(res.result.items);
+                        if (res && res.isSuccess && res.data && res.data.length > 0) {
+                            appendVideosToRecommended(res.data);
+                        } else {
+                            // nếu server trả rỗng -> dừng
+                            hasMore = false;
                         }
-
+                    },
+                    error: function (err) {
+                        console.error('Lỗi tải thêm recommendations:', err);
+                        // Nếu lỗi nhiều lần có thể dừng
+                        hasMore = false;
+                    },
+                    complete: function () {
+                        $('#search-loading').hide();
                         isLoading = false;
                     }
                 });
             }
 
-            // Append video vào grid
-            function appendVideos(videos) {
+            // Hàm chèn video (kiểm tra duplicate trước khi append)
+            function appendVideosToRecommended(videos) {
+                if (!videos || !videos.length) return;
+
+                // Lấy tập ID hiện tại để tránh trùng
+                const existing = new Set();
+                $('#recommendedVideoGrid .video-item').each(function () {
+                    const id = $(this).data('video-id');
+                    if (id) existing.add(String(id));
+                });
+
                 let html = '';
                 videos.forEach(v => {
+                    const vid = String(v.id);
+                    if (existing.has(vid)) return; // skip nếu đã có
+
+                    const thumbnail = v.thumbnail || '/img/default-thumbnail.jpg';
+                    const avatar = v.channelPicture || '/avatarUser/avt-default.jpg';
+                    const title = v.title || 'Untitled';
+                    const duration = v.duration || '0:00';
+                    const views = formatViews(v.views || 0);
+
                     html += `
-                    <div class="col-xl-3 col-lg-4 col-sm-6 mb-4">
+                    <div class="col-xl-3 col-lg-4 col-sm-6 mb-4 video-item" data-video-id="${vid}">
                         <div class="video-card animated">
                             <div class="video-card-image">
-                                <a href="/Video/Watch/${v.id}">
-                                    <img src="${v.thumbnail || '/img/default-thumbnail.jpg'}" alt="${v.title}">
+                                <a href="/Video/Watch/${vid}">
+                                    <img src="${thumbnail}" alt="${title}">
                                 </a>
-                                <span class="time">${v.duration || '0:00'}</span>
+                                <span class="time">${duration}</span>
                             </div>
                             <div class="video-card-body">
-                                <img src="${v.channelPicture || '/avatarUser/avt-default.jpg'}" alt="${v.channelName}">
+                                <img src="${avatar}" alt="${v.channelName || ''}">
                                 <div class="video-info">
                                     <div class="video-title">
-                                        <a href="/Video/Watch/${v.id}">${v.title}</a>
+                                        <a href="/Video/Watch/${vid}">${title}</a>
                                     </div>
                                     <div class="video-page">
-                                        <a href="/Member/Channel/${v.channelId}">${v.channelName}</a>
+                                        <a href="/Member/Channel/${v.channelId}">${v.channelName || ''}</a>
                                     </div>
-                                    <div class="video-view">${v.views} lượt xem • ${v.createdAtTimeAgo}</div>
+                                    <div class="video-view">${views} lượt xem • ${v.createdAtTimeAgo}</div>
                                 </div>
                             </div>
                         </div>
                     </div>`;
+                    existing.add(vid); // đánh dấu đã có
                 });
 
-                $('.mt-5.pt-3.border-top .row').append(html);
+                const $new = $(html).hide();
+                $('#recommendedVideoGrid').append($new);
+                $new.fadeIn(400);
             }
-
         });
     </script>
+
     <partial name="_ValidationScriptsPartial" />
 }

@@ -45,17 +45,25 @@ namespace Web_Video.Controllers
         }
 
         // --- HÀM HELPER LẤY VIDEO ĐỀ XUẤT (TÁI SỬ DỤNG) ---
-        private async Task<List<Video>> GetRecommendationsAsync(string userId, Guid? currentVideoId = null)
+        // [SỬA ĐỔI] Thêm tham số List<Guid> excludeIds
+        private async Task<List<Video>> GetRecommendationsAsync(string userId, List<Guid> excludeIds, Guid? currentVideoId = null)
         {
-            const int TIMEOUT_SECONDS = 4; // FIX P3: Tăng Timeout cho độ tin cậy
-
+            const int TIMEOUT_SECONDS = 4;
             try
             {
                 var httpClient = _httpClientFactory.CreateClient();
                 httpClient.Timeout = TimeSpan.FromSeconds(TIMEOUT_SECONDS);
-                var payload = new { userId = userId, currentVideoId = currentVideoId };
+
+                // [SỬA ĐỔI] Thêm excludeIds vào payload gửi sang Python
+                var payload = new
+                {
+                    userId = userId,
+                    currentVideoId = currentVideoId,
+                    excludeIds = excludeIds ?? new List<Guid>() // Gửi danh sách ID cần loại bỏ
+                };
 
                 var response = await httpClient.PostAsJsonAsync("http://localhost:5001/api/recommend", payload);
+
                 if (response.IsSuccessStatusCode)
                 {
                     var apiResult = await response.Content.ReadFromJsonAsync<PythonRecommendResponse>();
@@ -63,17 +71,16 @@ namespace Web_Video.Controllers
 
                     if (videoIds != null && videoIds.Any())
                     {
-                        // Lấy chi tiết video từ DB
                         var recVideos = await Context.Videos
                             .Include(x => x.Channel)
                             .Include(x => x.Viewers)
                             .Where(x => videoIds.Contains(x.Id))
                             .ToListAsync();
 
-                        // Sắp xếp lại theo thứ tự Python trả về và ánh xạ để có data tính views
+                        // Sắp xếp theo thứ tự Python trả về
                         var orderedVideos = videoIds
                             .Join(recVideos, id => id, v => v.Id, (id, v) => v)
-                            .Select(v => new Video // Cần trả về Entity Video để khớp với ViewModel
+                            .Select(v => new Video
                             {
                                 Id = v.Id,
                                 Title = v.Title,
@@ -81,15 +88,13 @@ namespace Web_Video.Controllers
                                 Thumbnail = v.Thumbnail,
                                 UploadDate = v.UploadDate,
                                 Duration = v.Duration,
-                                // Phải include Channel và Category trước khi truy cập
                                 Channel = v.Channel,
                                 Category = v.Category,
-                                Views = v.Viewers.Select(vv => vv.NumberOfVisit).Sum(), // Tính Views tổng
+                                Views = v.Viewers.Select(vv => vv.NumberOfVisit).Sum(),
                             })
-                            .Take(12)
+                            //.Take(12) // [XÓA DÒNG NÀY] Để lấy hết số lượng Python trả về (thường là 12-20)
                             .ToList();
 
-                        // Chuyển lại về Entity Video (với các trường navigation đã được load)
                         return recVideos.Where(v => orderedVideos.Select(o => o.Id).Contains(v.Id)).ToList();
                     }
                 }
@@ -97,11 +102,12 @@ namespace Web_Video.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"[Search Rec Fallback] Lỗi Python/Timeout: {ex.Message}");
-                // Fallback: Nếu Python lỗi, lấy Random từ DB
+                // Fallback: Random nhưng phải loại trừ các video đã có
                 return await Context.Videos
                     .Include(v => v.Channel)
                     .Include(v => v.Category)
                     .Include(v => v.Viewers)
+                    .Where(x => !excludeIds.Contains(x.Id)) // Loại bỏ video đã hiển thị
                     .OrderBy(x => Guid.NewGuid())
                     .Take(12)
                     .ToListAsync();
@@ -262,7 +268,8 @@ namespace Web_Video.Controllers
             // ======================================================================
             // 5. RECOMMENDATIONS + LOẠI BỎ TRÙNG
             // ======================================================================
-            viewModel.RecommendedVideos = await GetRecommendationsAsync(userId);
+            var existingIds = viewModel.Videos.Select(v => v.Id).ToList(); // Lấy ID của kết quả tìm kiếm chính
+            viewModel.RecommendedVideos = await GetRecommendationsAsync(userId, existingIds);
 
             if (viewModel.Videos.Any())
             {
@@ -302,7 +309,8 @@ namespace Web_Video.Controllers
             {
                 ViewData["Query"] = "Hình ảnh không hợp lệ hoặc quá lớn (giới hạn 5MB)";
                 ViewBag.IsFallback = true;
-                viewModel.RecommendedVideos = await GetRecommendationsAsync(userId);
+                var existingIds = viewModel.Videos.Select(v => v.Id).ToList();
+                viewModel.RecommendedVideos = await GetRecommendationsAsync(userId, existingIds);
                 return View("Index", viewModel);
             }
 
@@ -370,8 +378,8 @@ namespace Web_Video.Controllers
             }
 
             // 3. LUÔN LẤY ĐỀ XUẤT (RECOMMENDATION ENGINE)
-            viewModel.RecommendedVideos = await GetRecommendationsAsync(userId);
-
+            var excludeIds = viewModel.Videos.Select(v => v.Id).ToList();
+            viewModel.RecommendedVideos = await GetRecommendationsAsync(userId, excludeIds);
             // 4. LỌC TRÙNG LẶP
             if (viewModel.Videos.Any())
             {
@@ -383,6 +391,36 @@ namespace Web_Video.Controllers
             }
 
             return View("Index", viewModel);
+        }
+        // Class DTO để nhận dữ liệu từ Client
+        public class LoadMoreRequest
+        {
+            public List<Guid> ExcludeIds { get; set; }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> GetMoreRecommendations([FromBody] LoadMoreRequest request)
+        {
+            string userId = User.Identity.IsAuthenticated ? User.GetUserId() : "";
+
+            // Gọi hàm helper với danh sách ID cần loại bỏ
+            var videos = await GetRecommendationsAsync(userId, request.ExcludeIds);
+
+            // Chuyển đổi sang DTO nhẹ để trả về JSON cho Client
+            var result = videos.Select(v => new
+            {
+                id = v.Id,
+                title = v.Title,
+                thumbnail = v.Thumbnail ?? "/img/default-thumbnail.jpg",
+                duration = v.Duration ?? "0:00",
+                channelName = v.Channel?.ChannelName ?? "Unknown",
+                channelPicture = v.Channel?.ChannelPicture ?? "/avatarUser/avt-default.jpg",
+                channelId = v.Channel?.Id,
+                views = v.Views ?? 0, // Đã tính sum ở Helper
+                createdAtTimeAgo = SD.TimeAgo(v.UploadDate)
+            }).ToList();
+
+            return Json(new { isSuccess = true, data = result });
         }
 
         // Phương thức LoadFallbackResults không còn cần thiết vì logic đã nằm trong SearchByImage và GetRecommendationsAsync
