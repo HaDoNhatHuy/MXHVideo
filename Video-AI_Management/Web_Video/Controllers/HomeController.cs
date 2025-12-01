@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
@@ -75,11 +76,32 @@ namespace Web_Video.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+        // Endpoint xử lý Block Video/Channel
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> BlockContent(Guid targetId, string type) // Type: "Video" or "Channel"
+        {
+            var userId = User.GetUserId();
+            var existingBlock = await Context.Set<UserBlock>()
+                .FirstOrDefaultAsync(b => b.AppUserId == userId && b.TargetId == targetId && b.Type == type);
 
+            if (existingBlock == null)
+            {
+                Context.Set<UserBlock>().Add(new UserBlock
+                {
+                    AppUserId = userId,
+                    TargetId = targetId,
+                    Type = type
+                });
+                await Context.SaveChangesAsync();
+            }
+            return Json(new { isSuccess = true, message = "Content removed from recommendations." });
+        }
         #region API Endpoints
         [Authorize(Roles = $"{SD.UserRole},{SD.AdminRole}")]
-        [HttpGet]
-        public async Task<IActionResult> GetVideosForHomeGrid(HomeParameters parameters)
+        //[HttpGet]
+        [HttpPost] // Đổi sang POST để gửi list ID lớn
+        public async Task<IActionResult> GetVideosForHomeGrid([FromBody] HomeParameters parameters)
         {
             // NẾU CÓ TÌM KIẾM HOẶC CHỌN CATEGORY -> Dùng logic cũ (filter)
             if (!string.IsNullOrEmpty(parameters.SearchBy) && parameters.SearchBy.ToLower() != "all" || parameters.CategoryId != Guid.Empty)
@@ -95,9 +117,15 @@ namespace Web_Video.Controllers
                 string userId = User.Identity.IsAuthenticated ? User.GetUserId() : "";
                 var httpClient = _httpClientFactory.CreateClient();
 
-                var payload = new { userId = userId, currentVideoId = (Guid?)null };
-                // FIX P3: Tăng Timeout từ 2 lên 4 giây để tăng độ tin cậy
-                httpClient.Timeout = TimeSpan.FromSeconds(4); // <--- ĐÃ SỬA
+                // THÊM excludeIds (danh sách video đã hiển thị trên FE)
+                var payload = new
+                {
+                    userId = userId,
+                    currentVideoId = (Guid?)null,
+                    excludeIds = parameters.ExcludeIds ?? new List<Guid>()
+                };
+
+                httpClient.Timeout = TimeSpan.FromSeconds(4);
 
                 var response = await httpClient.PostAsJsonAsync("http://localhost:5001/api/recommend", payload);
 
@@ -108,14 +136,14 @@ namespace Web_Video.Controllers
 
                     if (videoIds != null && videoIds.Any())
                     {
-                        // Lấy data từ DB dựa trên ID trả về từ Python
+                        // LẤY TOÀN BỘ VIDEO THEO DANH SÁCH ID TỪ PYTHON
                         var videosFromDb = await Context.Videos
                             .Include(x => x.Channel)
                             .Include(x => x.Viewers)
                             .Where(x => videoIds.Contains(x.Id))
                             .ToListAsync();
 
-                        // Sắp xếp lại list DB theo thứ tự của list ID từ Python
+                        // SẮP XẾP ĐÚNG THEO THỨ TỰ ID TỪ PYTHON
                         var orderedVideos = videoIds
                             .Join(videosFromDb, id => id, v => v.Id, (id, v) => v)
                             .Select(x => new VideoForHomeGridDto
@@ -125,22 +153,16 @@ namespace Web_Video.Controllers
                                 Thumbnail = x.Thumbnail,
                                 Duration = x.Duration ?? "0:00",
                                 ChannelName = x.Channel.ChannelName,
-                                // FIX P1: Tính Views bằng SUM(NumberOfVisit)
-                                Views = x.Viewers.Select(v => v.NumberOfVisit).Sum(),
+                                Views = x.Viewers.Select(v => v.NumberOfVisit).Sum(), // FIX P1
                                 CreatedAtTimeAgo = SD.TimeAgo(x.UploadDate),
                                 ChannelAvatar = x.Channel.ChannelPicture ?? "/avatarUser/avt-default.jpg"
                             })
                             .ToList();
 
-                        // Pagination giả lập
-                        var pagedData = orderedVideos
-                            .Skip((parameters.PageNumber - 1) * parameters.PageSize)
-                            .Take(parameters.PageSize)
-                            .ToList();
-
-                        // Trả về kết quả AI (số lượng trang chỉ là 1 vì AI đã trả về đủ list)
+                        // ❌ BỎ Skip/Take (Python đã phân trang)
+                        // Trả toàn bộ danh sách AI trả về
                         return Json(new ApiResponse(200, result: new PaginatedResult<VideoForHomeGridDto>(
-                            pagedData, orderedVideos.Count, parameters.PageNumber, parameters.PageSize, 1)));
+                            orderedVideos, orderedVideos.Count, 1, orderedVideos.Count, 1)));
                     }
                 }
             }

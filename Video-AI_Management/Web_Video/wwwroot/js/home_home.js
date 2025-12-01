@@ -69,9 +69,15 @@
         st.isLoading = true;
         st.container.siblings(`#${page}-loading-indicator`).show();
 
+        let excludedIds = [];
+        $('.yt-video-card').each(function () {
+            excludedIds.push($(this).data('video-id'));
+        });
+
         const parameters = {
             pageNumber: st.pageNumber,
-            pageSize: st.pageSize
+            pageSize: st.pageSize,
+            excludeIds: excludedIds // Gửi mảng này về server
         };
 
         if (page === 'index') {
@@ -83,8 +89,9 @@
 
         $.ajax({
             url: st.apiUrl,
-            type: 'GET',
-            data: parameters,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(parameters),
             success: function (data) {
                 try {
                     const result = data.result;
@@ -201,35 +208,59 @@
                 const thumbnailUrl = v.thumbnail || '/avatarUser/avt-default.jpg';
 
                 html += `
-            <div class="yt-video-card">
-                <a href="/Video/Watch/${v.id}" class="yt-video-thumbnail">
-                    <img src="${thumbnailUrl}" alt="${v.title}">
-                    <span class="yt-video-duration">${durationStr}</span>
-                </a>
-                <div class="yt-video-info">
-                    <div class="yt-channel-avatar">
-                        <a href="/Member/Channel/${v.channelId}">
-                            <img src="${avatarUrl}" alt="${v.channelName}">
-                        </a>
-                    </div>
-                    <div class="yt-video-details">
-                        <div class="yt-video-title">
-                            <a href="/Video/Watch/${v.id}" title="${v.title}">
-                                ${v.title || 'Untitled Video'}
-                            </a>
-                        </div>
-                        <div class="yt-channel-name">
+                  <div class="yt-video-card" data-video-id="${v.id}">
+                    <a href="/Video/Watch/${v.id}" class="yt-video-thumbnail">
+                        <img src="${thumbnailUrl}" alt="${v.title}">
+                        <span class="yt-video-duration">${durationStr}</span>
+                    </a>
+
+                    <div class="yt-video-info">
+                        <div class="yt-channel-avatar">
                             <a href="/Member/Channel/${v.channelId}">
-                                ${v.channelName || 'Unknown Channel'}
+                                <img src="${avatarUrl}" alt="${v.channelName}">
                             </a>
-                            <i class="fas fa-check-circle"></i>
                         </div>
-                        <div class="yt-video-meta">
-                            ${formatView(v.views || 0)} • ${v.createdAtTimeAgo || 'Vừa xong'}
+
+                        <div class="yt-video-details">
+                            <div class="yt-video-title">
+                                <a href="/Video/Watch/${v.id}" title="${v.title}">
+                                    ${v.title || 'Untitled Video'}
+                                </a>
+                            </div>
+
+                            <div class="yt-channel-name">
+                                <a href="/Member/Channel/${v.channelId}">
+                                    ${v.channelName || 'Unknown Channel'}
+                                </a>
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+
+                            <div class="yt-video-meta">
+                                ${formatView(v.views || 0)} • ${v.createdAtTimeAgo || 'Vừa xong'}
+                            </div>
                         </div>
+                         <!-- NÚT 3 CHẤM -->
+                            <div class="video-actions dropdown mt-1">
+                                <button class="btn btn-link btn-sm text-secondary" data-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item not-interested-btn" href="#" data-id="${v.id}">
+                                            <i class="fas fa-ban me-2"></i> Not interested
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item dont-recommend-btn" href="#" data-channel-id="${v.channelId}">
+                                            <i class="fas fa-user-slash me-2"></i> Don't recommend channel
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                     </div>
                 </div>
-            </div>
+
             `;
             });
 
@@ -364,6 +395,33 @@
             }
         });
     }
+
+    // NOT INTERESTED
+    $(document).on('click', '.not-interested-btn', function (e) {
+        e.preventDefault();
+        const videoId = $(this).data('id');
+        const $card = $(this).closest('.yt-video-card');
+
+        $.post('/Home/BlockContent', { targetId: videoId, type: 'Video' }, function () {
+            $card.fadeOut();
+        });
+    });
+
+    // DON'T RECOMMEND CHANNEL
+    $(document).on('click', '.dont-recommend-btn', function (e) {
+        e.preventDefault();
+        const channelId = $(this).data('channel-id');
+        const $card = $(this).closest('.yt-video-card');
+
+        $.post('/Home/BlockContent', { targetId: channelId, type: 'Channel' }, function () {
+
+            // Ẩn tất cả video của channel này
+            $(`.yt-video-card[data-channel-id="${channelId}"]`).fadeOut();
+
+            // Ẩn card hiện tại
+            $card.fadeOut();
+        });
+    });
 
     function isElementScrollable($el) {
         if (!$el || !$el.length) return false;

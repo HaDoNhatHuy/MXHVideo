@@ -19,7 +19,8 @@ namespace DataAccess.Data
         public DbSet<RecognizeCelebrities> RecognizeCelebrities { get; set; }
         public DbSet<Playlist> Playlists { get; set; } 
         public DbSet<PlaylistItem> PlaylistItems { get; set; }
-        public DbSet<Report> Reports { get; set; } 
+        public DbSet<Report> Reports { get; set; }
+        public DbSet<UserBlock> UserBlocks { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

@@ -114,12 +114,15 @@
     cursor: pointer;
     transition: transform 0.2s;
     border-radius: 12px;
+    position: relative;
+    z-index: 1;
 }
 
     .yt-video-card:hover {
         transform: translateY(-2px);
         background-color: #f2f2f2;
         box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+        z-index: 50;
     }
 
 /* Thumbnail Container */
@@ -380,4 +383,69 @@
     height: 100%;
     background-color: #ff0000;
     transition: width 0.3s;
+}
+/* CARD layout */
+.yt-video-info {
+    display: flex;
+    align-items: flex-start;
+}
+
+/* container chữ và menu */
+.yt-video-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative; /* để absolute hoạt động */
+}
+
+/* Sửa lại video-actions */
+.video-actions {
+    /* XÓA: position: absolute; right: 0; top: 0; */
+    align-self: flex-start; /* Căn lên trên */
+    flex-shrink: 0;
+}
+
+    .video-actions button {
+        padding: 4px 8px;
+        border: none;
+        background: transparent;
+        opacity: 0; /* Ẩn mặc định */
+        transition: opacity 0.2s;
+    }
+
+/* Hiện khi hover vào card */
+.yt-video-card:hover .video-actions button {
+    opacity: 1;
+}
+
+.video-actions .dropdown-menu {
+    min-width: 180px;
+    z-index: 99999 !important; /* Tăng lên rất cao */
+    position: fixed !important; /* Quan trọng: dùng fixed thay vì absolute */
+    inset: auto !important; /* tránh bootstrap auto đặt sai */
+    transform: translateY(24px) !important; /* kéo xuống 1 chút giống YouTube */
+}
+/* Khi dropdown đang mở, card chứa nó phải có z-index cao nhất */
+.yt-video-card.dropdown-open {
+    z-index: 100 !important;
+}
+/* Đảm bảo backdrop của Bootstrap dropdown không che */
+.dropdown-backdrop {
+    z-index: 99998 !important;
+}
+
+/* loại bỏ margin top đang làm lệch nút */
+.video-actions.mt-1 {
+    margin-top: 0 !important;
+}
+/* Force dropdown menu lên trên tất cả */
+.video-actions .dropdown-menu {
+    min-width: 180px;
+    position: fixed !important; /* Thay vì absolute */
+    z-index: 999999 !important;
+}
+
+/* Card đang hover dropdown phải cao nhất */
+.yt-video-card:has(.dropdown-menu.show) {
+    z-index: 100 !important;
 }

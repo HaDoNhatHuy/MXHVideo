@@ -9,5 +9,6 @@
             set => _searchBy = string.IsNullOrEmpty(value) ? "" : value.ToLower();
         }
         public Guid CategoryId { get; set; }
+        public List<Guid> ExcludeIds { get; set; } = new List<Guid>();
     }
 }
