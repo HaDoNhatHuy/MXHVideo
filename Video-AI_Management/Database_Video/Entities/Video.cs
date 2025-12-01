@@ -31,5 +31,8 @@ namespace Database_Video.Entities
         public ICollection<Comment> Comments { get; set; } = new HashSet<Comment>();
         public ICollection<LikeDislike> LikeDislikes { get; set; } = new HashSet<LikeDislike>();
         public ICollection<VideoView> Viewers { get; set; } = new HashSet<VideoView>();
+        // THÊM 2 TRƯỜNG NÀY ĐỂ TỐI ƯU TỐC ĐỘ
+        public int CachedViews { get; set; } = 0; // Lưu tổng view đã tính sẵn
+        public double DurationSeconds { get; set; } = 0; // Lưu thời lượng quy đổi ra giây
     }
 }

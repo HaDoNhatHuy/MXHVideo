@@ -13,7 +13,8 @@ using System.Threading.Tasks;
 using Web_Video.Extensions;
 using WebVideo.Utility;
 using Database_Video.DTOs;
-using Web_Video.ViewModels.Search; // Cần thiết cho việc tính Views
+using Web_Video.ViewModels.Search;
+using Microsoft.Extensions.Caching.Memory; // Cần thiết cho việc tính Views
 
 namespace Web_Video.Controllers
 {
@@ -21,11 +22,13 @@ namespace Web_Video.Controllers
     {
         private readonly DataContext _context;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IMemoryCache _cache; // Inject Cache
 
-        public SearchController(DataContext context, IHttpClientFactory httpClientFactory)
+        public SearchController(DataContext context, IHttpClientFactory httpClientFactory, IMemoryCache cache)
         {
             _context = context;
             _httpClientFactory = httpClientFactory;
+            _cache = cache;
         }
 
         // ViewModel để chứa kết quả tìm kiếm
@@ -48,20 +51,20 @@ namespace Web_Video.Controllers
         // [SỬA ĐỔI] Thêm tham số List<Guid> excludeIds
         private async Task<List<Video>> GetRecommendationsAsync(string userId, List<Guid> excludeIds, Guid? currentVideoId = null)
         {
-            const int TIMEOUT_SECONDS = 4;
+            const int TIMEOUT_SECONDS = 3; // Giảm timeout xuống 3s để không treo user
             try
             {
                 var httpClient = _httpClientFactory.CreateClient();
                 httpClient.Timeout = TimeSpan.FromSeconds(TIMEOUT_SECONDS);
 
-                // [SỬA ĐỔI] Thêm excludeIds vào payload gửi sang Python
                 var payload = new
                 {
                     userId = userId,
                     currentVideoId = currentVideoId,
-                    excludeIds = excludeIds ?? new List<Guid>() // Gửi danh sách ID cần loại bỏ
+                    excludeIds = excludeIds ?? new List<Guid>()
                 };
 
+                // Gọi Python
                 var response = await httpClient.PostAsJsonAsync("http://localhost:5001/api/recommend", payload);
 
                 if (response.IsSuccessStatusCode)
@@ -71,13 +74,18 @@ namespace Web_Video.Controllers
 
                     if (videoIds != null && videoIds.Any())
                     {
-                        var recVideos = await Context.Videos
+                        // [TỐI ƯU CỰC MẠNH TẠI ĐÂY]
+                        // 1. Chỉ lấy những video có ID trả về
+                        // 2. KHÔNG BAO GIỜ Include(Viewers)
+                        // 3. Dùng AsNoTracking()
+                        var recVideos = await _context.Videos
+                            .AsNoTracking()
                             .Include(x => x.Channel)
-                            .Include(x => x.Viewers)
+                            .Include(x => x.Category)
                             .Where(x => videoIds.Contains(x.Id))
                             .ToListAsync();
 
-                        // Sắp xếp theo thứ tự Python trả về
+                        // Sắp xếp lại theo thứ tự Python trả về (giữ nguyên logic của bạn)
                         var orderedVideos = videoIds
                             .Join(recVideos, id => id, v => v.Id, (id, v) => v)
                             .Select(v => new Video
@@ -90,187 +98,200 @@ namespace Web_Video.Controllers
                                 Duration = v.Duration,
                                 Channel = v.Channel,
                                 Category = v.Category,
-                                Views = v.Viewers.Select(vv => vv.NumberOfVisit).Sum(),
+                                // [QUAN TRỌNG] Lấy từ cột CachedViews, KHÔNG tính tổng lại
+                                Views = v.CachedViews
                             })
-                            //.Take(12) // [XÓA DÒNG NÀY] Để lấy hết số lượng Python trả về (thường là 12-20)
                             .ToList();
 
+                        // Loại bỏ những video đã có trong danh sách hiển thị
                         return recVideos.Where(v => orderedVideos.Select(o => o.Id).Contains(v.Id)).ToList();
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Search Rec Fallback] Lỗi Python/Timeout: {ex.Message}");
-                // Fallback: Random nhưng phải loại trừ các video đã có
-                return await Context.Videos
-                    .Include(v => v.Channel)
-                    .Include(v => v.Category)
-                    .Include(v => v.Viewers)
-                    .Where(x => !excludeIds.Contains(x.Id)) // Loại bỏ video đã hiển thị
-                    .OrderBy(x => Guid.NewGuid())
-                    .Take(12)
-                    .ToListAsync();
+                // Log lỗi nhẹ, không làm phiền user
+                Console.WriteLine($"[Recommendation Skip] {ex.Message}");
             }
+
+            // Fallback: Nếu lỗi Python, trả về rỗng để code chính tự xử lý (hoặc lấy random nhẹ)
             return new List<Video>();
         }
 
         [HttpGet]
         public async Task<IActionResult> Index(string query, string uploadTime = "any", string duration = "any")
         {
-            var viewModel = new SearchViewModel();
+            // --- 1. CHUẨN BỊ DỮ LIỆU VIEW ---
             ViewData["Query"] = query;
-            ViewData["UploadTime"] = uploadTime.ToLower();
-            ViewData["Duration"] = duration.ToLower();
+            ViewData["UploadTime"] = uploadTime?.ToLower() ?? "any";
+            ViewData["Duration"] = duration?.ToLower() ?? "any";
             string userId = User.Identity.IsAuthenticated ? User.GetUserId() : "";
 
-            // Nếu có query — chạy tìm kiếm Exact trước
+            // --- 2. KIỂM TRA CACHE (TỐI ƯU TỐC ĐỘ SỐ 1) ---
+            // Tạo key cache duy nhất dựa trên query và bộ lọc
+            string cacheKey = $"search_{query?.Trim().ToLower()}_{uploadTime}_{duration}";
+
+            // Nếu đã có trong RAM, trả về ngay lập tức (0 giây)
+            if (_cache.TryGetValue(cacheKey, out SearchViewModel cachedModel))
+            {
+                // Vẫn phải lấy recommendation riêng cho từng user (không cache phần này chung)
+                if (User.Identity.IsAuthenticated)
+                {
+                    var cachedIds = cachedModel.Videos.Select(v => v.Id).ToList();
+                    cachedModel.RecommendedVideos = await GetRecommendationsAsync(userId, cachedIds);
+                }
+                return View(cachedModel);
+            }
+
+            var viewModel = new SearchViewModel();
+
+            // --- 3. XÂY DỰNG QUERY (KHÔNG LOAD DỮ LIỆU NGAY) ---
             if (!string.IsNullOrWhiteSpace(query))
             {
-                string q = query.ToLower();
+                string q = query.ToLower().Trim();
 
-                // ============================================
-                // 1. BẮT ĐẦU BẰNG VIDEO QUERY CƠ BẢN
-                // ============================================
-                var videoQuery = await Context.Videos
-                    .AsNoTracking() // **TỐI ƯU 1: Tắt Entity Tracking** (Quan trọng để tăng tốc độ đọc)
+                // Khởi tạo Query - QUAN TRỌNG: Không dùng Include(Viewers)
+                var videoQuery = _context.Videos
+                    .AsNoTracking() // Tắt theo dõi để đọc nhanh hơn
                     .Include(v => v.Category)
                     .Include(v => v.Channel)
-                    .Include(v => v.Viewers)
-                    .Where(v =>
-                        (v.Title != null && v.Title.ToLower().Contains(q)) ||
-                        (v.Channel != null && v.Channel.ChannelName.ToLower().Contains(q)) ||
-                        (v.Description != null && v.Description.ToLower().Contains(q)) ||
-                        (v.RecognizedCelebrities != null && v.RecognizedCelebrities.ToLower().Contains(q))
-                    ).ToListAsync();
+                    .AsQueryable();
 
-                // ============================================
-                // 2. ÁP DỤNG BỘ LỌC TÌM KIẾM NÂNG CAO
-                // ============================================
-                // A. Lọc thời gian (Upload Time)
-                DateTime now = DateTime.UtcNow;
+                // A. Lọc theo từ khóa
+                videoQuery = videoQuery.Where(v =>
+                    (v.Title != null && v.Title.ToLower().Contains(q)) ||
+                    (v.Channel != null && v.Channel.ChannelName.ToLower().Contains(q)) ||
+                    (v.Description != null && v.Description.ToLower().Contains(q)) ||
+                    (v.RecognizedCelebrities != null && v.RecognizedCelebrities.ToLower().Contains(q))
+                );
+
+                // B. Lọc thời gian (Tính toán mốc thời gian trước khi đưa vào câu lệnh SQL)
                 if (uploadTime != "any")
                 {
-                    videoQuery = videoQuery.Where(v =>
+                    DateTime now = DateTime.UtcNow;
+                    DateTime cutoffDate = DateTime.MinValue;
+
+                    switch (uploadTime.ToLower())
                     {
-                        var diff = now - v.UploadDate;
-                        return uploadTime.ToLower() switch
-                        {
-                            "last_hour" => diff.TotalHours <= 1,
-                            "today" => diff.TotalDays <= 1,
-                            "this_week" => diff.TotalDays <= 7,
-                            "this_month" => diff.TotalDays <= 30,
-                            "this_year" => diff.TotalDays <= 365,
-                            _ => true
-                        };
-                    }).ToList();
+                        case "last_hour": cutoffDate = now.AddHours(-1); break;
+                        case "today": cutoffDate = now.AddDays(-1); break;
+                        case "this_week": cutoffDate = now.AddDays(-7); break;
+                        case "this_month": cutoffDate = now.AddDays(-30); break;
+                        case "this_year": cutoffDate = now.AddDays(-365); break;
+                    }
+
+                    if (cutoffDate > DateTime.MinValue)
+                    {
+                        videoQuery = videoQuery.Where(v => v.UploadDate >= cutoffDate);
+                    }
                 }
 
-                // B. Lọc theo thời lượng
+                // C. Lọc thời lượng (Dùng cột DurationSeconds đã tính sẵn trong DB)
+                // Lưu ý: Nếu bạn chưa có cột DurationSeconds trong DB, đoạn này sẽ lỗi.
                 if (duration != "any")
                 {
-                    videoQuery = videoQuery.Where(v =>
+                    switch (duration.ToLower())
                     {
-                        double seconds = ParseDurationToSeconds(v.Duration);
-                        return duration.ToLower() switch
-                        {
-                            "short" => seconds < 240,       // Dưới 4 phút (< 4*60)
-                            "medium" => seconds >= 240 && seconds <= 1200, // 4-20 phút
-                            "long" => seconds > 1200,       // Trên 20 phút
-                            _ => true
-                        };
-                    }).ToList();
+                        case "short": // < 4 phút
+                            videoQuery = videoQuery.Where(v => v.DurationSeconds < 240);
+                            break;
+                        case "medium": // 4 - 20 phút
+                            videoQuery = videoQuery.Where(v => v.DurationSeconds >= 240 && v.DurationSeconds <= 1200);
+                            break;
+                        case "long": // > 20 phút
+                            videoQuery = videoQuery.Where(v => v.DurationSeconds > 1200);
+                            break;
+                    }
                 }
 
-                // Lưu lại filter để View highlight
-                ViewData["UploadTime"] = uploadTime.ToLower();
-                ViewData["Duration"] = duration.ToLower();
+                // --- 4. THỰC THI QUERY ---
+                // Sắp xếp theo CachedViews (đã tính ngầm) thay vì tính Sum trực tiếp
+                viewModel.Videos = await videoQuery
+                    .OrderByDescending(v => v.CachedViews)
+                    .Take(50) // Giới hạn 50 kết quả đầu tiên để load nhanh
+                    .ToListAsync();
 
-                // ============================================
-                // 3. CHỈ LÚC NÀY MỚI THỰC HIỆN QUERY
-                // ============================================
-                viewModel.Videos = videoQuery
-                    .OrderByDescending(v => v.Viewers.Select(vv => vv.NumberOfVisit).Sum())
-                    .Take(20)
-                    .ToList();
-
-                // Tìm kiếm Channel (gần như giữ nguyên)
-                viewModel.Channels = await Context.Channels
+                // Lấy Channel (giữ nguyên logic cũ nhưng thêm AsNoTracking)
+                viewModel.Channels = await _context.Channels
+                    .AsNoTracking()
                     .Include(c => c.Subscribers)
                     .Where(c => c.ChannelName.ToLower().Contains(q))
                     .Take(5)
                     .ToListAsync();
             }
 
-            // ======================================================================
-            // 4. FUZZY SEARCH (nếu exact + filter không tìm thấy gì)
-            // ======================================================================
-            if (!viewModel.Videos.Any() && viewModel.Channels.Count == 0)
+            // --- 5. FUZZY SEARCH (CHỈ CHẠY KHI KHÔNG TÌM THẤY GÌ) ---
+            if ((viewModel.Videos == null || !viewModel.Videos.Any()) &&
+    (viewModel.Channels == null || !viewModel.Channels.Any()) &&
+    !string.IsNullOrWhiteSpace(query))
             {
-                var candidateVideos = await Context.Videos
-                    .Include(v => v.Channel)
+                // [TỐI ƯU]
+                // 1. Chỉ lấy 500 video mới nhất thay vì 2000 (DB lớn lấy 2000 rất chậm)
+                // 2. Chỉ Select đúng các cột cần thiết để so sánh chuỗi (Projection)
+                var candidateVideos = await _context.Videos
+                    .AsNoTracking()
                     .OrderByDescending(v => v.UploadDate)
-                    .Take(2000)
+                    .Take(500) // Giảm xuống 500
                     .Select(v => new
                     {
                         v.Id,
                         v.Title,
+                        // Lưu ý: Lấy thẳng ChannelName nếu có thể, tránh join nếu không cần thiết
+                        // Nếu buộc phải join:
                         ChannelName = v.Channel.ChannelName,
-                        v.UploadDate,
                         v.Description,
-                        v.Category.CategoryName,
-                        //v.RecognizedCelebrities
+                        CategoryName = v.Category.CategoryName
                     })
                     .ToListAsync();
 
-                var fuzzyResults = new List<FuzzySearchResult>();
+                var fuzzyResults = new List<Guid>();
 
-                foreach (var video in candidateVideos)
+                // Logic tính điểm Fuzzy (xử lý trên RAM -> Cực nhanh với 500 items)
+                foreach (var item in candidateVideos)
                 {
-                    double scoreTitle = FuzzySearchHelper.CalculateFuzzyScore(video.Title, query);
-                    double scoreChannel = FuzzySearchHelper.CalculateFuzzyScore(video.ChannelName, query);
-                    double scoreDescription = FuzzySearchHelper.CalculateFuzzyScore(video.Description, query);
-                    //double scoreCelebrity = FuzzySearchHelper.CalculateFuzzyScore(video.RecognizedCelebrities, query);
-                    double scoreCategory = FuzzySearchHelper.CalculateFuzzyScore(video.CategoryName, query);
+                    double scoreTitle = FuzzySearchHelper.CalculateFuzzyScore(item.Title, query);
+                    double scoreChannel = FuzzySearchHelper.CalculateFuzzyScore(item.ChannelName, query);
+                    // Có thể bỏ qua description nếu muốn nhanh hơn nữa
 
-                    double maxMetadataScore = Math.Max(scoreDescription, scoreCategory);
-                    //double finalScore = Math.Max(scoreTitle, scoreChannel);
-                    double finalScore = Math.Max(Math.Max(scoreTitle, scoreChannel), maxMetadataScore);
-
-                    if (finalScore >= 60)
+                    if (Math.Max(scoreTitle, scoreChannel) >= 60)
                     {
-                        fuzzyResults.Add(new FuzzySearchResult
-                        {
-                            VideoId = video.Id,
-                            Score = finalScore
-                        });
+                        fuzzyResults.Add(item.Id);
                     }
                 }
 
-                var topFuzzyIds = fuzzyResults
-                    .OrderByDescending(r => r.Score)
-                    .Take(20)
-                    .Select(r => r.VideoId)
-                    .ToList();
-
-                if (topFuzzyIds.Any())
+                if (fuzzyResults.Any())
                 {
-                    viewModel.Videos = await Context.Videos
+                    // Lấy thông tin chi tiết của các video tìm được
+                    viewModel.Videos = await _context.Videos
+                        .AsNoTracking()
                         .Include(v => v.Category)
                         .Include(v => v.Channel)
-                        .Where(v => topFuzzyIds.Contains(v.Id))
+                        .Where(v => fuzzyResults.Take(20).Contains(v.Id)) // Chỉ lấy top 20
                         .ToListAsync();
+
+                    // Gán Views từ Cache
+                    foreach (var v in viewModel.Videos) v.Views = v.CachedViews;
 
                     ViewBag.IsFuzzyMatch = true;
                 }
             }
 
-            // ======================================================================
-            // 5. RECOMMENDATIONS + LOẠI BỎ TRÙNG
-            // ======================================================================
-            var existingIds = viewModel.Videos.Select(v => v.Id).ToList(); // Lấy ID của kết quả tìm kiếm chính
+            // --- 6. LƯU KẾT QUẢ VÀO CACHE ---
+            // Chỉ cache phần kết quả tìm kiếm (Videos + Channels), không cache Recommendations
+            if (viewModel.Videos.Any() || viewModel.Channels.Any())
+            {
+                var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(10)) // Cache tồn tại 10 phút
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(2));  // Xóa nếu 2 phút không ai truy cập
+
+                _cache.Set(cacheKey, viewModel, cacheOptions);
+            }
+
+            // --- 7. RECOMMENDATIONS (LUÔN LẤY MỚI CHO TỪNG USER) ---
+            var existingIds = viewModel.Videos.Select(v => v.Id).ToList();
             viewModel.RecommendedVideos = await GetRecommendationsAsync(userId, existingIds);
 
+            // Lọc trùng lần cuối
             if (viewModel.Videos.Any())
             {
                 var resultIds = viewModel.Videos.Select(v => v.Id).ToHashSet();
@@ -280,117 +301,8 @@ namespace Web_Video.Controllers
                     .ToList();
             }
 
-            ViewBag.IsFallback = (viewModel.Videos.Count == 0 && viewModel.Channels.Count == 0);
+            ViewBag.IsFallback = (!viewModel.Videos.Any() && !viewModel.Channels.Any());
             return View(viewModel);
-        }
-        // Hàm Helper chuyển đổi chuỗi "mm:ss" hoặc "h:mm:ss" sang giây
-        private double ParseDurationToSeconds(string durationStr)
-        {
-            if (string.IsNullOrEmpty(durationStr)) return 0;
-            try
-            {
-                var parts = durationStr.Split(':').Select(double.Parse).ToList();
-                if (parts.Count == 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]; // h:mm:ss
-                if (parts.Count == 2) return parts[0] * 60 + parts[1]; // mm:ss
-                return 0;
-            }
-            catch { return 0; }
-        }
-        // --- CẬP NHẬT SearchByImage ---
-        [HttpPost]
-        public async Task<IActionResult> SearchByImage(IFormFile image)
-        {
-            var viewModel = new SearchViewModel();
-            string userId = User.Identity.IsAuthenticated ? User.GetUserId() : "";
-            ViewBag.IsFallback = false;
-
-            // Kiểm tra File Size/Format (giữ nguyên logic kiểm tra)
-            if (image == null || image.Length == 0 || image.Length > 5 * 1024 * 1024 || !new[] { ".jpg", ".jpeg", ".png" }.Contains(Path.GetExtension(image.FileName).ToLowerInvariant()))
-            {
-                ViewData["Query"] = "Hình ảnh không hợp lệ hoặc quá lớn (giới hạn 5MB)";
-                ViewBag.IsFallback = true;
-                var existingIds = viewModel.Videos.Select(v => v.Id).ToList();
-                viewModel.RecommendedVideos = await GetRecommendationsAsync(userId, existingIds);
-                return View("Index", viewModel);
-            }
-
-            // Chuyển đổi hình ảnh sang base64
-            string imageBase64;
-            using (var memoryStream = new MemoryStream())
-            {
-                await image.CopyToAsync(memoryStream);
-                imageBase64 = Convert.ToBase64String(memoryStream.ToArray());
-            }
-
-            List<string> recognizedCelebrities = new List<string>();
-
-            // 1. GỌI PYTHON NHẬN DIỆN (Port 5000)
-            try
-            {
-                var client = new HttpClient { BaseAddress = new Uri("http://localhost:5000/"), Timeout = TimeSpan.FromMinutes(5) };
-                var requestBody = new { image_base64 = imageBase64 };
-                var response = await client.PostAsJsonAsync("recognize_image", requestBody);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var result = await response.Content.ReadFromJsonAsync<Dictionary<string, string[]>>();
-                    recognizedCelebrities = (result?["celebrities"] ?? Array.Empty<string>()).ToList();
-                }
-                else
-                {
-                    ViewData["Query"] = "Lỗi khi nhận diện hình ảnh (Python API lỗi)";
-                    ViewBag.IsFallback = true;
-                }
-            }
-            catch (Exception)
-            {
-                ViewData["Query"] = "Lỗi khi xử lý tìm kiếm bằng hình ảnh (Timeout)";
-                ViewBag.IsFallback = true;
-            }
-
-            // 2. Xử lý kết quả tìm kiếm chính
-            if (recognizedCelebrities.Any())
-            {
-                var celebIds = await _context.Celebrities
-                    .Where(c => recognizedCelebrities.Contains(c.Name))
-                    .Select(c => c.Id)
-                    .ToListAsync();
-
-                viewModel.Videos = await _context.Videos
-                    .Include(v => v.Category)
-                    .Include(v => v.Channel)
-                    .Where(v => v.RecognizeCelebrities.Any(rc => celebIds.Contains(rc.CelebrityId ?? Guid.Empty)))
-                    .ToListAsync();
-
-                ViewData["Query"] = $"Tìm kiếm bằng hình ảnh: {string.Join(", ", recognizedCelebrities)}";
-
-                if (!viewModel.Videos.Any())
-                {
-                    // Trường hợp tìm được celeb nhưng DB không có video nào chứa celeb đó
-                    ViewBag.IsFallback = true;
-                }
-            }
-            else if (!ViewBag.IsFallback)
-            {
-                // Trường hợp Python nhận diện thành công nhưng không tìm thấy khuôn mặt nào
-                ViewData["Query"] = "Không nhận diện được người nổi tiếng";
-                ViewBag.IsFallback = true;
-            }
-
-            // 3. LUÔN LẤY ĐỀ XUẤT (RECOMMENDATION ENGINE)
-            var excludeIds = viewModel.Videos.Select(v => v.Id).ToList();
-            viewModel.RecommendedVideos = await GetRecommendationsAsync(userId, excludeIds);
-            // 4. LỌC TRÙNG LẶP
-            if (viewModel.Videos.Any())
-            {
-                var searchResultIds = viewModel.Videos.Select(v => v.Id).ToHashSet();
-                viewModel.RecommendedVideos = viewModel.RecommendedVideos
-                    .Where(v => !searchResultIds.Contains(v.Id))
-                    .Take(12)
-                    .ToList();
-            }
-
-            return View("Index", viewModel);
         }
         // Class DTO để nhận dữ liệu từ Client
         public class LoadMoreRequest

@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Web_Video.Extensions;
+using Web_Video.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,11 +52,11 @@ builder.Services.Configure<FormOptions>(options =>
     options.MultipartHeadersLengthLimit = int.MaxValue;
 });
 // Cấu hình để phục vụ file .vtt với MIME Type chính xác
-//var provider = new FileExtensionContentTypeProvider();
-//// Thêm ánh xạ cho .vtt
-//provider.Mappings[".vtt"] = "text/vtt";
-//builder.Services.AddSingleton<IContentTypeProvider>(provider); // Đăng ký provider
-
+var provider = new FileExtensionContentTypeProvider();
+// Thêm ánh xạ cho .vtt
+provider.Mappings[".vtt"] = "text/vtt";
+builder.Services.AddSingleton<IContentTypeProvider>(provider); // Đăng ký provider
+builder.Services.AddHostedService<VideoUpdateService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -66,12 +67,12 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+//app.UseStaticFiles();
 // SỬ DỤNG PROVIDER ĐÃ CẤU HÌNH
-//app.UseStaticFiles(new StaticFileOptions
-//{
-//    ContentTypeProvider = app.Services.GetRequiredService<IContentTypeProvider>()
-//});
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = app.Services.GetRequiredService<IContentTypeProvider>()
+});
 
 
 app.UseRouting();
