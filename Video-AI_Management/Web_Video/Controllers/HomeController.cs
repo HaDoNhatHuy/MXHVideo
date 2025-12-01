@@ -161,8 +161,16 @@ namespace Web_Video.Controllers
 
                         // ❌ BỎ Skip/Take (Python đã phân trang)
                         // Trả toàn bộ danh sách AI trả về
+                        //return Json(new ApiResponse(200, result: new PaginatedResult<VideoForHomeGridDto>(
+                        //    orderedVideos, orderedVideos.Count, 1, orderedVideos.Count, 1)));
                         return Json(new ApiResponse(200, result: new PaginatedResult<VideoForHomeGridDto>(
-                            orderedVideos, orderedVideos.Count, 1, orderedVideos.Count, 1)));
+                                orderedVideos,
+                                // Thiết lập tổng số mục lớn (ví dụ 1000) để đảm bảo hasMore vẫn là TRUE cho lần tải sau
+                                totalItemsCount: 1000,
+                                pageNumber: parameters.PageNumber, // Sử dụng PageNumber hiện tại
+                                pageSize: parameters.PageSize,
+                                totalPages: (int)Math.Ceiling(1000.0 / parameters.PageSize)
+                            )));
                     }
                 }
             }
@@ -240,15 +248,17 @@ namespace Web_Video.Controllers
             }));
         }
         [Authorize(Roles = $"{SD.UserRole},{SD.AdminRole}")]
-        [HttpGet]
-        public async Task<IActionResult> GetHistory(int pageNumber = 1, int pageSize = 12)
+        [HttpPost] // Thay thế [HttpGet]
+                   // Đọc tham số phân trang từ body (JSON object)
+        public async Task<IActionResult> GetHistory([FromBody] HomeParameters parameters)
         {
+            // Dùng parameters.PageNumber và parameters.PageSize
             var query = Context.VideoViews
                 .Where(x => x.AppUserId == User.GetUserId())
-                .OrderByDescending(x => x.LastVisit)  // Sắp xếp mới nhất đầu tiên
+                .OrderByDescending(x => x.LastVisit)
                 .Select(x => new
                 {
-                    VideoViewId = x.Id,  // Để xóa entry cụ thể
+                    VideoViewId = x.Id,
                     Id = x.VideoId,
                     x.Video.Title,
                     x.Video.Thumbnail,
@@ -256,14 +266,14 @@ namespace Web_Video.Controllers
                     ChannelId = x.Video.Channel.Id,
                     LastVisitTimeAgo = SD.TimeAgo(x.LastVisit),
                     LastVisit = x.LastVisit,
-                    GroupName = GetDateGroupName(x.LastVisit),  // Thêm GroupName cho JS
-                    Views = x.Video.Viewers.Select(v => v.NumberOfVisit).Sum(),  // Tổng views
+                    GroupName = GetDateGroupName(x.LastVisit),
+                    Views = x.Video.Viewers.Select(v => v.NumberOfVisit).Sum(),
                     Duration = x.Video.Duration,
                     Progress = x.ProgressSeconds ?? 0
                 });
 
-            // Dùng PaginatedList để tự động tính pagination
-            var paginatedList = await PaginatedList<object>.CreateAsync(query, pageNumber, pageSize);
+            // Cập nhật lại logic phân trang để sử dụng tham số từ body
+            var paginatedList = await PaginatedList<object>.CreateAsync(query, parameters.PageNumber, parameters.PageSize);
 
             // Chuyển sang PaginatedResult để trả JSON
             var paginatedResults = new PaginatedResult<object>(
@@ -273,7 +283,6 @@ namespace Web_Video.Controllers
                 paginatedList.PageSize,
                 paginatedList.TotalPages
             );
-
             return Json(new ApiResponse(200, result: paginatedResults));
         }
 
@@ -288,9 +297,11 @@ namespace Web_Video.Controllers
         }
 
         [Authorize(Roles = $"{SD.UserRole},{SD.AdminRole}")]
-        [HttpGet]
-        public async Task<IActionResult> GetLikesDislikesVideos(bool liked, int pageNumber = 1, int pageSize = 12)
+        [HttpPost] // Thay thế [HttpGet]
+                   // 'liked' vẫn lấy từ query string. parameters lấy từ body.
+        public async Task<IActionResult> GetLikesDislikesVideos(bool liked, [FromBody] HomeParameters parameters)
         {
+            // Sử dụng parameters.PageNumber và parameters.PageSize
             var query = Context.LikeDislikes
                 .Where(x => x.AppUserId == User.GetUserId() && x.Liked == liked)
                 .Select(x => new
@@ -302,16 +313,19 @@ namespace Web_Video.Controllers
                     ChannelId = x.Video.Channel.Id,
                     CreatedAtTimeAgo = SD.TimeAgo(x.Video.UploadDate),
                     x.Video.UploadDate,
-                    Views = x.Video.Viewers.Select(v => v.NumberOfVisit).Sum(),  // Tổng views
+                    Views = x.Video.Viewers.Select(v => v.NumberOfVisit).Sum(), // Tổng views [5]
                 });
+
             var totalItems = await query.CountAsync();
             var items = await query
                 .OrderByDescending(x => x.UploadDate)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
+                // Cập nhật Skip và Take để sử dụng tham số từ body
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
                 .ToListAsync();
-            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
-            var paginatedResults = new PaginatedResult<object>(items, totalItems, pageNumber, pageSize, totalPages);
+
+            var totalPages = (int)Math.Ceiling((double)totalItems / parameters.PageSize);
+            var paginatedResults = new PaginatedResult<object>(items, totalItems, parameters.PageNumber, parameters.PageSize, totalPages);
             return Json(new ApiResponse(200, result: paginatedResults));
         }
 

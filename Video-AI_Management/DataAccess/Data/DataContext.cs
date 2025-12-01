@@ -35,6 +35,8 @@ namespace DataAccess.Data
             builder.ApplyConfiguration(new VideoViewConfig());
             builder.ApplyConfiguration(new RecognizeCelebritiesConfig());
             builder.ApplyConfiguration(new PlaylistItemConfig());
+            // THÊM: Cấu hình mới cho UserBlock
+            builder.ApplyConfiguration(new UserBlockConfig());
         }
     }
 }
