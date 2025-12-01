@@ -13,6 +13,8 @@ namespace Web_Video.ViewModels.Playlist
         [Required(ErrorMessage = "Tên danh sách phát là bắt buộc")]
         [StringLength(100, MinimumLength = 3, ErrorMessage = "Tên phải từ {2} đến {1} ký tự")]
         public string Name { get; set; }
+        // THÊM: Trường Privacy (0: Public, 1: Private, 2: Unlisted)
+        public int Privacy { get; set; }
     }
 
     // DTO để hiển thị danh sách Playlist của người dùng
@@ -22,6 +24,8 @@ namespace Web_Video.ViewModels.Playlist
         public string Name { get; set; }
         public int VideoCount { get; set; }
         public string CreatedAtTimeAgo { get; set; }
+        // THÊM: Trường Privacy để sử dụng khi mở modal chỉnh sửa
+        public int Privacy { get; set; }
         public string FirstVideoThumbnail { get; set; } // Thumbnail của video đầu tiên
         public string Description { get; set; }  // Add this
     }

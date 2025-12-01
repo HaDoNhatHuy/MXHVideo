@@ -11,7 +11,14 @@
         <!-- Header Section -->
         <div class="page-header">
             <h1 class="page-title">Danh sách phát</h1>
+            <!-- Nút Tạo danh sách phát mới -->
+            <button type="button" class="btn btn-danger btn-sm rounded-pill" onclick="openCreateModal()">
+                <i class="fas fa-plus me-1"></i> Tạo danh sách phát mới
+            </button>
         </div>
+
+        @* QUAN TRỌNG: Thêm Anti-Forgery Token cho các request POST/EDIT *@
+        @Html.AntiForgeryToken()
 
         <!-- Playlists Grid -->
         <div id="playlistsContainer" class="playlists-grid">
@@ -22,6 +29,46 @@
                     </svg>
                 </div>
                 <p class="loading-text">Đang tải...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tạo/Chỉnh sửa Playlist -->
+<div class="modal fade" id="createEditPlaylistModal" tabindex="-1" role="dialog" aria-labelledby="createEditPlaylistModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Tạo danh sách phát mới</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="playlistForm">
+                    <input type="hidden" id="playlistIdInput" name="Id" value="" />
+                    <div class="mb-3">
+                        <label for="playlistNameInput" class="form-label">Tên danh sách phát <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="playlistNameInput" name="Name" placeholder="Nhập tên danh sách phát (Ví dụ: Video yêu thích)" required maxlength="100">
+                        <div class="text-danger mt-1" id="playlistNameError"></div>
+                    </div>
+
+                    <!-- CHỌN PRIVACY -->
+                    <div class="mb-3">
+                        <label for="playlistPrivacySelect" class="form-label">Quyền riêng tư</label>
+                        <select class="form-control" id="playlistPrivacySelect" name="Privacy">
+                            <option value="0">Công khai (Public)</option>
+                            <option value="1">Riêng tư (Private)</option>
+                            <option value="2">Không công khai (Unlisted)</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="btnSavePlaylist">
+                    <i class="fas fa-plus me-1" id="saveIcon"></i> <span id="saveText">Tạo</span>
+                </button>
             </div>
         </div>
     </div>
@@ -46,6 +93,9 @@
             margin-bottom: 32px;
             padding: 0 0 24px 0;
             border-bottom: 1px solid #E5E5E5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .page-title {
@@ -69,6 +119,7 @@
             cursor: pointer;
             display: flex;
             flex-direction: column;
+            position: relative;
         }
 
         /* Thumbnail Container */
@@ -153,6 +204,32 @@
                 letter-spacing: 0.5px;
             }
 
+        /* Edit Button */
+        .edit-playlist-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #CCCCCC;
+            border-radius: 4px;
+            padding: 6px 10px;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.2s ease;
+            z-index: 10;
+            font-size: 12px;
+        }
+
+        .playlist-card:hover .edit-playlist-btn {
+            opacity: 1;
+        }
+
+        .edit-playlist-btn:hover {
+            background: #FFFFFF;
+            border-color: #065FD4;
+            color: #065FD4;
+        }
+
         /* Playlist Info */
         .playlist-info {
             display: flex;
@@ -191,10 +268,21 @@
             align-items: center;
             gap: 4px;
             line-height: 18px;
+            flex-wrap: wrap;
         }
 
             .playlist-meta span {
                 display: inline-block;
+            }
+
+        .privacy-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+            .privacy-badge i {
+                font-size: 10px;
             }
 
         /* Action Button - YouTube Style */
@@ -361,6 +449,9 @@
         .page-header {
             margin-bottom: 24px;
             padding-bottom: 16px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
         }
 
         .page-title {
@@ -390,77 +481,228 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
-            loadUserPlaylists();
-        });
+        // Hàm utility cho notifications
+        function displayNotification(isSuccess, title, message, type) {
+            if (typeof toastr !== "undefined") {
+                if (isSuccess) toastr.success(message, title);
+                else toastr.error(message, title);
+            } else {
+                alert(`${title}: ${message}`);
+            }
+        }
 
-        function loadUserPlaylists() {
-            const container = $('#playlistsContainer');
-            const loading = $('#loadingIndicator');
+        $(document).ready(function () {
+            const $modal = $('#createEditPlaylistModal');
+            const $idInput = $('#playlistIdInput');
+            const $nameInput = $('#playlistNameInput');
+            const $privacySelect = $('#playlistPrivacySelect');
+            const $saveBtn = $('#btnSavePlaylist');
+            const $playlistsContainer = $('#playlistsContainer');
 
-            loading.show();
-            container.empty().append(loading);
+            // Lấy token từ @Html.AntiForgeryToken()
+            const token = $('input[name="__RequestVerificationToken"]').val();
 
-            $.ajax({
-                url: "/Playlist/GetUserPlaylists",
-                type: "GET",
-                success: function (data) {
-                    loading.hide();
+            // =======================================================
+            // 1. CHỨC NĂNG MỞ MODAL VÀ THIẾT LẬP TRẠNG THÁI
+            // =======================================================
 
-                    if (data.isSuccess && data.result.length > 0) {
-                        let html = '';
+            // A. Hàm mở Modal Tạo mới
+            window.openCreateModal = function () {
+                $('#modalTitle').text('Tạo danh sách phát mới');
+                $idInput.val('');
+                $nameInput.val('');
+                $privacySelect.val('0'); // Mặc định Public
+                $('#saveText').text('Tạo');
+                $('#saveIcon').removeClass('fa-save').addClass('fa-plus');
+                $('#playlistNameError').empty();
+                $saveBtn.prop('disabled', false);
+                $modal.modal('show');
+            };
 
-                        data.result.forEach(p => {
-                            const videoCountText = p.videoCount === 1 ? '1 video' : `${p.videoCount} videos`;
-                            const thumbnailUrl = p.firstVideoThumbnail || '/img/playlist_2.jpg';
+            // B. Hàm mở Modal Chỉnh sửa
+            window.openEditModal = function (id, name, privacy) {
+                $('#modalTitle').text(`Chỉnh sửa Playlist: ${name}`);
+                $idInput.val(id);
+                $nameInput.val(name);
+                $privacySelect.val(privacy.toString());
+                $('#saveText').text('Lưu');
+                $('#saveIcon').removeClass('fa-plus').addClass('fa-save');
+                $('#playlistNameError').empty();
+                $saveBtn.prop('disabled', false);
+                $modal.modal('show');
+            };
 
-                            html += `
-                                <div class="playlist-card">
-                                    <div class="playlist-thumbnail" onclick="location.href='/Playlist/WatchPlaylist/${p.id}'">
-                                        <img src="${thumbnailUrl}" alt="${p.name}">
-                                        <div class="playlist-count">
-                                            <i class="fas fa-list"></i>
-                                            <span>${p.videoCount}</span>
-                                        </div>
-                                        <div class="playlist-overlay">
-                                            <div class="playlist-hover-info">
-                                                <i class="fas fa-play-circle"></i>
-                                                <span>PHÁT TẤT CẢ</span>
+            // =======================================================
+            // 2. XỬ LÝ LƯU (TẠO MỚI HOẶC CHỈNH SỬA)
+            // =======================================================
+
+            $saveBtn.on('click', function (e) {
+                e.preventDefault();
+
+                const playlistId = $idInput.val();
+                const isEdit = playlistId && playlistId !== "00000000-0000-0000-0000-000000000000";
+                const name = $nameInput.val().trim();
+                const privacy = parseInt($privacySelect.val());
+                const apiUrl = isEdit ? '/Playlist/EditPlaylist' : '/Playlist/CreatePlaylist';
+
+                // Validation (3-100 ký tự)
+                if (!name || name.length < 3 || name.length > 100) {
+                    $('#playlistNameError').text('Tên danh sách phát phải từ 3 đến 100 ký tự.');
+                    return;
+                }
+                $('#playlistNameError').empty();
+
+                $saveBtn.prop('disabled', true);
+                const originalText = $('#saveText').text();
+                $('#saveText').html('<i class="fas fa-spinner fa-spin me-1"></i> Đang xử lý...');
+
+                const dataPayload = {
+                    Id: playlistId,
+                    Name: name,
+                    Privacy: privacy
+                };
+
+                // Gọi API
+                $.ajax({
+                    url: apiUrl,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(dataPayload),
+                    headers: {
+                        'RequestVerificationToken': token
+                    },
+                    success: function (response) {
+                        if (response.statusCode === 200 || response.statusCode === 201) {
+                            displayNotification(true, response.title || 'Thành công', response.message, 'toastr');
+                            $modal.modal('hide');
+                            loadUserPlaylists();
+                        } else if (response.statusCode === 400) {
+                            $('#playlistNameError').text(response.message || 'Dữ liệu không hợp lệ.');
+                            displayNotification(false, 'Lỗi', 'Vui lòng kiểm tra lại thông tin.', 'toastr');
+                        } else {
+                            displayNotification(false, 'Lỗi', response.message || 'Lỗi server không xác định.', 'toastr');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Lỗi khi lưu Playlist:", error);
+                        displayNotification(false, 'Lỗi', 'Không thể kết nối đến server.', 'toastr');
+                    },
+                    complete: function () {
+                        $saveBtn.prop('disabled', false);
+                        $('#saveText').text(originalText);
+                    }
+                });
+            });
+
+            // =======================================================
+            // 3. LOGIC TẢI VÀ HIỂN THỊ DANH SÁCH
+            // =======================================================
+
+            // Helper để chuyển Privacy Code sang Icon/Text
+            function getPrivacyLabel(privacy) {
+                switch (privacy) {
+                    case 1:
+                        return '<span class="privacy-badge text-danger">Riêng tư <i class="fas fa-lock"></i></span>';
+                    case 2:
+                        return '<span class="privacy-badge text-warning">Không công khai <i class="fas fa-link"></i></span>';
+                    case 0:
+                    default:
+                        return '<span class="privacy-badge text-success">Công khai <i class="fas fa-globe"></i></span>';
+                }
+            }
+
+            // Hàm Tải và Hiển thị Playlist
+            function loadUserPlaylists() {
+                const loading = $('#loadingIndicator');
+                loading.show();
+                $playlistsContainer.empty().append(loading);
+
+                $.ajax({
+                    url: "/Playlist/GetUserPlaylists",
+                    type: "GET",
+                    success: function (data) {
+                        loading.hide();
+
+                        if (data.isSuccess && data.result && data.result.length > 0) {
+                            let html = '';
+
+                            data.result.forEach(p => {
+                                const videoCountText = p.videoCount === 1 ? '1 video' : `${p.videoCount} videos`;
+                                const thumbnailUrl = p.firstVideoThumbnail || '/img/playlist_2.jpg';
+                                const privacyHtml = getPrivacyLabel(p.privacy);
+
+                                html += `
+                                    <div class="playlist-card">
+                                        <div class="playlist-thumbnail" onclick="location.href='/Playlist/WatchPlaylist/${p.id}'">
+                                            <img src="${thumbnailUrl}" alt="${p.name}">
+                                            <div class="playlist-count">
+                                                <i class="fas fa-list"></i>
+                                                <span>${p.videoCount}</span>
+                                            </div>
+                                            <div class="playlist-overlay">
+                                                <div class="playlist-hover-info">
+                                                    <i class="fas fa-play-circle"></i>
+                                                    <span>PHÁT TẤT CẢ</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="playlist-info">
-                                        <h3 class="playlist-title">
-                                            <a href="/Playlist/WatchPlaylist/${p.id}">${p.name}</a>
-                                        </h3>
-                                        <p class="playlist-meta">
-                                            <span>${videoCountText}</span>
-                                            <span>•</span>
-                                            <span>${p.createdAtTimeAgo}</span>
-                                        </p>
-                                        <button class="view-playlist-btn" onclick="event.stopPropagation(); location.href='/Playlist/FullList/${p.id}'">
-                                            Xem toàn bộ danh sách
+                                        <!-- Nút Chỉnh sửa -->
+                                        <button class="btn btn-sm edit-playlist-btn"
+                                                data-id="${p.id}"
+                                                data-name="${p.name}"
+                                                data-privacy="${p.privacy}"
+                                                title="Chỉnh sửa Playlist"
+                                                onclick="event.stopPropagation();">
+                                            <i class="fas fa-pencil-alt"></i>
                                         </button>
+                                        <div class="playlist-info">
+                                            <h3 class="playlist-title">
+                                                <a href="/Playlist/WatchPlaylist/${p.id}">${p.name}</a>
+                                            </h3>
+                                            <p class="playlist-meta">
+                                                <span>${videoCountText}</span>
+                                                <span>•</span>
+                                                <span>${p.createdAtTimeAgo}</span>
+                                                <span>•</span>
+                                                ${privacyHtml}
+                                            </p>
+                                            <button class="view-playlist-btn" onclick="event.stopPropagation(); location.href='/Playlist/FullList/${p.id}'">
+                                                Xem toàn bộ danh sách
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            `;
-                        });
+                                `;
+                            });
 
-                        container.html(html);
-                    } else {
-                        container.html(`
-                            <div class="empty-state">
-                                <i class="fas fa-list-ul"></i>
-                                <p>Bạn chưa có danh sách phát nào.</p>
-                            </div>
-                        `);
+                            $playlistsContainer.html(html);
+                        } else {
+                            $playlistsContainer.html(`
+                                <div class="empty-state">
+                                    <i class="fas fa-list-ul"></i>
+                                    <p>Bạn chưa có danh sách phát nào.</p>
+                                </div>
+                            `);
+                        }
+                    },
+                    error: function () {
+                        loading.hide();
+                        $playlistsContainer.html('<div class="error-state"><i class="fas fa-exclamation-circle"></i>Lỗi khi tải danh sách phát. Vui lòng thử lại.</div>');
                     }
-                },
-                error: function () {
-                    loading.hide();
-                    container.html('<div class="error-state"><i class="fas fa-exclamation-circle"></i>Lỗi khi tải danh sách phát. Vui lòng thử lại.</div>');
-                }
+                });
+            }
+
+            // Gắn sự kiện cho nút Chỉnh sửa (được tạo động)
+            $(document).on('click', '.edit-playlist-btn', function (e) {
+                e.stopPropagation();
+                const id = $(this).data('id');
+                const name = $(this).data('name');
+                const privacy = $(this).data('privacy');
+                window.openEditModal(id, name, privacy);
             });
-        }
+
+            // Tải danh sách khi trang load lần đầu
+            loadUserPlaylists();
+        });
     </script>
+    <partial name="_ValidationScriptsPartial" />
 }

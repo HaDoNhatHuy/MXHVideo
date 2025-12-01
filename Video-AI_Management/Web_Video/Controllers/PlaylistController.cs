@@ -152,13 +152,47 @@ namespace Web_Video.Controllers
                 AppUserId = userId,
                 Description = "",
                 CreatedDate = DateTime.UtcNow,
-                Privacy = 0
+                Privacy = model.Privacy
             };
 
             _unitOfWork.PlaylistRepo.Add(newPlaylist);
             await _unitOfWork.CompleteAsync();
 
             return Json(new ApiResponse(201, "Created", "Đã tạo danh sách phát thành công.", new { id = newPlaylist.Id, name = newPlaylist.Name }));
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditPlaylist([FromBody] PlaylistAddEditViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                return Json(new ApiResponse(400, message: $"Dữ liệu không hợp lệ: {string.Join("; ", errors)}"));
+            }
+
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new ApiResponse(401, message: "Không xác thực được người dùng."));
+            }
+
+            // 1. Tìm Playlist theo ID và kiểm tra quyền sở hữu
+            var existingPlaylist = await _unitOfWork.PlaylistRepo.GetFirstOrDefaultAsync(p =>
+                p.Id == model.Id && p.AppUserId == userId); // Dùng _unitOfWork.PlaylistRepo [7]
+
+            if (existingPlaylist == null)
+            {
+                return Json(new ApiResponse(404, message: "Không tìm thấy Playlist hoặc bạn không có quyền chỉnh sửa."));
+            }
+
+            // 2. Cập nhật thông tin
+            existingPlaylist.Name = model.Name.Trim();
+            existingPlaylist.Privacy = model.Privacy; // CẬP NHẬT PRIVACY
+
+            // 3. Lưu
+            await _unitOfWork.CompleteAsync();
+
+            return Json(new ApiResponse(200, "Updated", $"Đã cập nhật Playlist '{existingPlaylist.Name}' thành công."));
         }
 
         // API lấy danh sách Playlist của người dùng hiện tại
@@ -179,6 +213,8 @@ namespace Web_Video.Controllers
                     Id = p.Id,
                     Name = p.Name,
                     CreatedAtTimeAgo = SD.TimeAgo(p.CreatedDate),
+                    // THÊM: Privacy
+                    Privacy = p.Privacy,
                     VideoCount = p.PlaylistItems.Count(),
                     FirstVideoThumbnail = p.PlaylistItems
                         .OrderBy(pi => pi.OrderIndex)

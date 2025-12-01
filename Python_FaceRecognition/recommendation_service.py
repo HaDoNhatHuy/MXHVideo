@@ -43,18 +43,8 @@ def train_model_background():
     print(f"[{datetime.now()}] --- BẮT ĐẦU RETRAIN MODEL ---")
     try:
         # 1. Load Data
-        query_videos = """
-SELECT 
-    v.Id,
-    v.Title,
-    v.CategoryId,
-    v.RecognizedCelebrities,
-    v.Duration,
-    v.ChannelId,
-    c.Name AS CategoryName
-FROM Video v
-LEFT JOIN Category c ON v.CategoryId = c.Id
-"""
+        query_videos = "SELECT Id, Title, CategoryId, RecognizedCelebrities, Duration, ChannelId FROM Video"
+
         
         # Lấy dữ liệu thô để tính điểm
         query_raw_interactions = """
@@ -118,9 +108,8 @@ LEFT JOIN Category c ON v.CategoryId = c.Id
 
         # 2. Content-Based (TF-IDF)
         df_videos['soup'] = (
-            df_videos['Title'].fillna('') + ' ' +
-            df_videos['RecognizedCelebrities'].fillna('') + ' ' +
-            df_videos['CategoryName'].fillna('')
+            df_videos['Title'].fillna('') + ' ' + 
+            df_videos['RecognizedCelebrities'].fillna('')
         )
         
         tfidf = TfidfVectorizer(stop_words='english', max_features=5000)

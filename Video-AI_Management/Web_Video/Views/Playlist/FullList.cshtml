@@ -23,6 +23,16 @@
                     <span class="meta-item">@Model.PlaylistInfo.CreatedAtTimeAgo</span>
                 </div>
             </div>
+            <!-- THÊM NÚT XÓA TẠI ĐÂY -->
+            <div class="playlist-actions-full mt-3">
+                @* LƯU Ý: Nút này chỉ hiển thị trên trang FullList (grid view) *@
+                <button id="deletePlaylistBtn"
+                        class="btn btn-danger btn-sm rounded-pill"
+                        data-playlist-id="@Model.PlaylistInfo.Id"
+                        data-playlist-name="@Model.PlaylistInfo.Name">
+                    <i class="fas fa-trash me-1"></i> Xóa Toàn Bộ Playlist
+                </button>
+            </div>
         </div>
 
         <!-- Video List -->
@@ -199,7 +209,7 @@
         .video-info {
             /* Xóa hoặc comment phần này */
         }
-       
+
         /* Điều chỉnh Item khi có nút xóa */
         .video-info {
             flex-grow: 1;
@@ -287,96 +297,87 @@
 
         /* Responsive Design */
         @@media (max-width: 992px) {
-            .playlist-container
+            .playlist-container {
+                padding: 20px 16px 40px;
+            }
 
-        {
-            padding: 20px 16px 40px;
-        }
+            .playlist-title {
+                font-size: 20px;
+            }
 
-        .playlist-title {
-            font-size: 20px;
-        }
-
-        .thumbnail-wrapper {
-            width: 148px;
-        }
-
+            .thumbnail-wrapper {
+                width: 148px;
+            }
         }
 
         @@media (max-width: 768px) {
-            .playlist-container
+            .playlist-container {
+                padding: 16px 12px 32px;
+            }
 
-        {
-            padding: 16px 12px 32px;
-        }
+            .playlist-header {
+                padding: 0 0 16px 0;
+                margin-bottom: 16px;
+            }
 
-        .playlist-header {
-            padding: 0 0 16px 0;
-            margin-bottom: 16px;
-        }
+            .playlist-title {
+                font-size: 18px;
+            }
 
-        .playlist-title {
-            font-size: 18px;
-        }
+            .playlist-meta {
+                font-size: 13px;
+            }
 
-        .playlist-meta {
-            font-size: 13px;
-        }
+            .video-item {
+                gap: 8px;
+                padding: 6px;
+            }
 
-        .video-item {
-            gap: 8px;
-            padding: 6px;
-        }
+            .video-index {
+                width: 20px;
+                font-size: 13px;
+            }
 
-        .video-index {
-            width: 20px;
-            font-size: 13px;
-        }
+            .thumbnail-wrapper {
+                width: 120px;
+            }
 
-        .thumbnail-wrapper {
-            width: 120px;
-        }
+            .video-title {
+                font-size: 13px;
+            }
 
-        .video-title {
-            font-size: 13px;
-        }
-
-        .video-meta {
-            font-size: 11px;
-        }
-
+            .video-meta {
+                font-size: 11px;
+            }
         }
 
         @@media (max-width: 480px) {
-            .playlist-container
+            .playlist-container {
+                padding: 12px 8px 24px;
+            }
 
-        {
-            padding: 12px 8px 24px;
-        }
+            .playlist-title {
+                font-size: 16px;
+            }
 
-        .playlist-title {
-            font-size: 16px;
-        }
+            .video-item {
+                flex-direction: column;
+                gap: 8px;
+            }
 
-        .video-item {
-            flex-direction: column;
-            gap: 8px;
-        }
+            .video-index {
+                width: 100%;
+                text-align: left;
+                padding-top: 0;
+            }
 
-        .video-index {
-            width: 100%;
-            text-align: left;
-            padding-top: 0;
-        }
+            .thumbnail-wrapper {
+                width: 100%;
+            }
 
-        .thumbnail-wrapper {
-            width: 100%;
-        }
-
-        .video-details {
-            padding-top: 0;
-        }
-
+            .video-details {
+                padding-top: 0;
+            }
         }
     </style>
 }
@@ -393,7 +394,67 @@
                 resolve(result);
             });
         }
-            $(document).ready(function () {
+        $(document).ready(function () {
+
+            $('#deletePlaylistBtn').on('click', function(e) {
+            e.preventDefault();
+            // QUAN TRỌNG: Ngăn chặn bất kỳ sự kiện nào khác chạy
+            e.stopImmediatePropagation();
+
+            const $btn = $(this);
+            const playlistId = $btn.data('playlist-id');
+            const playlistName = $btn.data('playlist-name');
+            const token = $('input[name="__RequestVerificationToken"]').val();
+
+            if (!token) {
+                 displayNotification(false, 'Lỗi', 'Không tìm thấy Anti-Forgery Token. Đảm bảo bạn có @Html.AntiForgeryToken() trong View.', 'toastr');
+                 return;
+            }
+
+            confirmation(`CẢNH BÁO: Bạn có chắc chắn muốn xóa vĩnh viễn Playlist "${playlistName}" không?`)
+                .then(function(confirmed) {
+                    if (confirmed) {
+                        const originalHtml = $btn.html();
+                        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Đang xóa...');
+
+                        // GỌI API XÓA PLAYLIST
+                        $.ajax({
+                            url: '/Playlist/DeletePlaylist/' + playlistId,
+                            type: 'POST',
+                            // Cần phải gửi Anti-Forgery Token qua Header
+                            headers: {
+                                'RequestVerificationToken': token
+                            },
+                            // Thiết lập dataType để jQuery biết phản hồi phải là JSON
+                            dataType: 'json',
+                            success: function (response) {
+                                if (response && response.statusCode === 200) {
+                                    displayNotification(true, response.title, response.message, 'toastr');
+                                    // Chuyển hướng sau khi xóa thành công
+                                    setTimeout(() => {
+                                        window.location.href = '/Playlist/Index';
+                                    }, 1000);
+                                } else {
+                                    displayNotification(false, 'Lỗi', response.message || 'Lỗi server không xác định.', 'toastr');
+                                    $btn.prop('disabled', false).html(originalHtml);
+                                }
+                            },
+                            error: function (xhr, status, error) {
+                                // Xử lý lỗi 500 hoặc lỗi mạng
+                                let msg = 'Lỗi kết nối hoặc Server gặp sự cố (500 Internal Error).';
+                                if (xhr.status === 404) {
+                                    msg = 'Lỗi: Không tìm thấy Playlist.';
+                                } else if (xhr.responseText && xhr.responseText.includes('The required anti-forgery cookie')) {
+                                    msg = 'Lỗi bảo mật: Thiếu Anti-Forgery Token.';
+                                }
+                                displayNotification(false, 'Lỗi Xóa Playlist', msg, 'toastr');
+                                $btn.prop('disabled', false).html(originalHtml);
+                            }
+                        });
+                    }
+                });
+        });
+
             // Ngăn chặn sự kiện click lan truyền từ nút xóa
             $(document).on('click', '.remove-playlist-item-btn', function (e) {
                 e.preventDefault();
