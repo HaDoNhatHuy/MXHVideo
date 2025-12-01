@@ -388,14 +388,28 @@ else
             isLoading = true;
             $('#videosGrid').append('<div class="video-card loading-skeleton" style="height: 250px;"></div>'.repeat(pageSize));
 
+            // BƯỚC 1: Thu thập các ID đã hiển thị
+            let excludedIds = [];
+            // Chỉ lấy các thẻ video không phải là skeleton loading
+            $('#videosGrid .video-card').not('.loading-skeleton').each(function () {
+                const videoId = $(this).data('video-id');
+                if (videoId) excludedIds.push(videoId);
+            });
+
+            // BƯỚC 2: Định nghĩa tham số gửi lên server
+            const parameters = {
+                pageNumber: pageNumber,
+                pageSize: pageSize,
+                sortBy: sortBy,
+                excludeIds: excludedIds // Gửi mảng ID đã hiển thị
+            };
+
+
             $.ajax({
                 url: "/Channel/GetVideosForChannelGrid",
-                type: "GET",
-                data: {
-                    pageNumber: pageNumber,
-                    pageSize: pageSize,
-                    sortBy: sortBy
-                },
+                type: "POST",
+                contentType: 'application/json',
+                data: JSON.stringify(parameters),
                 success: function (data) {
                     $('.loading-skeleton').remove();
                     if (!data || typeof data !== 'object') {
@@ -442,7 +456,8 @@ else
             let videoItems = '';
             if (videos.length > 0) {
                 videos.forEach((v) => {
-                    videoItems += '<div class="video-card">';
+                    // CODE MỚI CẦN THÊM data-video-id:
+                    videoItems += `<div class="video-card" data-video-id="${v.id}">`;
                     videoItems += '<div class="video-thumbnail-wrapper">';
                     videoItems += `<a href="/Video/Watch/${v.id}"><img src="${v.thumbnail || '/images/default-thumbnail.jpg'}" alt="${v.title}" class="video-thumbnail"></a>`;
                     videoItems += `<span class="video-duration">${v.duration || '0:00'}</span>`;

@@ -1,4 +1,5 @@
 ﻿using DataAccess.Data;
+using Database_Video.DTOs;
 using Database_Video.Entities;
 using Database_Video.IRepo;
 using Database_Video.Pagination;
@@ -441,69 +442,83 @@ namespace Web_Video.Controllers
             }
             return "Other";
         }
+        // Đặt DTO này trong nơi chứa DTOs hoặc trong ChannelController.cs
+        public class ChannelVideosParameters
+        {
+            public int PageNumber { get; set; } = 1;
+            public int PageSize { get; set; } = 10;
+            public string SortBy { get; set; } = "";
+            public List<Guid> ExcludeIds { get; set; } = new List<Guid>(); // QUAN TRỌNG
+        }
 
-
-        [HttpGet]
-        public async Task<IActionResult> GetVideosForChannelGrid(int pageNumber = 1, int pageSize = 10, string sortBy = "")
+        [HttpPost]
+        public async Task<IActionResult> GetVideosForChannelGrid([FromBody] ChannelVideosParameters parameters)
         {
             try
             {
-                Console.WriteLine($"GetVideosForChannelGrid called: pageNumber={pageNumber}, pageSize={pageSize}, sortBy={sortBy}");
                 var userId = User.GetUserId();
-                Console.WriteLine($"UserId: {userId}");
-                if (string.IsNullOrEmpty(userId))
+                // Lấy ChannelId của người dùng hiện tại [6]
+                var channelId = await UnitOfWork.ChannelRepo.GetChannelIdByUserId(userId);
+
+                if (channelId == Guid.Empty)
                 {
-                    Console.WriteLine("Unauthorized: User not authenticated");
-                    return Unauthorized(new { statusCode = 401, message = "User not authenticated." });
+                    return Json(new ApiResponse(404, message: "Channel not found"));
                 }
 
-                var userChannelId = await UnitOfWork.ChannelRepo.GetChannelIdByUserId(userId);
-                Console.WriteLine($"UserChannelId: {userChannelId}");
-                if (userChannelId == Guid.Empty)
+                // Lấy IQueryable ban đầu
+                var query = Context.Videos
+                    .Include(x => x.Category)
+                    .Include(x => x.Viewers)
+                    .Where(x => x.ChannelId == channelId)
+                    .AsNoTracking();
+
+                // QUAN TRỌNG: Lọc ra các video đã được hiển thị trên Frontend
+                if (parameters.ExcludeIds != null && parameters.ExcludeIds.Any())
                 {
-                    Console.WriteLine("Not found: Channel not found for user");
-                    return NotFound(new { statusCode = 404, message = "Channel not found." });
+                    query = query.Where(x => !parameters.ExcludeIds.Contains(x.Id));
                 }
 
-                var parameters = new BaseParameters
-                {
-                    PageNumber = pageNumber,
-                    PageSize = pageSize,
-                    SortBy = sortBy
-                };
+                // Áp dụng sắp xếp (Nếu SortBy rỗng, mặc định sắp xếp theo UploadDate)
+                // Việc sắp xếp ổn định là cần thiết cho pagination (Skip/Take)
+                query = query.OrderByDescending(x => x.UploadDate);
 
-                var videosForGrid = await UnitOfWork.VideoRepo.GetVideosForChannelGridAsync(userChannelId, parameters);
-                Console.WriteLine($"Videos returned: {videosForGrid?.Count ?? 0}");
-                if (videosForGrid == null || videosForGrid == null)
+                // Chuyển đổi sang DTO và áp dụng phân trang (dùng PaginatedList)
+                var dtoQuery = query.Select(x => new VideoGridChannelDto
                 {
-                    Console.WriteLine("No videos found or repository returned null");
-                    return Json(new
-                    {
-                        statusCode = 200,
-                        result = new
-                        {
-                            items = new List<object>(),
-                            totalItemsCount = 0,
-                            pageNumber,
-                            totalPages = 0
-                        }
-                    });
-                }
-
-                return Json(new
-                {
-                    statusCode = 200,
-                    result = new
-                    {
-                        items = videosForGrid,
-                        totalItemsCount = videosForGrid.TotalItemsCount,
-                        pageNumber = videosForGrid.PageNumber,
-                        totalPages = videosForGrid.TotalPages
-                    }
+                    Id = x.Id,
+                    Title = x.Title,
+                    Thumbnail = x.Thumbnail != null ? x.Thumbnail.Replace("\\", "/") : "/avatarUser/avt-default.jpg",
+                    Duration = x.Duration ?? "0:00",
+                    CreatedAt = x.UploadDate,
+                    CategoryName = x.Category.CategoryName,
+                    // Tính tổng Views từ VideoViews [7, 8]
+                    Views = x.Viewers.Sum(v => v.NumberOfVisit),
+                    Comments = x.Comments.Count(),
+                    Likes = x.LikeDislikes.Count(l => l.Liked == true),
+                    Dislikes = x.LikeDislikes.Count(l => l.Liked == false),
+                    // Dislikes cần được tính tương tự nếu cần
+                    // ...
                 });
+
+                // Tạo danh sách phân trang
+                var paginatedResults = await PaginatedList<VideoGridChannelDto>.CreateAsync(
+                     dtoQuery,
+                     parameters.PageNumber,
+                     parameters.PageSize
+                );
+
+                // Trả về kết quả
+                return Json(new ApiResponse(200, result: new
+                {
+                    items = paginatedResults,
+                    totalItemsCount = paginatedResults.TotalItemsCount,
+                    pageNumber = paginatedResults.PageNumber,
+                    totalPages = paginatedResults.TotalPages
+                }));
             }
             catch (Exception ex)
             {
+                // [9]: Log lỗi chi tiết
                 Console.WriteLine($"Error in GetVideosForChannelGrid: {ex.Message}\n{ex.StackTrace}");
                 return StatusCode(500, new { statusCode = 500, message = $"Error: {ex.Message}" });
             }
