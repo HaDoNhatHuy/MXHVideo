@@ -61,7 +61,7 @@ def process_video(video_path, known_faces_dict):
 
                 # Tăng ngưỡng lên 0.5 hoặc 0.55 để bắt được mặt nghiêng/kính râm tốt hơn
                 # Logic Gap-Filling phía sau sẽ lo việc loại bỏ nhiễu
-                if best_match_distance < 0.52: 
+                if best_match_distance < 0.45: 
                     top, right, bottom, left = face_locations[i]
                     # Scale tọa độ về kích thước gốc
                     loc = (top*2, right*2, bottom*2, left*2)
